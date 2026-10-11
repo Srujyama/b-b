@@ -1,8 +1,13 @@
 # Hosted judge demo: Vellum integration handoff
 
-Prepared 2026-10-11. The founder owns deployment and wallet secrets. This PR is reviewed and merged
-into `main`; GitHub runs TypeScript + tests before deploying Fly. No personal or app deploy token is
+Prepared 2026-10-11. The founder owns deployment and wallet secrets. Voice implementation PR #28 is
+reviewed and merged into `main`; GitHub runs TypeScript + tests before deploying Fly. No personal or app deploy token is
 needed by Branch A. Do not deploy this feature branch directly.
+
+**Current checkpoint: [E2E_RESULTS.md](./E2E_RESULTS.md).** PR #28 is merged as `00feb46`;
+Fly and Vercel both serve that release. Demo execution is paused at the user's request while
+provider credits are restored. Historical live results below predate the current configuration
+blockers and must not be represented as a fresh end-to-end pass.
 
 ## Current deployment and architecture
 
@@ -19,29 +24,30 @@ needed by Branch A. Do not deploy this feature branch directly.
 - The default app LLM remains Opus 5.5; the voice model is Haiku 5.5. The supporting intake and fake
   hospital agents use ElevenLabs' native model configuration. No Twilio transport is used.
 
-Both public `/health` endpoints returned 200 during verification. The founder has now imported the
-AI settings: Fly reports `anthropic:true`, `contextDev:true`, `elevenlabs:true`. The temporary tunnel
-is stopped and the ElevenLabs agent now targets the Fly endpoint. The code in this PR still needs the normal reviewed
-main release before hosted transcript/context verification can pass. Local live tests used real
-provider requests and synthetic patient data; configuration health is not a full hosted call test.
+Both public hosts now serve the merged UI and use the same deployed Fly backend. The temporary
+tunnel is stopped. Fly's `/health` reports AI key presence, but fresh checks found exhausted
+Context.dev credits, an ElevenLabs 401, and missing Haiku gateway/browser-agent configuration.
+The provisioned Haiku agent targets Fly; the app still selects the legacy advocate fallback until
+the missing settings are imported. Key presence is not evidence of quota or complete voice wiring.
 
-## Founder: import voice settings, then point ElevenLabs at Fly
+## Founder: finish the missing voice wiring
 
-A private `vellum-voice.fly.env` file was prepared outside the repository for the user to transfer to
-the founder. It contains ONLY AI/voice configuration, not Fly deploy credentials or wallet keys.
-Do not commit that file, place it under `web/`, or paste it into a PR. Its variables are:
+The founder confirmed that `ELEVENLABS_API_KEY`, `ELEVENLABS_ADVOCATE_AGENT_ID`,
+`ELEVENLABS_HOSPITAL_AGENT_ID`, `ELEVENLABS_INTAKE_AGENT_ID`, and `ELEVENLABS_INTAKE_VOICE_ID`
+already exist on Fly. Leave those values untouched by this import. Restore provider credits or
+update provider keys separately; do not import the older full `vellum-voice.fly.env` file.
+
+The private **`vellum-voice-wiring.fly.env`** contains exactly the nine variables below. It has
+no provider API keys, wallet keys, or deploy credentials. It does contain the gateway bearer
+token: transfer the actual file privately, never through Git, `web/`, or a PR. A `/private/tmp`
+path belongs only to the machine that created it and is not a transfer mechanism. A private
+transfer bundle is available on the user's Mac under the ignored `server/.data/voice-handoff/`.
 
 | Variable | Purpose |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | Shared Claude account credential |
-| `CONTEXT_DEV_API_KEY` | Sourced hospital policy / pricing research |
-| `ELEVENLABS_API_KEY` | Existing approved TTS, voices-read, ElevenAgents-write key |
 | `VOICE_LLM_TOKEN` | Gateway bearer token; must match the ElevenLabs workspace secret |
 | `ELEVENLABS_LLM_SECRET_ID` | Existing ElevenLabs secret reference used for agent provisioning |
 | `ELEVENLABS_BROWSER_AGENT_ID` | Haiku / v4 Turbo advocate |
-| `ELEVENLABS_HOSPITAL_AGENT_ID` | AI fake-hospital backup |
-| `ELEVENLABS_INTAKE_AGENT_ID` | Mandarin intake |
-| `ELEVENLABS_INTAKE_VOICE_ID` | River, also used by Mandarin outcome narration |
 | `VOICE_LLM_MODEL` | `claude-haiku-5-5` |
 | `VOICE_TTS_MODEL` | `eleven_v4_turbo` (alternatives: `eleven_v4`, `eleven_flash_v2_5`) |
 | `VOICE_VOICE_PRESET` | `bella` (alternatives: `river`, `eric`) |
@@ -49,34 +55,48 @@ Do not commit that file, place it under `web/`, or paste it into a PR. Its varia
 | `PUBLIC_URL` | `https://vellum-app.fly.dev` |
 | `PUBLIC_WS_ORIGIN` | `wss://vellum-app.fly.dev` |
 
-1. Review and merge this PR, allowing the existing main-only CI/deploy job to finish. Vercel follows
-   main independently, so wait for both releases before testing.
-2. From the founder's authenticated Fly session, import the private file (replace its path):
+1. Release `00feb46` is already deployed to both Fly and Vercel. No separate feature-branch deploy
+   or personal Fly token is needed. The founder retains deployment and wallet access.
+2. Confirm the ElevenLabs account is unchanged before using the existing agent/secret references.
+   From the founder's authenticated Fly session, import the privately received file:
 
    ```sh
-   fly secrets import --app vellum-app < /absolute/path/vellum-voice.fly.env
+   fly secrets import --app vellum-app < /absolute/path/vellum-voice-wiring.fly.env
    ```
 
-   This changes only the named values and restarts the app. It does not remove existing wallet secrets.
+   This changes only those nine values and restarts the app. None overlaps the five ElevenLabs
+   settings above. It does not remove existing wallet secrets. Inspect variable names before import;
+   do not post the values to an issue, log, or screenshot.
 3. **Stop every local `demo-tunnel.ts` launcher first.** It updates this same ElevenLabs agent when a
    temporary hostname rotates and would otherwise overwrite the hosted endpoint.
-4. From `vellum/server` on the reviewed commit, configure the existing agent using the private file:
+4. The existing browser agent already points at Fly. If re-provisioning is needed, use a private
+   local provisioning environment containing a valid `ELEVENLABS_API_KEY` plus the wiring values.
+   The wiring-only import file intentionally lacks the API key and cannot provision by itself.
+   From `vellum/server` on the reviewed commit:
 
    ```sh
-   DOTENV_CONFIG_PATH=/absolute/path/vellum-voice.fly.env node --import tsx scripts/setup-elevenlabs.ts --browser
+   DOTENV_CONFIG_PATH=/absolute/path/private-provisioning.env node --import tsx scripts/setup-elevenlabs.ts --browser
    ```
 
    The provider's custom LLM URL must be `https://vellum-app.fly.dev/api/voice/browser/llm/v1`.
    ElevenLabs appends `/chat/completions`. Including that suffix in the configured base caused the live
    404 failure found and fixed during this integration. Our HTTP route still includes the full suffix.
-5. Verify `/health` reports all three AI services configured, then perform the hosted smoke test and
-   an actual browser-microphone rehearsal. The judge path must work with this Mac's server/tunnel off.
+   If the ElevenLabs account changes, remove the old `ELEVENLABS_LLM_SECRET_ID` and
+   `ELEVENLABS_BROWSER_AGENT_ID` from that private provisioning environment before running the
+   command. It creates a workspace secret and agent in the new account and prints new references.
+   Save those references even if a later step fails. Import the resulting gateway token and new
+   IDs into Fly together. Existing intake/hospital/voice IDs also need review for the new account;
+   do not assume references from the old account will work.
+5. Leave live testing paused until the user resumes. Then verify gateway authentication and that
+   human-session initialization includes `custom_llm_extra_body.browser_case_id`, followed by the
+   hosted smoke test and actual microphone rehearsal. `/health` alone is insufficient. Keep this
+   Mac's server/tunnel off so the judge path is independent of the development machine.
 
 No phone agent/number, `VOICE_ORCHESTRATOR_TOKEN`, or phone journal directory is required for the
 browser demo. Retained real-phone routes stay disabled and separate from the shared CasePacket path.
-The approved ElevenLabs key expires October 18; replace it for judging after that date.
+The original approved ElevenLabs key expires October 18; a replacement key has its own expiry.
 
-## Reproducible checks
+## Reproducible checks (live command waits for the demo to resume)
 
 From `vellum/server`:
 
@@ -94,7 +114,7 @@ recognition, receives Haiku/v4 audio, and posts both transcript lines with the p
 It succeeds only if speech is recognized, a reply and audio arrive, and both lines are saved.
 The test accepts the consenting Lin Mei fixture. It is not a completed negotiation or a latency SLA.
 
-Live results on this Mac, October 11:
+Historical live results on this Mac, October 11, before the current blockers:
 
 - Claude credentials: real Haiku completion returned 200.
 - Demo intake: 17 lines, $14,296 balance, four audit flags, Chinese explanations; about 31.5 seconds.
@@ -108,7 +128,7 @@ Live results on this Mac, October 11:
 - Rehearsal replies were longer than the requested 35-word target despite prompt tuning. Treat brevity
   as a behavior to evaluate in the live microphone rehearsal, not as a guaranteed word limit.
 
-## What changed for review
+## Implementation shipped in PR #28
 
 - Fix the ElevenLabs custom-LLM base URL (both browser and future phone agent).
 - Apply the formerly separate browser adapter patch: case metadata + supported voice overrides reach
@@ -127,19 +147,20 @@ Live results on this Mac, October 11:
   pauses sparse. Distinguish suspected bill errors from verified corrections and avoid invented
   signed-authorization claims.
 
-This is a cross-stream integration PR: minimal edits to `web/`, shared `types.ts`, outcome summaries
-and their tests are included for D to review alongside the A-owned voice code. No wallet, payment,
-Fly workflow, package, lockfile or shared LLM-helper changes are made.
+PR #28 included cross-stream integration edits to `web/`, shared `types.ts`, outcome summaries
+and their tests alongside the A-owned voice code. The current handoff follow-up changes only
+Branch A documentation; it does not modify runtime behavior or deployment configuration.
 
-## Hosted verification before this PR is merged
+## Historical hosted verification before PR #28 merged
 
 The actual judge frontend created a synthetic case through Vercel -> Fly in 26.8 seconds, preserving
 17 lines and the $14,296 balance. With the local gateway and tunnel stopped, the same synthetic audio
 test recognized the hospital input, received a Haiku reply and 965,846 PCM bytes from ElevenLabs;
 first reply audio arrived 934 ms after input ended. This proves the hosted voice transport, not the
 new transcript endpoint: the smoke test correctly exited nonzero with `saved:0` because the deployed
-main still lacked this PR's transcript route. Rerun after the reviewed merge; do not count that partial
-run as a complete hosted pass. PR CI (server, ownership, secret scan and Vercel preview) passed.
+main still lacked PR #28's transcript route. Do not count that partial run as a complete hosted pass.
+PR CI (server, ownership, secret scan and Vercel preview) passed. Post-merge transcript checks and
+the remaining live-voice blockers are recorded in `E2E_RESULTS.md`.
 
 ## Full-pipeline findings
 
@@ -157,7 +178,7 @@ not reached. These are not claimed as passed.
 
 ## Remaining end-to-end checks
 
-- Hosted secrets + CI rollout + ElevenLabs endpoint cutover, then microphone permission, interruption,
+- Missing hosted voice settings + funded provider keys, then microphone permission, interruption,
   audible clarity and live transcript on the actual judge frontend.
 - A complete negotiation and its tool-recorded outcome (the one-turn smoke intentionally declines tools).
 - Testnet escrow, hospital portal confirmation, fund loan, BNB receipts and Gemini with the founder's
