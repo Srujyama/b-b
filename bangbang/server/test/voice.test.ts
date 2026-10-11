@@ -359,3 +359,249 @@ describe("voice routes", () => {
     expect(r.json().error).toMatch(/ELEVENLABS_API_KEY is not configured/);
   });
 });
+
+// Branch A: real phone worker, native Haiku streaming, and orchestrator-owned context.
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHmac } from "node:crypto";
+import { anthropicRequest, completionChunks } from "../src/agent/haiku.js";
+import { outboundAgentConfig, type VoicePlan } from "../src/agent/call-plan.js";
+import { CallJobStore, runVoiceTask, syncVoiceTask, verifyWebhook } from "../src/agent/calls.js";
+import { configureVoiceContext } from "../src/agent/shared-context.js";
+
+const voicePlan = (): VoicePlan => ({
+  version: "1", jobId: "job-1", caseId: "case-1", planId: "plan-1", stepId: "call-billing",
+  client: { name: "Test Client", authorization: { confirmed: true, reference: "consent-1" } },
+  target: { name: "Example Billing", phone: "+14155550123" }, objective: "Request an itemized bill and nonbinding proposal",
+  steps: ["Confirm the billing department", "Ask for an itemized bill"], facts: ["The client disputes a duplicate charge."],
+  constraints: { maxOfferUsd: 2500, forbiddenActions: ["Do not accept a binding settlement"] },
+});
+const eventStream = (events: unknown[], fragment = false) => {
+  const bytes = new TextEncoder().encode(events.map((event) => `data: ${JSON.stringify(event)}\r\n\r\n`).join(""));
+  return new ReadableStream<Uint8Array>({ start(controller) {
+    if (fragment) for (let i = 0; i < bytes.length; i += 3) controller.enqueue(bytes.slice(i, i + 3));
+    else controller.enqueue(bytes);
+    controller.close();
+  } });
+};
+const spokenEvents = [
+  { type: "message_start", message: { id: "msg-1" } },
+  { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "Hello 您好" } },
+  { type: "message_delta", delta: { stop_reason: "end_turn" } }, { type: "message_stop" },
+];
+const conversation = (extra: Record<string, unknown> = {}) => ({
+  agent_id: "outbound-agent", conversation_id: "conv-1", status: "done",
+  conversation_initiation_client_data: { dynamic_variables: { job_id: "job-1" } },
+  transcript: [{ role: "agent", message: "I will bring this proposal to my client.", time_in_call_secs: 20 }],
+  analysis: { transcript_summary: "Office proposed a discount.", call_successful: "success",
+    data_collection_results: { proposal: { value: "$2,000 pending client approval" }, next_steps: { value: "Send authorization" } } },
+  metadata: { call_duration_secs: 30 }, ...extra,
+});
+
+describe("native Haiku voice stream", () => {
+  it("maps greeting, function calls and results to native Messages with caching and no sampling fields", () => {
+    const payload = anthropicRequest({ stream: true, messages: [
+      { role: "system", content: "You represent a client." }, { role: "assistant", content: "Hello" },
+      { role: "user", content: "Please wait" },
+      { role: "assistant", tool_calls: [{ id: "t1", type: "function", function: { name: "skip_turn", arguments: "{}" } }] },
+      { role: "tool", tool_call_id: "t1", content: "ok" },
+    ], tools: [{ type: "function", function: { name: "skip_turn", parameters: { type: "object" } } }] });
+    expect(payload.model).toBe("claude-haiku-5-5");
+    expect(payload.thinking).toEqual({ type: "disabled" });
+    expect(payload).not.toHaveProperty("temperature");
+    expect(payload.system?.[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(payload.messages[0].role).toBe("user");
+    expect(payload.messages.at(-1)?.content[0]).toMatchObject({ type: "tool_result", tool_use_id: "t1" });
+    expect(() => anthropicRequest({ stream: false, messages: [] })).toThrow();
+  });
+  it("streams split Unicode SSE frames without buffering a complete response", async () => {
+    const first = vi.fn();
+    const chunks: string[] = [];
+    for await (const c of completionChunks(eventStream(spokenEvents, true), first)) chunks.push(c);
+    expect(chunks.join("")).toContain("Hello 您好");
+    expect(chunks.at(-1)).toBe("data: [DONE]\n\n");
+    expect(first).toHaveBeenCalledOnce();
+  });
+  it("maps native tool-use blocks to OpenAI tool-call deltas", async () => {
+    const events = [
+      spokenEvents[0], { type: "content_block_start", index: 1, content_block: { type: "tool_use", id: "t2", name: "end_call" } },
+      { type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '{"reason":"done"}' } },
+      { type: "message_delta", delta: { stop_reason: "tool_use" } }, { type: "message_stop" },
+    ];
+    const chunks: string[] = [];
+    for await (const c of completionChunks(eventStream(events))) chunks.push(c);
+    expect(chunks.join("")).toContain('"name":"end_call"');
+    expect(chunks.join("")).toContain('"finish_reason":"tool_calls"');
+  });
+  it("does not mark a truncated upstream stream successful", async () => {
+    const chunks: string[] = [];
+    await expect((async () => { for await (const c of completionChunks(eventStream(spokenEvents.slice(0, 2)))) chunks.push(c); })())
+      .rejects.toThrow("message_stop");
+    expect(chunks.join("")).not.toContain("[DONE]");
+  });
+  it("does not claim success if the voice response exceeds its token budget", async () => {
+    await expect((async () => {
+      for await (const _ of completionChunks(eventStream([{ type: "message_delta", delta: { stop_reason: "max_tokens" } }]))) { /* drain */ }
+    })()).rejects.toThrow("token limit");
+  });
+});
+
+describe("outbound voice worker", () => {
+  let directory: string;
+  let app: ReturnType<typeof Fastify>;
+  let providerFetch: ReturnType<typeof vi.fn>;
+  const auth = { authorization: "Bearer orchestrator-test" };
+  beforeEach(async () => {
+    directory = mkdtempSync(join(tmpdir(), "bb-voice-test-"));
+    const config = {
+      ELEVENLABS_API_KEY: "eleven-test", ANTHROPIC_API_KEY: "anthropic-test", ELEVENLABS_OUTBOUND_AGENT_ID: "outbound-agent",
+      ELEVENLABS_PHONE_NUMBER_ID: "phone-1", VOICE_ORCHESTRATOR_TOKEN: "orchestrator-test", VOICE_LLM_TOKEN: "gateway-test",
+      VOICE_JOB_DIR: directory, PUBLIC_URL: "https://voice.example", VOICE_CALLS_ENABLED: "true",
+      VOICE_ALLOWED_NUMBERS: "", ELEVENLABS_WEBHOOK_SECRET: "webhook-test",
+    };
+    for (const [key, value] of Object.entries(config)) vi.stubEnv(key, value);
+    providerFetch = vi.fn(async () => new Response(JSON.stringify({ success: true, conversation_id: "conv-1", callSid: "CA-test" })));
+    vi.stubGlobal("fetch", providerFetch);
+    app = Fastify();
+    await app.register(voiceRoutes);
+  });
+  afterEach(async () => {
+    configureVoiceContext(undefined);
+    await app.close();
+    vi.unstubAllGlobals(); vi.unstubAllEnvs();
+    rmSync(directory, { recursive: true, force: true });
+  });
+  const signed = (body: string, timestamp = Math.floor(Date.now() / 1000)) => `t=${timestamp},v0=${createHmac("sha256", "webhook-test").update(`${timestamp}.${body}`).digest("hex")}`;
+  const submit = (a: typeof app, plan = voicePlan()) => a.inject({ method: "POST", url: "/api/voice/jobs", headers: auth, payload: plan });
+
+  it("requires orchestrator auth and rejects absent client authorization without dialing", async () => {
+    const missing = await app.inject({ method: "POST", url: "/api/voice/jobs", payload: voicePlan() });
+    expect(missing.statusCode).toBe(401);
+    const plan = voicePlan(); (plan.client.authorization.confirmed as boolean) = false;
+    expect((await submit(app, plan)).statusCode).toBe(400);
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("previews a representative brief without keys or external side effects", async () => {
+    vi.stubEnv("ELEVENLABS_API_KEY", "");
+    const r = await app.inject({ method: "POST", url: "/api/voice/jobs/preview", headers: auth, payload: voicePlan() });
+    expect(r.json()).toMatchObject({ dryRun: true, dialed: false });
+    expect(r.body).toContain("NO authority to accept a binding settlement");
+    expect(r.body).toContain("maxOfferUsd");
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("blocks calls until config, live switch and destination allowlist permit them", async () => {
+    vi.stubEnv("VOICE_CALLS_ENABLED", "false");
+    expect((await submit(app)).statusCode).toBe(503);
+    vi.stubEnv("VOICE_CALLS_ENABLED", "true"); vi.stubEnv("VOICE_ALLOWED_NUMBERS", "+14155550999");
+    expect((await submit(app)).statusCode).toBe(403);
+    vi.stubEnv("VOICE_ALLOWED_NUMBERS", ""); vi.stubEnv("ANTHROPIC_API_KEY", "");
+    expect((await submit(app)).statusCode).toBe(503);
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("dials once for simultaneous identical jobs and persists idempotency across store instances", async () => {
+    const responses = await Promise.all([submit(app), submit(app)]);
+    expect(responses.map((r) => r.statusCode)).toEqual([202, 202]);
+    expect(providerFetch).toHaveBeenCalledOnce();
+    expect(new CallJobStore(directory).get("job-1")).toMatchObject({ status: "submitted", conversationId: "conv-1" });
+    expect((await submit(app)).json().conversationId).toBe("conv-1");
+    expect(providerFetch).toHaveBeenCalledOnce();
+    const sent = JSON.parse(providerFetch.mock.calls[0][1].body);
+    expect(sent).toMatchObject({ agent_phone_number_id: "phone-1", to_number: "+14155550123", call_recording_enabled: false });
+    expect(sent.conversation_initiation_client_data.custom_llm_extra_body).toEqual({ voice_job_id: "job-1" });
+  });
+  it("rejects changed job content and a second active job for the same case", async () => {
+    await submit(app);
+    const changed = voicePlan(); changed.objective = "Different task";
+    expect((await submit(app, changed)).statusCode).toBe(409);
+    changed.jobId = "job-2";
+    expect((await submit(app, changed)).statusCode).toBe(409);
+    expect(providerFetch).toHaveBeenCalledOnce();
+  });
+  it("keeps uncertain dispatches for reconciliation and never automatically redials", async () => {
+    providerFetch.mockRejectedValueOnce(new Error("network timeout"));
+    expect((await submit(app)).json().status).toBe("unknown");
+    expect((await submit(app)).json().status).toBe("unknown");
+    expect(providerFetch).toHaveBeenCalledOnce();
+    providerFetch.mockResolvedValueOnce(new Response(JSON.stringify(conversation())));
+    const r = await app.inject({ method: "POST", url: "/api/voice/jobs/job-1/reconcile", headers: auth, payload: { conversationId: "conv-1" } });
+    expect(r.json().status).toBe("completed");
+  });
+  it("polls completed calls into evidence requiring review, without accepting an offer", async () => {
+    await submit(app);
+    providerFetch.mockResolvedValueOnce(new Response(JSON.stringify(conversation())));
+    const r = await app.inject({ method: "POST", url: "/api/voice/jobs/job-1/refresh", headers: auth });
+    expect(r.json()).toMatchObject({ status: "completed", result: { requiresReview: true, proposal: "$2,000 pending client approval" } });
+    expect(r.json()).not.toHaveProperty("agreedAmount");
+  });
+  it("rejects bad webhook signatures and applies authentic callbacks idempotently", async () => {
+    await submit(app);
+    const body = JSON.stringify({ type: "post_call_transcription", data: conversation() });
+    const send = (signature: string) => app.inject({ method: "POST", url: "/api/voice/webhooks/elevenlabs",
+      headers: { "content-type": "application/json", "elevenlabs-signature": signature }, payload: body });
+    expect((await send("bad")).statusCode).toBe(401);
+    expect((await send(signed(body))).statusCode).toBe(200);
+    const original = new CallJobStore(directory).get("job-1");
+    expect((await send(signed(body))).statusCode).toBe(200);
+    expect(new CallJobStore(directory).get("job-1")).toEqual(original);
+    expect(() => verifyWebhook(Buffer.from(body), signed(body, 1), "webhook-test")).toThrow("expired");
+  });
+  it("records busy/no-answer failures and rejects a callback for a different agent", async () => {
+    await submit(app);
+    const send = (data: unknown) => {
+      const body = JSON.stringify({ type: "call_initiation_failure", data });
+      return app.inject({ method: "POST", url: "/api/voice/webhooks/elevenlabs", headers: {
+        "content-type": "application/json", "elevenlabs-signature": signed(body),
+      }, payload: body });
+    };
+    expect((await send(conversation({ agent_id: "wrong" }))).statusCode).toBe(409);
+    expect((await send(conversation({ failure_reason: "busy" }))).statusCode).toBe(200);
+    expect(new CallJobStore(directory).get("job-1")).toMatchObject({ status: "failed", error: "busy" });
+  });
+  it("uses direct orchestrator references, reads live memory each turn and writes results back", async () => {
+    let authorized = true;
+    const read = vi.fn(async () => ({ revision: "r2", facts: ["Updated shared fact"], notes: [], authorized }));
+    const writeResult = vi.fn(async () => {});
+    configureVoiceContext({ resolveTask: async () => voicePlan(), read, writeResult });
+    const plan = voicePlan();
+    expect((await runVoiceTask(plan)).status).toBe("submitted");
+    providerFetch.mockResolvedValueOnce(new Response(eventStream(spokenEvents)));
+    const llm = () => app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions",
+      headers: { authorization: "Bearer gateway-test" }, payload: { stream: true, voice_job_id: "job-1", messages: [
+        { role: "system", content: "Stable instructions" }, { role: "user", content: "What next?" },
+      ] } });
+    const response = await llm();
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain("[DONE]");
+    const request = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(request.messages.at(-1).content[0].text).toContain("Updated shared fact");
+    authorized = false;
+    providerFetch.mockResolvedValueOnce(new Response(eventStream(spokenEvents)));
+    await llm();
+    expect(JSON.parse(providerFetch.mock.calls.at(-1)![1].body).messages.at(-1).content[0].text).toContain("authorization has been revoked");
+    providerFetch.mockResolvedValueOnce(new Response(JSON.stringify(conversation())));
+    await syncVoiceTask("job-1");
+    expect(writeResult).toHaveBeenCalledWith(expect.objectContaining({ jobId: "job-1" }), expect.objectContaining({ requiresReview: true }));
+  });
+  it("blocks a revoked shared authorization before dialing", async () => {
+    configureVoiceContext({ resolveTask: async () => voicePlan(), read: async () => ({ revision: "r3", facts: [], notes: [], authorized: false }), writeResult: async () => {} });
+    await expect(runVoiceTask(voicePlan())).rejects.toThrow("revoked");
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("requires a separate gateway token and never exposes Anthropic provider error bodies", async () => {
+    const payload = { stream: true, messages: [{ role: "user", content: "Hello" }] };
+    expect((await app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions", headers: auth, payload })).statusCode).toBe(401);
+    providerFetch.mockResolvedValueOnce(new Response("sensitive provider diagnostic", { status: 401 }));
+    const r = await app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions", headers: { authorization: "Bearer gateway-test" }, payload });
+    expect(r.statusCode).toBe(502);
+    expect(r.body).not.toContain("sensitive");
+  });
+  it("configures Flash, a protected Haiku gateway, IVR tools and no settlement tools", () => {
+    const config = outboundAgentConfig("https://voice.example", "secret-1");
+    expect(config.conversation_config.agent.prompt.custom_llm.model_id).toBe("claude-haiku-5-5");
+    expect(config.conversation_config.tts.model_id).toBe("eleven_flash_v2_5");
+    expect(config.conversation_config.agent.prompt.tool_ids).toEqual([]);
+    expect(config.conversation_config.agent.prompt.built_in_tools).toHaveProperty("play_keypad_touch_tone");
+    expect(JSON.stringify(config)).not.toContain("anthropic-test");
+  });
+});

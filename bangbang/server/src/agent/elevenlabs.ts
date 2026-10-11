@@ -56,6 +56,15 @@ async function eleven<T>(path: string, init: RequestInit = {}, f: FetchLike = fe
   return (text ? JSON.parse(text) : {}) as T;
 }
 
+/** Stores only the gateway token in ElevenLabs, never the Anthropic API key. */
+export async function createVoiceGatewaySecret(token: string, f: FetchLike = fetch): Promise<string> {
+  const result = await eleven<{ secret_id?: string }>("/v1/convai/secrets", {
+    method: "POST", body: JSON.stringify({ type: "new", name: "BangBang Voice Gateway", value: token }),
+  }, f);
+  if (!result.secret_id) throw new Error("ElevenLabs returned no secret_id");
+  return result.secret_id;
+}
+
 // ---------- agent ids ----------
 export type VoiceRole = "advocate" | "hospital" | "insurer" | "intake";
 
