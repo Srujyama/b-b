@@ -19,3 +19,15 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx vitest run
+
+  # Blocks a stream A/B/C PR that edits another stream's files (see .github/ownership.json).
+  ownership:
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'cross-stream-ok')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          files=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          node .github/scripts/check-ownership.mjs "${{ github.head_ref }}" $files
