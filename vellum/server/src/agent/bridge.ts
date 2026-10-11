@@ -11,6 +11,7 @@
 import WebSocket from "ws";
 import { opt } from "../env.js";
 import { browserDemoInit } from "./browser-demo.js";
+import { hospitalDemoInit } from "./hospital-demo.js";
 import { emit, requireCase, updateCase } from "../store.js";
 import type { TranscriptLine } from "../types.js";
 import { handleTool, type ToolResult } from "./tools.js";
@@ -122,11 +123,14 @@ export async function startVoiceBridge(
   const roles: [VoiceRole, VoiceRole] = ["advocate", counterparty];
   const inits = roles.map((r) => conversationInit(r, packet, caseId));
   const browserAgent = opt("ELEVENLABS_BROWSER_AGENT_ID");
+  const hospitalAgent = counterparty === "hospital" ? opt("ELEVENLABS_HAIKU_HOSPITAL_AGENT_ID") : undefined;
   if (browserAgent) {
     inits[0] = browserDemoInit(packet);
     inits[0].conversation_config_override.agent.first_message = "";
   }
-  const urls = await Promise.all(roles.map((r) => signed(r === "advocate" && browserAgent ? browserAgent : agentIdFor(r))));
+  if (hospitalAgent) inits[1] = hospitalDemoInit(packet);
+  const urls = await Promise.all(roles.map((r) => signed(r === "advocate" && browserAgent ? browserAgent
+    : r === "hospital" && hospitalAgent ? hospitalAgent : agentIdFor(r))));
   updateCase(caseId, { voiceSimulation: true });
 
   let stopped = false;
@@ -259,6 +263,7 @@ export async function startVoiceBridge(
         const name = internalToolName(String(call.tool_name ?? ""));
         let r: ToolResult;
         try {
+          if (l !== adv) throw new Error("Only the advocate may use case tools");
           r = handleTool(caseId, name, call.parameters ?? {});
         } catch (e) {
           r = { ok: false, message: (e as Error).message };
