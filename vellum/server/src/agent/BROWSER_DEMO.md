@@ -2,7 +2,7 @@
 
 This is the chosen hackathon path. A teammate speaks through the browser microphone; ElevenLabs
 handles recognition and voice, and the same TypeScript server streams Haiku responses. No telephone
-number, Twilio account upgrade, carrier call, or public product deployment is needed. Model/audio
+number, Twilio account upgrade, carrier call, is needed for local testing. Judges use the hosted deployment. Model/audio
 usage still consumes the relevant provider credits.
 
 Use synthetic cases. The agent announces that this is a simulated billing call. A recorded demo
@@ -26,25 +26,16 @@ retains conversation history at ElevenLabs. One shared Anthropic key is sufficie
 make separate models share prompt caches or hidden reasoning. The real-phone `VoiceContextSource`
 plan adapter remains a separate future integration.
 
-## Product-owner change (D): applied
+## Integrated browser client
 
-D applied this change to `web/app.js` when merging (the handoff patch file is no longer needed).
+The browser adapter is now applied in `web/app.js`; do not apply the old handoff patch again.
+It forwards case metadata and supported voice overrides to SDK 1.25.0. That SDK cannot serialize
+`modelId`, so choose the model during `--browser` provisioning and restart between model changes.
+Browser transcripts persist and translate on the server. The room and outcome summary label the
+simulation, including spoken Mandarin audio.
 
-The change updates `web/app.js:initToSessionOptions` to forward `customLlmExtraBody` and the supported
-voice overrides. Without it, the custom Haiku endpoint rejects the missing case ID; this must be
-completed before a live demo. Forwarded client tools already exist in the product.
-
-The pinned browser SDK is `@elevenlabs/client@1.25.0`. Its TTS override serializer supports `voiceId`,
-`stability`, and `speed`, but not `modelId`. Choose `VOICE_TTS_MODEL` before provisioning the browser
-agent, rerun `--browser` after changing it, and restart the local server between rehearsals. Do not
-change the model environment during an active rehearsal. The phone API's per-job model override is
-a different transport and remains supported.
-
-D should also label the negotiation room “Simulated billing call — teammate representative” and
-carry simulated status into outcome/receipt displays. `simulated:true` is returned by human-mode
-startup; the existing shared CasePacket/payment schema does not yet persist that distinction. Keep
-real-money credentials disabled for this rehearsal; synthetic tool acceptance can advance the
-existing demo pipeline.
+For judges, use the durable Fly/Vercel deployment described in [HOSTED_DEMO.md](./HOSTED_DEMO.md).
+The localhost tunnel instructions below are only for isolated local development.
 
 ## Start or recover the setup
 
@@ -52,7 +43,7 @@ All commands below run from `vellum/server`. Keep secrets only in the ignored `.
 [voice.env.example](./voice.env.example). Needed for a complete conversation:
 
 - `ELEVENLABS_API_KEY`, with the previously approved TTS/voices/agents scopes.
-- `ANTHROPIC_API_KEY`, the shared server credential. Deliberately deferred until the partner provides it.
+- `ANTHROPIC_API_KEY`, the shared server credential, now live-tested locally.
 - `VOICE_LLM_TOKEN`, a distinct random gateway bearer token.
 - `PUBLIC_URL`, the temporary HTTPS gateway address.
 - `ELEVENLABS_LLM_SECRET_ID` and `ELEVENLABS_BROWSER_AGENT_ID`, populated by browser provisioning.
@@ -86,7 +77,7 @@ All commands below run from `vellum/server`. Keep secrets only in the ignored `.
 4. Copy the emitted **HTTPS origin** into local `.env` as `PUBLIC_URL`. Free domains are temporary:
    disconnects, sleep or a later tunnel allocation may change them. Keep all three processes and the
    computer running for the demo. Free domains can also rotate while connected. Use the launcher
-   below after the first agent provisioning to keep its endpoint synchronized. No stable hosting is installed.
+   below after the first agent provisioning to keep its endpoint synchronized. This local test tunnel is not the hosted judge deployment.
 5. Provision or update the dedicated agent; save both printed IDs to `.env`:
 
    ```sh
@@ -107,7 +98,7 @@ All commands below run from `vellum/server`. Keep secrets only in the ignored `.
    new domain, preserving other environment settings. It prints only the public origin. This is the
    launcher now used locally. Keep it running; if SSH disconnects, restart it. A domain change can
    interrupt an active turn, so check the public `/health` and restart the rehearsal if needed.
-7. After D applies the patch and the shared Claude key is present, open `http://localhost:8787`, load a
+7. With the shared Claude key present, open `http://localhost:8787`, load a
    synthetic case with consent, select **Human / 真人账单员**, and start the conversation. The teammate
    speaks through that browser's microphone with headphones. The public gateway URL is not the UI.
 
@@ -135,7 +126,7 @@ stream conversion, private-route isolation, authentication and request size limi
 SSE test checks that the first chunk arrives before a delayed final chunk; it does not call Claude or
 prove end-to-end spoken latency. Existing TTS smoke tests used real ElevenLabs synthetic speech.
 
-Before recording, run a real browser conversation after the two partner prerequisites are complete.
+Before recording, run a real browser conversation after the hosted secrets and endpoint cutover are complete.
 Check interruption, short responses, voice clarity, live case changes, tool results, transcript, and
 clear simulated labeling. Do not report this complete until that full loop succeeds.
 

@@ -180,8 +180,8 @@ export const AGENTS: AgentSpec[] = [
 // Premade voices (override with env). Intake uses a multilingual TTS model so it speaks natural Mandarin.
 export function voiceFor(role: AgentSpec["role"]): string {
   if (role === "advocate") return opt("ELEVENLABS_ADVOCATE_VOICE_ID", "hpp4J3VqNfWAUOO0d1Us")!; // Bella, current premade voice
-  if (role === "hospital") return opt("ELEVENLABS_HOSPITAL_VOICE_ID", "pNInz6obpgDQGcFmaJgB")!; // Adam
-  return opt("ELEVENLABS_INTAKE_VOICE_ID", "EXAVITQu4vr4xnAvoBy")!; // Sarah (multilingual)
+  if (role === "hospital") return opt("ELEVENLABS_HOSPITAL_VOICE_ID", "cjVigY5qzO86Huf0OWal")!; // Eric
+  return opt("ELEVENLABS_INTAKE_VOICE_ID", "SAz9YHcvj6GT2YYXdXww")!; // River (multilingual)
 }
 
 /** Placeholder prompts — the real per-case prompts arrive as conversation overrides. */
@@ -219,6 +219,8 @@ export function agentConfig(spec: AgentSpec, toolIds: string[]): Record<string, 
       asr: { user_input_audio_format: "pcm_16000" },
     },
     platform_settings: {
+      auth: { enable_auth: true },
+      privacy: { record_voice: false },
       overrides: {
         conversation_config_override: {
           agent: { prompt: { prompt: true }, first_message: true, language: true },

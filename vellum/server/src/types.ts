@@ -133,6 +133,8 @@ export type CasePacket = {
   id: string;
   mode: "patient" | "clinic";
   status: CaseStatus;
+  /** Browser / AI-counterparty rehearsal; any negotiated outcome is simulated. */
+  voiceSimulation?: boolean;
   patient?: Patient;
   bill?: Bill;
   flags: AuditFlag[];

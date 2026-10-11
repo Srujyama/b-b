@@ -1,47 +1,20 @@
 # Branch A merge handoff: voice execution under the orchestrator
 
-Prepared 2026-10-11 for the session merging `codex/browser-voice-demo` into the combined Vellum application.
-Read this file before connecting the real phone worker to the product pipeline. The complete request
-example, environment setup, route table, and provider references are in [README.md](./README.md).
+Prepared 2026-10-11 for `codex/hosted-judge-demo` on the combined Vellum application.
 
-This branch includes integrated `origin/main` through `85b4028` (including persistence, deployment and merged voice PR #11).
-The remaining diff adds browser rehearsal, HTTPS ingress/URL synchronization, and this handoff. There are no new npm
-dependencies or edits to the product owner's files.
+**Current release handoff: read [HOSTED_DEMO.md](./HOSTED_DEMO.md) first.** It contains the Fly/Vercel
+architecture, exact configuration variables, founder-owned release sequence, live verification
+results and remaining checks. The original browser feature landed on main in PR #26 (superseding #21).
+This follow-up fixes the custom-LLM URL discovered by a real audio test, integrates browser metadata,
+saves translated transcripts, and carries simulation status into the UI and spoken summary.
 
-## Current priority: browser rehearsal, no Twilio
+Claude and Context.dev are now configured locally and passed real API checks. ElevenLabs browser,
+Mandarin intake and fake-hospital agents are provisioned. The live synthetic audio loop passed;
+permanent hosted AI service configuration remains the founder's deployment step. No Twilio number
+or real telephone call is part of the hackathon demo.
 
-The team chose to skip paid phone transport for the hackathon. A teammate speaks into the browser
-as billing. Use [BROWSER_DEMO.md](./BROWSER_DEMO.md) for setup; the retained phone-worker sections
-below are for later production work, not prerequisites for this rehearsal.
-
-Implemented and provisioned locally on October 11:
-
-- Separate **Vellum Haiku Browser Rehearsal** ElevenLabs agent, Haiku custom gateway, v4 Turbo/Bella,
-  three client tools, signed-session authentication, four-minute limit, and voice recording disabled.
-- Public HTTPS tunnel to a loopback-only gateway; only browser completions are forwarded. The product
-  server, case routes, tools and money routes remain local. The free temporary domain and provider IDs
-  are saved only in ignored `.env`; they are not durable deployment configuration.
-- A tunnel launcher follows free-domain rotation and updates the existing ElevenLabs agent and local
-  `PUBLIC_URL`. A manual tunnel rotated during verification; the launcher addresses that failure.
-- Gateway token stored in an ElevenLabs workspace secret. The Anthropic key remains deferred. The
-  user approved localhost.run TLS termination for synthetic demo traffic.
-- Each model turn reads the SAME CasePacket in the shared server store: facts, budget, recent offers and consent.
-  Missing metadata fails closed. ElevenLabs sends it in `elevenlabs_extra_body`; the gateway now
-  reads that nested object. The older top-level phone-job field remains backward compatible.
-- [Medical-bill playbook](./MEDICAL_BILL_PLAYBOOK.md) with CMS/CFPB/IRS/HHS sources, and a revised
-  demo narrative distinguishing simulated agreements from real provider confirmation.
-
-**One partner prerequisite remains:** supply the shared `ANTHROPIC_API_KEY`. The browser adapter change
-was applied to `web/app.js` by D when this merged. It forwards case
-metadata plus voice overrides to SDK 1.25.0. That serializer cannot set the model per browser session;
-choose the model at agent provisioning, rerun `--browser` and restart between rehearsals.
-
-D must also carry simulation labels through the UI/results before showing the demo. Existing demo
-acceptance tools can advance the pipeline: keep real-money credentials disabled for this rehearsal.
-Shared schema changes belong to D. The future real-phone worker remains nonbinding.
-
-No real phone call, live Haiku response, completed spoken browser rehearsal, or real financial action
-has been performed. Twilio onboarding stopped before selecting a paid plan or buying a number.
+The future real-phone worker notes below remain useful after the browser release. They do not
+replace the current hosted checklist or imply that a real phone worker has been deployed.
 
 ## Agreed product and architecture decisions
 
@@ -59,11 +32,11 @@ It does not run an independent planning loop or require an HTTP handoff inside t
 Shared memory means shared application storage, not a shared hidden model state. Prompt caching is
 per model and depends on matching prompt prefixes. Do not assume an orchestrator using another model
 shares its cache with Haiku. The native Anthropic adapter requests caching for the stable system
-prompt and adds the latest memory after the conversation history.
+prompt and adds the latest memory in a separate uncached system-reference block, preserving the actual caller turn.
 
 The partner's architecture document described the current GPT-4o/ElevenLabs browser and agent-vs-agent
 demo. This branch adds separate Haiku browser and outbound representatives. Human mode selects the
-browser agent when configured. Legacy GPT-4o agents and the agent-vs-agent bridge remain available;
+browser agent when configured. The AI-counterparty bridge also selects the Haiku browser advocate when configured;
 the product pipeline never switches to real phone calls implicitly.
 
 Initial implementation used empty API-key placeholders. The user subsequently authorized connecting
@@ -91,9 +64,9 @@ number is provisioned, and no phone calls have been placed. Real dialing remains
 | `src/agent/voice.env.example` | Empty credentials and documented settings for the new worker |
 | `test/voice.test.ts` | Adds mocked coverage for the new worker, streaming, shared context, callbacks and failures |
 
-No package/lockfile, shared `types.ts`, `store.ts`, `index.ts`, `env.ts`, `llm.ts`, product pipeline,
-money-rail code, UI, or shared `.env.example` edits are included. These remain with their owners under
-WORKPLAN. The new routes are reachable because the existing `index.ts` already registers `voiceRoutes`.
+The follow-up includes minimal shared type, UI and summary integration edits for D to review.
+Package/lockfile, store, index, env, shared LLM helper, pipeline and money-rail code remain unchanged.
+The routes are reachable because the existing `index.ts` already registers `voiceRoutes`.
 
 ## Future real-phone merge sequence for the partner/session
 

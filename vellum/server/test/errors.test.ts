@@ -46,7 +46,8 @@ describe("errorStatus / errorMessage", () => {
   });
 
   it("redact strips bearer tokens and key-shaped strings, leaves ordinary text alone", () => {
-    expect(redact("Authorization: Bearer abcdefghijklmnop failed")).toBe("Authorization: Bearer … failed");
+    const fakeBearer = "a".repeat(16);
+    expect(redact(`Authorization: Bearer ${fakeBearer} failed`)).toBe("Authorization: Bearer … failed");
     // built at runtime so secret scanners don't flag a fake key in source
     const fakeKey = ["sk", "ant", "api03", "A".repeat(20)].join("-");
     expect(redact(`bad key ${fakeKey}`)).toBe("bad key …");
