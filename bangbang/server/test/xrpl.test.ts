@@ -16,7 +16,7 @@ import {
   receiptFor,
   usdValue,
 } from "../src/chain/xrpl.js";
-import { buildLoanBrokerSet, buildVaultCreate, buildZeroInterestLoan, fundIdsFromEnv } from "../src/chain/xrplFund.js";
+import { buildDonorCredential, buildDonorDomain, buildLoanBrokerSet, buildVaultCreate, buildZeroInterestLoan, DONOR_CREDENTIAL, fundIdsFromEnv } from "../src/chain/xrplFund.js";
 import { upsertEnv } from "../scripts/setup-xrpl.js";
 import xrplRoutes from "../src/routes/xrpl.js";
 import { createCase, updateCase } from "../src/store.js";
@@ -121,6 +121,23 @@ describe("transaction builders pass xrpl.js validation", () => {
     for (const r of b.RawTransactions) expect(r.RawTransaction.Flags).toBe(0x40000000);
     expect(b.RawTransactions[0].RawTransaction.Account).toBe(W.hospital.address);
     expect(b.RawTransactions[1].RawTransaction.Account).toBe(W.patient.address);
+  });
+  it("donor-only Permissioned Domain + PRIVATE vault bound to it", () => {
+    const hex = Buffer.from(DONOR_CREDENTIAL, "utf8").toString("hex").toUpperCase();
+    const d = buildDonorDomain(W.issuer.address);
+    validate(d as any);
+    expect(d.AcceptedCredentials).toEqual([{ Credential: { Issuer: W.issuer.address, CredentialType: hex } }]);
+    const cc = buildDonorCredential(W.issuer.address, W.patient.address);
+    validate(cc as any);
+    expect([cc.Subject, cc.CredentialType]).toEqual([W.patient.address, hex]);
+    const domainId = "B".repeat(64);
+    const priv = buildVaultCreate(W.issuer.address, W.issuer.address, 800000000, 900000000, domainId);
+    validate(priv as any);
+    expect(priv.DomainID).toBe(domainId);
+    expect(priv.Flags).toBe(0x00010000); // tfVaultPrivate: the ledger rejects non-members (tecNO_AUTH, proven in live-xrpl)
+    const open = buildVaultCreate(W.issuer.address, W.issuer.address, 800000000, 900000000);
+    expect(open.DomainID).toBeUndefined();
+    expect(open.Flags).toBeUndefined();
   });
   it("closed-ended vault, zero-fee broker, 0% loan", () => {
     const v = buildVaultCreate(W.issuer.address, W.issuer.address, 800000000, 900000000);

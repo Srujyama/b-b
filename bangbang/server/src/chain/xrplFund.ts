@@ -1,5 +1,8 @@
 // Community medical-debt fund on XRPL DEVNET (Ripple lending challenge):
-//   donors ──VaultDeposit──▶ closed-ended Vault (XLS-65, asset = USD IOU)
+//   fund ──PermissionedDomainSet──▶ domain accepting the fund's "VerifiedDonor" credential (XLS-80 + XLS-70)
+//   fund ──CredentialCreate──▶ donor ──CredentialAccept   (only vetted donors: no anonymous money in a charity fund)
+//   donors ──VaultDeposit──▶ PRIVATE closed-ended Vault bound to that domain (XLS-65, asset = USD IOU);
+//                            anyone without the credential is rejected by the ledger itself (tecNO_AUTH)
 //   fund ──LoanBrokerSet──▶ LoanBroker on that vault (XLS-66; no first-loss cover, no mgmt fee)
 //   fund + patient ──LoanSet (InterestRate 0, CounterpartySignature)──▶ 0% payment plan
 //   patient ──LoanPay──▶ monthly installments
@@ -11,7 +14,11 @@ import {
   convertStringToHex,
   hashes,
   signLoanSetByCounterparty,
+  VaultCreateFlags,
+  type CredentialAccept,
+  type CredentialCreate,
   type LoanBrokerSet,
+  type PermissionedDomainSet,
   type LoanPay,
   type LoanSet,
   type VaultCreate,
@@ -35,8 +42,10 @@ import {
 
 export const MONTH_SEC = 30 * 86400;
 const VAULT_KIND_CLOSED = 1;
+/** Credential the fund issues to vetted donors; the vault's Permissioned Domain accepts only this. */
+export const DONOR_CREDENTIAL = "VerifiedDonor";
 
-export type FundIds = { vaultId: string; loanBrokerId: string };
+export type FundIds = { vaultId: string; loanBrokerId: string; domainId?: string };
 
 export function fundIdsFromEnv(): FundIds {
   const get = (k: string) => {
@@ -51,7 +60,21 @@ export function fundIdsFromEnv(): FundIds {
 
 // ---------------------------------------------------------------- pure builders (unit tested)
 
-export function buildVaultCreate(owner: string, issuer: string, subscriptionDate: number, redemptionDate: number): VaultCreate {
+/** Domain whose members are holders of the fund owner's VerifiedDonor credential. */
+export function buildDonorDomain(owner: string): PermissionedDomainSet {
+  return {
+    TransactionType: "PermissionedDomainSet",
+    Account: owner,
+    AcceptedCredentials: [{ Credential: { Issuer: owner, CredentialType: convertStringToHex(DONOR_CREDENTIAL) } }],
+  };
+}
+
+export function buildDonorCredential(owner: string, donor: string): CredentialCreate {
+  return { TransactionType: "CredentialCreate", Account: owner, Subject: donor, CredentialType: convertStringToHex(DONOR_CREDENTIAL) };
+}
+
+/** Closed-ended vault; with `domainId` it is PRIVATE and only that domain's members may deposit. */
+export function buildVaultCreate(owner: string, issuer: string, subscriptionDate: number, redemptionDate: number, domainId?: string): VaultCreate {
   if (redemptionDate - subscriptionDate < 180) throw new Error("vault investment window must be >= 180 s");
   return {
     TransactionType: "VaultCreate",
@@ -61,6 +84,7 @@ export function buildVaultCreate(owner: string, issuer: string, subscriptionDate
     SubscriptionDate: subscriptionDate,
     RedemptionDate: redemptionDate,
     Data: convertStringToHex("BangBang community medical-debt fund"),
+    ...(domainId ? { DomainID: domainId, Flags: VaultCreateFlags.tfVaultPrivate } : {}),
   };
 }
 
@@ -114,26 +138,45 @@ function createdIndex(meta: unknown, entryType: string): string | undefined {
 
 // ---------------------------------------------------------------- network ops
 
-/** Create the closed-ended vault + loan broker and seed it with a donation. Used by setup + live script.
- *  `investAfterSec`: subscription window (deposits) before loans may originate. */
+/** Vet a donor: the fund issues VerifiedDonor and the donor accepts it, making them a domain member. */
+export async function verifyDonor(ctx: XrplCtx, owner: Wallet, donor: Wallet): Promise<Receipt[]> {
+  const cc = await submitTx(ctx, buildDonorCredential(owner.address, donor.address), owner);
+  const accept: CredentialAccept = { TransactionType: "CredentialAccept", Account: donor.address, Issuer: owner.address, CredentialType: convertStringToHex(DONOR_CREDENTIAL) };
+  const ca = await submitTx(ctx, accept, donor);
+  return [
+    receiptFor(ctx.network, "CredentialCreate", cc.result.hash, { credential: DONOR_CREDENTIAL, subject: donor.address }),
+    receiptFor(ctx.network, "CredentialAccept", ca.result.hash, { credential: DONOR_CREDENTIAL, subject: donor.address }),
+  ];
+}
+
+/** Create the fund: donor-only Permissioned Domain -> private closed-ended vault -> vetted donation -> loan broker.
+ *  `investAfterSec`: subscription window (deposits) before loans may originate. `permissioned: false` = open vault. */
 export async function createCommunityFund(
   ctx: XrplCtx,
-  p: { owner: Wallet; donor: Wallet; donation: number; investAfterSec?: number; termYears?: number },
+  p: { owner: Wallet; donor: Wallet; donation: number; investAfterSec?: number; termYears?: number; permissioned?: boolean },
 ): Promise<FundIds & { receipts: Receipt[]; subscriptionDate: number; redemptionDate: number }> {
   const receipts: Receipt[] = [];
+  let domainId: string | undefined;
+  if (p.permissioned !== false) {
+    const dres = await submitTx(ctx, buildDonorDomain(p.owner.address), p.owner);
+    domainId = createdIndex(dres.result.meta, "PermissionedDomain");
+    if (!domainId) throw new Error("PermissionedDomainSet succeeded but created no PermissionedDomain");
+    receipts.push(receiptFor(ctx.network, "PermissionedDomainSet", dres.result.hash, { domainId, accepts: DONOR_CREDENTIAL }));
+    if (p.donor.address !== p.owner.address) receipts.push(...(await verifyDonor(ctx, p.owner, p.donor)));
+  }
   const subscriptionDate = rippleTimeIn(p.investAfterSec ?? 30);
   const redemptionDate = rippleTimeIn((p.termYears ?? 6) * 365 * 86400);
-  const vc = buildVaultCreate(p.owner.address, ctx.actors.issuer.address, subscriptionDate, redemptionDate);
+  const vc = buildVaultCreate(p.owner.address, ctx.actors.issuer.address, subscriptionDate, redemptionDate, domainId);
   const vres = await submitTx(ctx, vc, p.owner);
   const vaultId = createdIndex(vres.result.meta, "Vault") ?? hashes.hashVault(p.owner.address, Number((vres.result.tx_json as any).Sequence));
-  receipts.push(receiptFor(ctx.network, "VaultCreate", vres.result.hash, { vaultId, kind: "closed", subscriptionDate, redemptionDate }));
+  receipts.push(receiptFor(ctx.network, "VaultCreate", vres.result.hash, { vaultId, kind: "closed", private: Boolean(domainId), domainId, subscriptionDate, redemptionDate }));
 
   receipts.push(await donate(ctx, vaultId, p.donor, p.donation));
 
   const bres = await submitTx(ctx, buildLoanBrokerSet(p.owner.address, vaultId), p.owner);
   const loanBrokerId = createdIndex(bres.result.meta, "LoanBroker") ?? hashes.hashLoanBroker(p.owner.address, Number((bres.result.tx_json as any).Sequence));
   receipts.push(receiptFor(ctx.network, "LoanBrokerSet", bres.result.hash, { loanBrokerId, vaultId, managementFeeRate: 0 }));
-  return { vaultId, loanBrokerId, receipts, subscriptionDate, redemptionDate };
+  return { vaultId, loanBrokerId, domainId, receipts, subscriptionDate, redemptionDate };
 }
 
 export async function donate(ctx: XrplCtx, vaultId: string, donor: Wallet, amount: number): Promise<Receipt> {
