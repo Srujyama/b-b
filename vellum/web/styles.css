@@ -553,3 +553,9 @@ td.mark { white-space: nowrap; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 2s !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* demo bill picture on step 1 */
+.bill-image { margin: 20px 0 24px; }
+.bill-image img { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto;
+  border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05); }
+.bill-image figcaption { text-align: center; color: #6b7280; font-size: 13px; margin-top: 8px; }

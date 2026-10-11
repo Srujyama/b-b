@@ -688,6 +688,8 @@ function initPatient() {
     const errors = flags.filter((f) => Number(f.amountAtStake) > 0);
     const stake = errors.reduce((a, f) => a + (Number(f.amountAtStake) || 0), 0);
     $("#bill-title").textContent = isDemo(p) ? t("billTitleDemo") : t("billTitleOwn");
+    const billImg = document.getElementById("bill-image");
+    if (billImg) billImg.hidden = !isDemo(p); // the picture is of the demo statement only
     sum.replaceChildren(
       h("p", { class: "provider" }, bill.provider?.name ?? ""),
       h("div", { class: "owe" }, h("span", {}, t("hospitalSays")), h("b", {}, usd(bill.patientBalance))),
