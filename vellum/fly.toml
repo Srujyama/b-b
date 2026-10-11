@@ -1,0 +1,35 @@
+# Full Vellum server (API + WebSockets + web) on Fly.io. Deploy from vellum/:  fly deploy
+# ONE always-on machine: cases, escrow secrets and the live call bridge live in this process (and on /data).
+app = "vellum-app"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8787"
+  DATA_DIR = "/data"
+  PUBLIC_WS_ORIGIN = "wss://vellum-app.fly.dev"
+  PUBLIC_URL = "https://vellum-app.fly.dev"
+
+[mounts]
+  source = "vellum_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
