@@ -17,7 +17,11 @@
     "live:research": "tsx scripts/live-research.ts",
     "live:clinic": "tsx scripts/live-clinic.ts",
     "live:gemini": "tsx scripts/live-gemini.ts",
+<<<<<<< HEAD
     "eval:negotiation": "tsx scripts/eval-negotiation.ts"
+=======
+    "e2e": "tsx scripts/e2e.ts"
+>>>>>>> afede1b (Keyless demo path + real HTTP e2e (npm run e2e))
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
