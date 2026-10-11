@@ -16,7 +16,7 @@ Object.assign(I18N.en, {
   hospNet: "XRPL devnet: a test network. No real money moves.",
   hospQueueTitle: "Settlements to confirm",
   hospQueueLede:
-    "Each patient below agreed a settlement with a BangBang advocate. The money is already locked in escrow for the hospital and is paid out only when you confirm the account is at $0.",
+    "Each patient below agreed a settlement with a BangBang advocate. The money is locked in escrow for the hospital, or will be, and is paid out only when you confirm the account is at $0.",
   hospEmpty: "No settlements yet. Cases appear here once the advocate and the billing office agree on an amount.",
   hospBack: "All settlements",
   hospPreview: "Preview data from the design harness: not a real patient, and its receipts are not real transactions.",
@@ -59,7 +59,7 @@ Object.assign(I18N.en, {
     type: "Type", credStatus: "Status", issuer: "Issuer (clinic)", holder: "Holder (patient)", issued: "Issued", accepted: "Accepted",
   },
   hospEscrowState: { open: "Open, waiting for your confirmation", released: "Released to the hospital", none: "Not created yet" },
-  hospCredState: { yes: "Accepted by the patient", no: "Not issued for this case" },
+  hospCredState: { yes: "Accepted by the patient", issued: "Issued, not yet accepted by the patient", no: "Not issued for this case" },
   hospLedgerOk: (time) => `Found on the ledger, checked ${time}`,
   hospLedgerMissing: "Not found on the ledger",
   hospLedgerChecking: "Checking the ledger…",
@@ -72,7 +72,7 @@ Object.assign(I18N.zh, {
   hospBrand: "医院收费端",
   hospNet: "XRPL 开发网：测试网络，不涉及真钱。",
   hospQueueTitle: "待确认的结算",
-  hospQueueLede: "下面每位病人都已和帮帮代理谈好结算金额。钱已经锁在托管里给医院，只有您确认账户余额为零后才会放款。",
+  hospQueueLede: "下面每位病人都已和帮帮代理谈好结算金额。钱已经锁在托管里给医院（或即将锁入），只有您确认账户余额为零后才会放款。",
   hospEmpty: "还没有结算。代理和医院谈好金额后，个案会出现在这里。",
   hospBack: "全部结算",
   hospPreview: "这是界面预览数据（开发用），不是真实病人，凭证也不是真实交易。",
@@ -111,7 +111,7 @@ Object.assign(I18N.zh, {
     type: "类型", credStatus: "状态", issuer: "签发方（诊所）", holder: "持有人（病人）", issued: "签发", accepted: "接受",
   },
   hospEscrowState: { open: "已锁定，等您确认", released: "已放给医院", none: "还没建立" },
-  hospCredState: { yes: "病人已接受", no: "这个个案没有签发" },
+  hospCredState: { yes: "病人已接受", issued: "已签发，病人尚未接受", no: "这个个案没有签发" },
   hospLedgerOk: (time) => `链上已找到（${time} 核对）`,
   hospLedgerMissing: "链上没找到",
   hospLedgerChecking: "正在核对链上记录…",
@@ -231,7 +231,8 @@ function renderCredential(d) {
   const L = t("hospDl");
   const c = d.credential;
   const credLedger = state.ledger && !state.ledger.error ? state.ledger.credential.onLedger : null;
-  const status = c.accepted ? t("hospCredState").yes : t("hospCredState").no;
+  const S = t("hospCredState");
+  const status = c.accepted ? S.yes : c.create ? S.issued : S.no;
   const rows = [
     row(L.type, h("span", { class: "mono" }, c.type)),
     row(
@@ -250,6 +251,8 @@ function renderCredential(d) {
   if (c.create) rows.push(row(L.issued, txLink(c.create)));
   if (c.accept) rows.push(row(L.accepted, txLink(c.accept)));
   $("#credential").replaceChildren(...rows.flat());
+  // The "issued by the clinic and accepted by the patient" note is only true once the accept is on record.
+  $("#cred-note").hidden = !c.accepted;
 }
 
 function renderConfirm(d) {
