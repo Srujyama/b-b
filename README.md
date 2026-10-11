@@ -1,7 +1,10 @@
-# B@B Hacks 2.0
+# Vellum
 
-- **`bangbang/`**: **BangBang 帮帮**, the project we're submitting: a multilingual AI patient advocate that haggles
-  medical bills and appeals insurance denials. **Project README (judges): [`bangbang/README.md`](bangbang/README.md). Team: [`bangbang/TEAM.md`](bangbang/TEAM.md), [`bangbang/WORKPLAN.md`](bangbang/WORKPLAN.md).**
-- `lowball-main/`: prior work (an AI car-price negotiator), kept for reference only. Its negotiation engine was ported.
-- `b-b/`: idea-generation notes and verified sponsor-API facts.
-- `THINKPAD.md`: Claude's live build plan and task state.
+**Vellum** is an AI advocate that negotiates medical bills and appeals insurance denials for people the billing
+system talks past, starting with a Mandarin-speaking mom and a $14,296 ER bill. Built at B@B Hacks 2.0.
+
+- **Start here (judges):** [`vellum/README.md`](vellum/README.md): what it does, how each sponsor track is used,
+  and what is live vs. mocked.
+- **Team:** [`vellum/TEAM.md`](vellum/TEAM.md) (run it, who owns what), [`vellum/WORKPLAN.md`](vellum/WORKPLAN.md).
+- **Submission text:** [`vellum/docs/SUBMISSION.md`](vellum/docs/SUBMISSION.md).
+- `lowball-main/`: our earlier car-price negotiator; its engine is being folded into Vellum, then this folder goes away.
