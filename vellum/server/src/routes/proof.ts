@@ -25,6 +25,7 @@ import { seedPreview } from "../dev/preview.js";
 import { opt } from "../env.js";
 import { requireCase } from "../store.js";
 import type { CasePacket, Receipt } from "../types.js";
+import { jsonErrors } from "./errors.js";
 
 export const PROOF_FORMAT = "vellum-proof/v1";
 const PREVIEW = "PREVIEW (dev harness, not live data)";
@@ -240,6 +241,7 @@ function fail(reply: FastifyReply, err: unknown) {
 }
 
 export default async function proofRoutes(app: FastifyInstance) {
+  jsonErrors(app);
   app.get<{ Params: { id: string }; Querystring: { download?: string } }>("/api/cases/:id/proof", async (req, reply) => {
     try {
       const c = requireCase(req.params.id);

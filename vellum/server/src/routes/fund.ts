@@ -10,6 +10,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { addReceipt, emit, getCase } from "../store.js";
 import { defaultCtx, type XrplCtx } from "../chain/xrpl.js";
 import { fundDonors, fundIdsWithDomain, fundState, loanCaseId, loanInfo, payInstallment, type FundIds } from "../chain/xrplFund.js";
+import { jsonErrors } from "./errors.js";
 
 export type FundRouteOpts = { ctx?: () => Promise<XrplCtx>; ids?: () => FundIds };
 
@@ -22,6 +23,7 @@ function fail(reply: FastifyReply, err: unknown) {
 }
 
 export default async function fundRoutes(app: FastifyInstance, opts: FundRouteOpts = {}) {
+  jsonErrors(app);
   // ids first: a missing XRPL_VAULT_ID should say so before we try to connect anywhere
   const load = async () => {
     const ids = (opts.ids ?? fundIdsWithDomain)();

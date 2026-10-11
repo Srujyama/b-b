@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { openMandate, readLedger } from "../chain/bnb.js";
 import { requireCase, updateCase, emit } from "../store.js";
+import { jsonErrors } from "./errors.js";
 
 // BNB Chain AdvocateLedger routes (see docs/API.md). Other modules call appendLog/recordDeal from chain/bnb.ts directly.
 function fail(reply: FastifyReply, err: unknown) {
@@ -11,6 +12,7 @@ function fail(reply: FastifyReply, err: unknown) {
 }
 
 export default async function bnbRoutes(app: FastifyInstance) {
+  jsonErrors(app);
   app.post<{ Params: { id: string } }>("/api/cases/:id/mandate", async (req, reply) => {
     try {
       requireCase(req.params.id);
