@@ -18,7 +18,8 @@
     "live:clinic": "tsx scripts/live-clinic.ts",
     "live:gemini": "tsx scripts/live-gemini.ts",
     "eval:negotiation": "tsx scripts/eval-negotiation.ts",
-    "e2e": "tsx scripts/e2e.ts"
+    "e2e": "tsx scripts/e2e.ts",
+    "prewarm": "tsx scripts/prewarm.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

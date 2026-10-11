@@ -80,6 +80,7 @@ beforeAll(async () => {
   T.ids.agreed = createCase({ mode: "patient", status: "agreed", bill, patient, agreedAmount: 1800 }).id;
   T.ids.neg = createCase({ mode: "patient", status: "researched", bill, patient, target: 1500, walkaway: 2500 }).id;
   T.ids.run = createCase({ mode: "patient", status: "audited", bill, patient }).id;
+  T.ids.cached = createCase({ mode: "patient", status: "audited", bill: { ...bill, provider: { name: "STANFORD HEALTH CARE" } }, patient }).id;
   T.ids.noConsent = createCase({ mode: "patient", status: "audited", bill, patient: { ...patient, consent: false } }).id;
   T.ids.empty = createCase({ mode: "patient" }).id;
   T.ids.clinic = createCase({ mode: "clinic", status: "agreed", agreedAmount: 10 }).id;
@@ -148,12 +149,15 @@ const PROBES: Probe[] = [
   { route: "POST /api/cases", url: "/api/cases", payload: { billText: "x", patient: "notjson" }, status: 400, match: /patient must be a JSON object/ },
   { route: "POST /api/cases", url: "/api/cases", payload: { billText: "x", patient: { name: 5 } }, status: 400, match: /patient\.name is required/ },
   { route: "POST /api/cases", url: "/api/cases", payload: { billText: "ER visit 99285 $3200", patient: { name: "Lin" } }, status: 503, match: NOT_CONFIGURED("ANTHROPIC_API_KEY") },
-  { route: "POST /api/cases/demo", url: "/api/cases/demo", status: 503, match: NOT_CONFIGURED("ANTHROPIC_API_KEY") },
+  // the bundled demo statement is read by the deterministic reader: no key needed
+  { route: "POST /api/cases/demo", url: "/api/cases/demo", status: 200, match: /"status":"audited"/ },
 
   // ---- research.ts (Context.dev + Claude)
   { route: "POST /api/cases/:id/research", url: caseUrl("unknown", "/research"), status: 404, match: /unknown case/ },
   { route: "POST /api/cases/:id/research", url: caseUrl("empty", "/research"), status: 409, match: /no parsed bill/ },
   { route: "POST /api/cases/:id/research", url: caseUrl("run", "/research"), status: 503, match: NOT_CONFIGURED("CONTEXT_DEV_API_KEY") },
+  // a hospital with cached research (the seed cache: Stanford) still researches with no keys, in the background
+  { route: "POST /api/cases/:id/research", url: caseUrl("cached", "/research"), status: 202, match: /"status":"audited"/ },
 
   // ---- clinic.ts (Context.dev + Claude)
   { route: "POST /api/claims", url: "/api/claims", payload: {}, status: 400, match: /claim\.payer is required/ },

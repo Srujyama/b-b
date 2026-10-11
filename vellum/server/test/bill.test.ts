@@ -156,17 +156,20 @@ describe("routes (llm mocked)", () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
-  it("POST /api/cases/demo builds an audited case from the fixture", async () => {
+  it("POST /api/cases/demo builds an audited case from the fixture in well under 2s, with no LLM call even with a key", async () => {
     const { buildApp } = await import("../src/index.js");
     const app = await buildApp();
+    const t0 = Date.now();
     const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
+    expect(Date.now() - t0).toBeLessThan(2000);
     expect(res.statusCode).toBe(200);
     const c = res.json();
+    expect(mocked).not.toHaveBeenCalled(); // no transcription, no explanation step
     expect(c.status).toBe("audited");
     expect(c.mode).toBe("patient");
-    expect(c.patient.language).toBe("zh");
+    expect(c.bill.reader).toBe("builtin");
     expect(c.bill.lineItems).toHaveLength(17);
-    expect(c.bill.lineItems[0].descriptionZh).toBeTruthy();
+    expect(c.bill.lineItems.some((l: { descriptionZh?: string }) => l.descriptionZh)).toBe(false);
     expect(c.flags.map((f: { kind: string }) => f.kind)).toEqual(expect.arrayContaining(["duplicate", "upcoding", "unbundling"]));
     const got = await app.inject({ method: "GET", url: `/api/cases/${c.id}` });
     expect(got.json().status).toBe("audited");
@@ -184,6 +187,8 @@ describe("routes (llm mocked)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.json().bill.patientBalance).toBe(14296);
     expect(res.json().patient.maxPay).toBe(2500);
+    expect(res.json().bill.reader).toBeUndefined(); // an upload is read by Claude
+    expect(mocked).toHaveBeenCalledTimes(1); // transcription only: no explanation step on the critical path
     const empty = await app.inject({ method: "POST", url: "/api/cases", payload: {} });
     expect(empty.statusCode).toBe(400);
     await app.close();
@@ -208,7 +213,7 @@ describe("routes (llm mocked)", () => {
     mocked.mockRejectedValue(new Error("ANTHROPIC_API_KEY is not configured — set it in vellum/server/.env (see .env.example)"));
     const { buildApp } = await import("../src/index.js");
     const app = await buildApp();
-    const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
+    const res = await app.inject({ method: "POST", url: "/api/cases", payload: { patient: { name: "Lin Mei", maxPay: 2500 }, billText: statement } });
     expect(res.statusCode).toBe(503);
     expect(res.json().error).toMatch(/ANTHROPIC_API_KEY is not configured/);
     await app.close();
@@ -247,9 +252,7 @@ describe("keyless demo path (no ANTHROPIC_API_KEY)", () => {
       .mocked(emit)
       .mock.calls.filter(([id, ev]) => id === c.id && ev.type === "log")
       .map(([, ev]) => (ev as { message: string }).message);
-    expect(BUILTIN_READER_LOG).toBe(
-      "Parsed with Vellum's built-in statement reader (no AI key configured); plain-language explanations need ANTHROPIC_API_KEY",
-    );
+    expect(BUILTIN_READER_LOG).toBe("Read with Vellum's built-in statement reader (the bundled demo statement; no AI call needed)");
     expect(logs).toContain(BUILTIN_READER_LOG);
     expect(logs).not.toContain("Explained every line in Chinese");
     await app.close();
@@ -274,15 +277,14 @@ describe("keyless demo path (no ANTHROPIC_API_KEY)", () => {
     await app.close();
   });
 
-  it("with a key the demo goes through the LLM reader (unchanged)", async () => {
+  it("with a key the demo still uses the deterministic reader (same bill, no LLM call)", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
     const { buildApp } = await import("../src/index.js");
     const app = await buildApp();
     const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
     expect(res.statusCode).toBe(200);
-    expect(mocked).toHaveBeenCalledTimes(2); // transcribe + explain
-    expect(res.json().bill.lineItems[0].descriptionZh).toBeTruthy();
-    expect(res.json().bill.reader).toBeUndefined();
+    expect(mocked).not.toHaveBeenCalled();
+    expect(res.json().bill).toEqual({ ...parseStatementText(statement), reader: "builtin" });
     await app.close();
   });
 });

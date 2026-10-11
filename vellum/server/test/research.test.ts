@@ -413,7 +413,7 @@ describe("POST /api/cases/:id/research", () => {
     const app = await buildApp();
     const c = createCase({ mode: "patient", bill, patient: patient() });
     const res = await app.inject({ method: "POST", url: `/api/cases/${c.id}/research`, payload: {} });
-    expect(res.statusCode).toBe(503);
+    expect(res.statusCode).toBe(503); // Mercy General has no cached research, so there is nothing to fall back on
     expect(res.json().error).toMatch(/CONTEXT_DEV_API_KEY/);
     await app.close();
   });
@@ -440,9 +440,15 @@ describe("POST /api/cases/:id/research", () => {
     const app = await buildApp();
     const c = createCase({ mode: "patient", status: "audited", bill, flags, patient: patient() });
     const res = await app.inject({ method: "POST", url: `/api/cases/${c.id}/research`, payload: {} });
-    expect(res.statusCode).toBe(200);
-    const body = res.json() as CasePacket;
+    expect(res.statusCode).toBe(202); // runs in the background
+    expect(res.json().status).toBe("audited");
+    let body = res.json() as CasePacket;
+    for (let i = 0; i < 100 && body.status !== "researched"; i++) {
+      await new Promise((r) => setTimeout(r, 20));
+      body = (await app.inject({ method: "GET", url: `/api/cases/${c.id}` })).json();
+    }
     expect(body.status).toBe("researched");
+    expect((body as CasePacket & { research?: { state: string } }).research?.state).toBe("done");
     expect(body.fairPrices.map((f) => [f.code, f.medicareRate])).toEqual([
       ["74177", 400],
       ["99285", 200],

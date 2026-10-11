@@ -1,0 +1,113 @@
+{
+  "_about": "Seed research cache: REAL results from earlier live Context.dev runs (fair prices + the hospital financial-assistance policy), each with the sources it was read from. Checked before any Context.dev call and used as the fallback when Context.dev is out of credits or rate-limited. Never hand-edit numbers here; re-capture them from a live run.",
+  "fetchedAt": "2026-10-11",
+  "via": "context.dev (cached)",
+  "fairPrices": [
+    {
+      "hospital": "Stanford Health Care",
+      "code": "74177",
+      "capturedFrom": "production case fb4009a3-84cd-40ee-a343-987c3069355a (vellum-app.fly.dev, 2026-10-11)",
+      "fairPrice": {
+        "code": "74177",
+        "description": "CT ABD & PELVIS W/CONTRAST",
+        "sources": [
+          {
+            "title": "Medicare hospital facility rate (2026) for 74177: Medicare.gov Procedure Price Lookup: 74177",
+            "url": "https://www.medicare.gov/procedure-price-lookup/cost/74177/",
+            "snippet": "Facility Fee $356",
+            "via": "context.dev"
+          }
+        ],
+        "medicareRate": 356
+      }
+    },
+    {
+      "hospital": "Stanford Health Care",
+      "code": "99285",
+      "capturedFrom": "local live run, npm run live:research (2026-10-11)",
+      "fairPrice": {
+        "code": "99285",
+        "description": "HC ED VISIT LEVEL 5",
+        "medicareRate": 608.43,
+        "sources": [
+          {
+            "title": "Medicare hospital facility rate (2026) for 99285: APC (Ambulatory Payment Classifications) FAQ",
+            "url": "https://www.acep.org/administration/reimbursement/reimbursement-faqs/apc-ambulatory-payment-classifications-faq",
+            "snippet": "| 5025 | 99285 | Level 5 Type A ED Visits | V | 6.6557 | $608.43 | |",
+            "via": "context.dev"
+          }
+        ]
+      }
+    },
+    {
+      "hospital": "Stanford Health Care",
+      "code": "96374",
+      "capturedFrom": "production case fb4009a3-84cd-40ee-a343-987c3069355a (vellum-app.fly.dev, 2026-10-11)",
+      "note": "Context.dev research ran and found no verifiable published price for this code",
+      "fairPrice": {
+        "code": "96374",
+        "description": "THER/PROPH/DIAG INJ IV PUSH INITIAL",
+        "sources": []
+      }
+    },
+    {
+      "hospital": "Stanford Health Care",
+      "code": "Q9967",
+      "capturedFrom": "production case fb4009a3-84cd-40ee-a343-987c3069355a (vellum-app.fly.dev, 2026-10-11)",
+      "note": "Context.dev research ran and found no verifiable published price for this code",
+      "fairPrice": {
+        "code": "Q9967",
+        "description": "LOCM 300-399MG/ML IODINE PER ML",
+        "sources": []
+      }
+    },
+    {
+      "hospital": "Stanford Health Care",
+      "code": "80053",
+      "capturedFrom": "production case fb4009a3-84cd-40ee-a343-987c3069355a (vellum-app.fly.dev, 2026-10-11)",
+      "note": "Context.dev research ran and found no verifiable published price for this code",
+      "fairPrice": {
+        "code": "80053",
+        "description": "COMPREHENSIVE METABOLIC PANEL",
+        "sources": []
+      }
+    },
+    {
+      "hospital": "Stanford Health Care",
+      "code": "85025",
+      "capturedFrom": "production case fb4009a3-84cd-40ee-a343-987c3069355a (vellum-app.fly.dev, 2026-10-11)",
+      "note": "Context.dev research ran and found no verifiable published price for this code",
+      "fairPrice": {
+        "code": "85025",
+        "description": "CBC W/AUTO DIFF WBC",
+        "sources": []
+      }
+    }
+  ],
+  "charity": [
+    {
+      "hospital": "Stanford Health Care",
+      "capturedFrom": "production case fb4009a3-84cd-40ee-a343-987c3069355a (vellum-app.fly.dev, 2026-10-11) + local live run, npm run live:research (2026-10-11)",
+      "policy": {
+        "hospital": "Stanford Health Care",
+        "hasFap": true,
+        "freeCareBelowPctFpl": 400,
+        "summary": "Stanford Health Care states that those with a family income at or below 400 percent of the federal poverty level are generally eligible for 100 percent assistance, including uninsured patients and insured patients with high medical costs. High medical costs are defined as annual out-of-pocket costs exceeding 10 percent of the patient's family income.",
+        "sources": [
+          {
+            "title": "Hospital profile: Stanford Health Care",
+            "url": "https://stanfordhealthcare.org",
+            "snippet": "Stanford Health Care is a leading academic medical center affiliated with Stanford University that delivers comprehensive patient care, research, and education.",
+            "via": "context.dev"
+          },
+          {
+            "title": "Stanford Health Care financial assistance policy",
+            "url": "https://stanfordhealthcare.org/for-patients-visitors/financial-assistance.html",
+            "snippet": "[Help Paying Your Bill > Eligibility Criteria]\n\nThose with a family income at or below 400 percent of the federal poverty level (FPL) guidelines are generally eligible for 100 percent assistance.\n\n- Uninsured Patients who have Family Income not in excess of 400% of the most recent Federal Poverty Guidelines.\n- Insured Patients with (i) a Family Income that is at or below 400% of the most recent Federal Poverty Guidelines; and (ii) high medical costs. For these purposes, “high medical costs” mean",
+            "via": "context.dev"
+          }
+        ]
+      }
+    }
+  ]
+}

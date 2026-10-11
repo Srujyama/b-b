@@ -8,9 +8,12 @@
 //                     (falls back to ELEVENLABS_TOOL_SECRET from the environment)
 //   E2E_LOAN          auto (default: loan if Gemini recommends a payment plan, or to fund a short patient wallet) | force | skip
 //   E2E_TIMEOUT_MS    per-request timeout (default 120000; XRPL devnet submits take a few seconds each)
+//   E2E_DEMO_BUDGET_MS        POST /api/cases/demo must answer within this (default 2000)
+//   E2E_RESEARCH_TIMEOUT_MS   how long to poll for status 'researched' (default 30000)
 //
-// What it does (real calls, nothing simulated here): health -> POST /api/cases/demo (bundled fixture bill + patient) ->
-// GET case -> financing (live Gemini Fed odds) -> XRPL devnet hardship credential -> a negotiation recorded through
+// What it does (real calls, nothing simulated here): health -> POST /api/cases/demo (bundled fixture bill + patient,
+// timed) -> GET case -> research (POST /research answers 202 at once; poll GET until 'researched': cached Context.dev
+// results first, live otherwise; works with no keys for the demo hospital) -> financing (live Gemini Fed odds) -> XRPL devnet hardship credential -> a negotiation recorded through
 // the tool webhook the way a human billing rep's call is (log_offer x3 descending, accept ABOVE the patient's
 // walkaway must be refused, then accept at/below it) -> optional 0% community-fund loan (pipeline order: before the
 // escrow; in auto mode also opened when the shared devnet patient wallet is too short to fund the escrow) -> XRPL
@@ -25,7 +28,7 @@
 // override variables already set (even to ""), so blank them on the SERVER command to exercise the keyless path:
 //   ANTHROPIC_API_KEY= ELEVENLABS_API_KEY= CONTEXT_DEV_API_KEY= DEV_PREVIEW= PORT=8899 npx tsx src/index.ts
 //   BASE_URL=http://localhost:8899 npm run e2e
-// Otherwise the server takes the keyed path: the demo case is read by Claude and the four 503 checks are SKIPped.
+// The demo bill is always read by the built-in reader; with keys configured the 503 checks are SKIPped.
 //
 // The deployed server is shared: this script only ever creates and touches its OWN case (the id it got back).
 // It exits non-zero if any step FAILs. SKIP is printed (with the reason) for a step that does not apply.
@@ -34,7 +37,12 @@ import { keccak256 } from "viem";
 
 const BASE = (process.env.BASE_URL || "http://localhost:8787").replace(/\/$/, "");
 const TIMEOUT = Number(process.env.E2E_TIMEOUT_MS) || 120_000;
-const TOOL_SECRET = process.env.E2E_TOOL_SECRET || process.env.ELEVENLABS_TOOL_SECRET || "";
+const DEMO_BUDGET_MS = Number(process.env.E2E_DEMO_BUDGET_MS) || 2_000; // POST /api/cases/demo must answer within this
+const RESEARCH_TIMEOUT_MS = Number(process.env.E2E_RESEARCH_TIMEOUT_MS) || 30_000; // poll this long for 'researched'
+const RESEARCH_STEP = "research (POST /research → 202, poll until researched)";
+let demoMs = 0;
+let researchMs = 0;
+const TOOL_SECRET =process.env.E2E_TOOL_SECRET || process.env.ELEVENLABS_TOOL_SECRET || "";
 const LOAN_MODE = (process.env.E2E_LOAN || "auto").toLowerCase();
 
 const fixture = JSON.parse(readFileSync(new URL("../fixtures/lin-er-bill.json", import.meta.url), "utf8")) as {
@@ -178,7 +186,10 @@ async function main() {
   await step(
     "create demo case (POST /api/cases/demo)",
     async () => {
+      const t0 = Date.now();
       const c = ok(await http("POST", "/api/cases/demo", {}), "POST /api/cases/demo");
+      demoMs = Date.now() - t0;
+      expect(demoMs < DEMO_BUDGET_MS, `POST /api/cases/demo took ${demoMs}ms (budget ${DEMO_BUDGET_MS}ms)`);
       expect(typeof c?.id === "string" && c.id, "no case id returned");
       caseId = c.id;
       expect(c.status === "audited", `status is ${c.status}, expected audited`);
@@ -191,15 +202,10 @@ async function main() {
         expect(f, `audit missed the planted ${p.kind}`);
         expect(f.amountAtStake === p.amountAtStake, `${p.kind} at stake ${f.amountAtStake}, fixture says ${p.amountAtStake}`);
       }
-      const zh = c.bill.lineItems.filter((l: any) => l.descriptionZh).length;
-      if (!health.anthropic) {
-        expect(zh === 0, "no Anthropic key, yet lines carry Chinese explanations (unexpected)");
-        expect(c.bill.reader === "builtin", `no Anthropic key, but bill.reader is ${c.bill.reader} (expected "builtin")`);
-      } else expect(c.bill.reader === undefined, `Anthropic key configured, but bill.reader is ${c.bill.reader}`);
+      // the bundled demo statement is always read by the deterministic reader (keys or not): fast, no AI call
+      expect(c.bill.reader === "builtin", `bill.reader is ${c.bill.reader} (expected "builtin")`);
       packet = c;
-      return `case ${caseId}: ${c.bill.lineItems.length} lines, balance $${c.bill.patientBalance}, ${c.flags.length} flags; reader: ${
-        health.anthropic ? "Claude (key configured)" : `built-in statement reader (bill.reader=${c.bill.reader})`
-      }; patient ${c.patient.name}, consent, maxPay $${c.patient.maxPay}`;
+      return `case ${caseId}: ${c.bill.lineItems.length} lines, balance $${c.bill.patientBalance}, ${c.flags.length} flags; reader: built-in statement reader (bill.reader=${c.bill.reader}); patient ${c.patient.name}, consent, maxPay $${c.patient.maxPay}`;
     },
     { needs: ["health"] },
   );
@@ -213,6 +219,35 @@ async function main() {
       expect(c.bill?.patientBalance === packet.bill.patientBalance, "balance differs from the create response");
       expect(c.bill?.reader === packet.bill.reader, `bill.reader ${c.bill?.reader} not persisted (create said ${packet.bill.reader})`);
       return `status ${c.status}, balance $${c.bill.patientBalance}${c.bill.reader ? `, bill.reader=${c.bill.reader} (stored on the case)` : ""}`;
+    },
+    { needs: ["create demo case (POST /api/cases/demo)"] },
+  );
+
+  await step(
+    RESEARCH_STEP,
+    async () => {
+      const t0 = Date.now();
+      const r = await http("POST", `/api/cases/${caseId}/research`, {});
+      const accepted = ok(r, "POST /research", 202);
+      const ackMs = Date.now() - t0;
+      expect(accepted?.id === caseId, "POST /research returned another case");
+      let c = accepted;
+      while (c.status !== "researched" && c.research?.state !== "failed") {
+        if (Date.now() - t0 > RESEARCH_TIMEOUT_MS) fail(`not researched after ${RESEARCH_TIMEOUT_MS}ms (status ${c.status}, research ${JSON.stringify(c.research)})`);
+        await new Promise((res) => setTimeout(res, 250));
+        c = ok(await http("GET", `/api/cases/${caseId}`), "GET /api/cases/:id");
+      }
+      researchMs = Date.now() - t0;
+      expect(c.status === "researched", `research failed: ${c.research?.error ?? "unknown error"}`);
+      expect(c.fairPrices?.length > 0 && c.fairPrices.length <= 4, `${c.fairPrices?.length} fair prices (expected 1-4: the top codes by charge)`);
+      for (const fp of c.fairPrices)
+        if (fp.medicareRate !== undefined) expect(fp.sources?.length > 0, `${fp.code}: Medicare $${fp.medicareRate} has no source`);
+      expect(Array.isArray(c.facts) && c.facts.length > 0, "no negotiation facts built");
+      expect(typeof c.walkaway === "number", "no walkaway on the researched case");
+      const cached = c.fairPrices.filter((f: any) => f.cache).length;
+      const prices = c.fairPrices.map((f: any) => `${f.code} ${f.medicareRate !== undefined ? `Medicare $${f.medicareRate}` : "no published price"}`).join(", ");
+      const charity = c.charity?.hasFap ? `charity: free care <= ${c.charity.freeCareBelowPctFpl ?? "?"}% FPL${c.charity.cache ? " (cached)" : ""}` : "no charity policy";
+      return `202 in ${ackMs}ms, researched in ${(researchMs / 1000).toFixed(1)}s; ${prices}; ${cached}/${c.fairPrices.length} from the cache (${c.fairPrices.find((f: any) => f.cache)?.cache?.via ?? "live"}); ${charity}; plan: open $${c.opening}, target $${c.target}, walk away $${c.walkaway}`;
     },
     { needs: ["create demo case (POST /api/cases/demo)"] },
   );
@@ -429,7 +464,6 @@ async function main() {
       return `503 "${msg}"`;
     }, { needs: [needs] });
 
-  await needs503("create demo case (POST /api/cases/demo)", "POST /research", Boolean(health.contextDev && health.anthropic), "Context.dev + Anthropic", "POST", `/api/cases/${caseId}/research`, {});
   // NOTE: routes/clinic.ts creates the clinic case before it finds the key missing, so this leaves one "failed" clinic
   // case (ours, not anyone else's) in the store on a keyless server.
   await needs503("health", "POST /api/claims/demo", Boolean(health.contextDev && health.anthropic), "Context.dev + Anthropic", "POST", "/api/claims/demo", {});
@@ -440,6 +474,7 @@ async function main() {
   const failed = results.filter((r) => r.outcome === "FAIL");
   const skipped = results.filter((r) => r.outcome === "SKIP");
   console.log(`\nCase: ${caseId || "(none)"}${caseId ? `  ${BASE}/api/cases/${caseId}` : ""}`);
+  console.log(`Timings: POST /api/cases/demo ${demoMs}ms; research (POST 202 → researched) ${researchMs}ms`);
   if (links.length) console.log(`On-ledger transactions (XRPL devnet):\n  ${links.join("\n  ")}`);
   console.log(`\n${results.length - failed.length - skipped.length} PASS, ${skipped.length} SKIP, ${failed.length} FAIL`);
   if (failed.length) {

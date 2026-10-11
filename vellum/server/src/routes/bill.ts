@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { auditBill, totalAtStake } from "../bill/audit.js";
-import { explainZh, parseBill, parseStatementText } from "../bill/parse.js";
+import { parseBill, parseStatementText } from "../bill/parse.js";
 import { createCase, emit, updateCase } from "../store.js";
 import type { CasePacket, Patient } from "../types.js";
 
@@ -66,47 +66,31 @@ async function readIntake(req: FastifyRequest): Promise<IntakeInput> {
   return out;
 }
 
-// ---- keyless demo path (keyless-e2e) ----
-// Without ANTHROPIC_API_KEY the bundled demo statement is still read for real: it is in the fixed-column itemized
-// format parseStatementText (bill/parse.ts) reads deterministically, and it goes through the same auditBill. Only the
-// Chinese line explanations (explainZh, an LLM call) are skipped. Arbitrary uploads still need the key (503), since
-// photos/PDFs and free-form statements can only be read by the vision model.
-export const BUILTIN_READER_LOG =
-  "Parsed with Vellum's built-in statement reader (no AI key configured); plain-language explanations need ANTHROPIC_API_KEY";
+// ---- demo path ----
+// The bundled demo statement is our own, in the fixed-column itemized format parseStatementText (bill/parse.ts) reads
+// deterministically, so POST /api/cases/demo always uses that reader (instant, no AI call, with or without
+// ANTHROPIC_API_KEY) and the same auditBill. Uploaded bills (photos, PDFs, free-form text) still go to Claude.
+// There is no line-explanation step on the critical path: the UI is English-only and shows the printed lines.
+export const BUILTIN_READER_LOG = "Read with Vellum's built-in statement reader (the bundled demo statement; no AI call needed)";
 const hasLlmKey = () => Boolean(process.env.ANTHROPIC_API_KEY);
 export type BillReader = "llm" | "builtin";
 
-/** Shared intake pipeline: parse -> explain in Chinese -> deterministic audit -> status audited.
- *  reader "builtin" (keyless demo only): deterministic parseStatementText, no explainZh. */
+/** Shared intake pipeline: parse -> deterministic audit -> status audited.
+ *  reader "builtin" (the bundled demo statement): deterministic parseStatementText, stored as bill.reader "builtin". */
 export async function intakeCase(input: IntakeInput, seed?: string, reader: BillReader = "llm"): Promise<CasePacket> {
   if (!input.text?.trim() && !input.imageDataUrl) throw badRequest("No bill provided — send a `bill` image file or `billText`");
   const c = createCase({ mode: "patient", patient: input.patient });
   try {
-    emit(c.id, { type: "log", message: seed ? `Loaded ${seed}` : "Bill received", messageZh: "收到账单了" });
-    emit(c.id, { type: "log", message: "Reading the bill line by line", messageZh: "正在一行一行地读您的账单" });
+    emit(c.id, { type: "log", message: seed ? `Loaded ${seed}` : "Bill received" });
+    emit(c.id, { type: "log", message: "Reading the bill line by line" });
     const parsed = reader === "builtin" ? parseStatementText(input.text ?? "") : await parseBill({ text: input.text, imageDataUrl: input.imageDataUrl });
-    emit(c.id, {
-      type: "log",
-      message: `Read ${parsed.lineItems.length} charge lines from ${parsed.provider.name}; balance due $${parsed.patientBalance.toFixed(2)}`,
-      messageZh: `读到 ${parsed.lineItems.length} 项收费，医院说您要付 $${parsed.patientBalance.toFixed(2)}`,
-    });
-    let bill = parsed;
-    if (reader === "builtin") {
-      // keyless-e2e: persist the marker on the case, so a later GET (UI, e2e) can tell it was read without AI;
-      // the log line below only goes out over the WebSocket.
-      bill = { ...parsed, reader: "builtin" };
-      emit(c.id, { type: "log", message: BUILTIN_READER_LOG, messageZh: "用 Vellum 内置的账单读取程序读好了（未配置 AI 密钥）；逐项中文解释需要 ANTHROPIC_API_KEY" });
-    } else {
-      bill = await explainZh(parsed);
-      emit(c.id, { type: "log", message: "Explained every line in Chinese", messageZh: "每一项都用中文解释好了" });
-    }
+    // the marker is stored on the case, so a later GET (UI, e2e) can tell how the bill was read
+    const bill = reader === "builtin" ? { ...parsed, reader: "builtin" as const } : parsed;
+    if (reader === "builtin") emit(c.id, { type: "log", message: BUILTIN_READER_LOG });
+    emit(c.id, { type: "log", message: `Read ${bill.lineItems.length} charge lines from ${bill.provider.name}; balance due $${bill.patientBalance.toFixed(2)}` });
     const flags = auditBill(bill);
     const stake = totalAtStake(flags);
-    emit(c.id, {
-      type: "log",
-      message: `Audit: ${flags.length} flags, $${stake.toFixed(2)} in likely billing errors`,
-      messageZh: `检查完了：发现 ${flags.filter((f) => f.amountAtStake > 0).length} 个可能的错误，涉及 $${stake.toFixed(2)}`,
-    });
+    emit(c.id, { type: "log", message: `Audit: ${flags.length} flags, $${stake.toFixed(2)} in likely billing errors` });
     return updateCase(c.id, { bill, flags, status: "audited" });
   } catch (err) {
     updateCase(c.id, { status: "failed" });
@@ -143,12 +127,11 @@ export default async function billRoutes(app: FastifyInstance) {
     }
   });
 
-  // Demo seed: the fixture is a raw statement; it goes through the same parse + explain + audit path.
+  // Demo seed: the fixture is a raw statement, read by the deterministic reader and audited (milliseconds).
   app.post("/api/cases/demo", async (_req, reply) => {
     try {
       const { patient, text } = await loadDemoFixture();
-      // keyless-e2e: no key -> the deterministic reader (real parse + audit of the bundled statement); key -> unchanged
-      return await intakeCase({ patient, text }, "demo seed bill (fixtures/lin-er-bill.json)", hasLlmKey() ? "llm" : "builtin");
+      return await intakeCase({ patient, text }, "demo seed bill (fixtures/lin-er-bill.json)", "builtin");
     } catch (err) {
       return sendError(reply, err);
     }
