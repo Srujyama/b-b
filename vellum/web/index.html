@@ -198,6 +198,7 @@
         <p id="outcome-preview" class="outcome-tag" hidden></p>
         <ul id="outcome-en" class="outcome-en"></ul>
         <button id="hear-btn" class="secondary hear" type="button"><span class="hear-icon" aria-hidden="true">▶</span><span id="hear-label">Hear the result</span></button>
+        <button id="hear-zh-btn" class="text" type="button">Hear it in Chinese</button>
         <p id="hear-note" class="fine hear-note" role="status" hidden></p>
         <audio id="hear-audio" preload="none" hidden></audio>
       </div>
@@ -231,8 +232,8 @@
             <button id="hedge-btn" class="text" type="button">Hedge rate risk (Gemini sandbox)</button>
           </div>
           <div id="mandate-box" class="note">
-            <p>Optional: record her limit on BNB Chain, so anyone can check that no deal went above it. The contract is not deployed yet, so this step currently reports that.</p>
-            <button id="mandate-btn" class="secondary" type="button">Record the limit on-chain</button>
+            <p>BNB Chain: her limit on a public log. <span class="notlive-tag">contract not deployed yet</span></p>
+            <button id="mandate-btn" class="secondary" type="button" hidden>Record the limit on-chain</button>
           </div>
           <h3>Receipts</h3>
           <ol id="receipts" class="timeline"></ol>

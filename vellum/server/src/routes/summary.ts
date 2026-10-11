@@ -209,15 +209,19 @@ export function ttsConfig() {
 }
 
 /** One TTS request for `text`, cached per case + voice + model + text. Returns mp3 bytes. */
-export async function speakSummary(caseId: string, text: string, f: typeof fetch = fetch): Promise<{ audio: Buffer; cached: boolean }> {
-  const cfg = ttsConfig();
+export async function speakSummary(caseId: string, text: string, f: typeof fetch = fetch, lang: "zh" | "en" = "zh"): Promise<{ audio: Buffer; cached: boolean }> {
+  const base = ttsConfig();
+  // English uses the advocate's voice; Chinese keeps the multilingual summary voice.
+  const cfg = lang === "en"
+    ? { ...base, voiceId: opt("ELEVENLABS_ADVOCATE_VOICE_ID", "hpp4J3VqNfWAUOO0d1Us") as string, modelId: opt("ELEVENLABS_TTS_MODEL", "eleven_flash_v2_5") as string }
+    : base;
   const cacheKey = `${caseId}:${createHash("sha256").update(`${cfg.voiceId}\n${cfg.modelId}\n${text}`).digest("hex")}`;
   const hit = audioCache.get(cacheKey);
   if (hit) return { audio: hit, cached: true };
 
   // language_code pins Mandarin normalization on Flash/Turbo v2.5; multilingual_v2 ignores it.
   const body: Record<string, unknown> = { text, model_id: cfg.modelId };
-  if (!/multilingual_v2/.test(cfg.modelId)) body.language_code = "zh";
+  if (!/multilingual_v2/.test(cfg.modelId)) body.language_code = lang;
   let res: Response;
   try {
     res = await f(`${cfg.base}/v1/text-to-speech/${encodeURIComponent(cfg.voiceId)}?output_format=mp3_44100_128`, {
@@ -249,9 +253,11 @@ export default async function summaryRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { id: string } }>("/api/cases/:id/summary", async (req) => buildSummary(requireCase(req.params.id)));
 
-  app.get<{ Params: { id: string } }>("/api/cases/:id/summary.mp3", async (req, reply) => {
+  app.get<{ Params: { id: string }; Querystring: { lang?: string } }>("/api/cases/:id/summary.mp3", async (req, reply) => {
     const packet = requireCase(req.params.id);
-    const { audio, cached } = await speakSummary(packet.id, buildSummary(packet).zh);
+    const lang = req.query.lang === "zh" ? "zh" : "en"; // English by default; ?lang=zh reads it in Mandarin
+    const sum = buildSummary(packet);
+    const { audio, cached } = await speakSummary(packet.id, lang === "zh" ? sum.zh : sum.en, fetch, lang);
     return reply.header("content-type", "audio/mpeg").header("cache-control", "no-store").header("x-vellum-cache", cached ? "hit" : "miss").send(audio);
   });
 }

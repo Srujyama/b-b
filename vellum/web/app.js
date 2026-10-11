@@ -82,7 +82,7 @@ export const I18N = {
     humanMode: "You play the hospital. Talk into the mic.",
     dealAt: (amt) => `Deal: ${amt}`, toReceipts: "See receipts", waitingLines: "The conversation appears here once the call starts.",
     receiptsTitle: "A receipt for every step",
-    outcomeTitle: "The result", hearResult: "Hear the result", hearStop: "Stop", hearLoading: "Preparing the audio…",
+    outcomeTitle: "The result", hearResult: "Hear the result", hearZh: "Hear it in Chinese", hearStop: "Stop", hearLoading: "Preparing the audio…",
     hearUnavailable: "Audio isn't available right now. The result is written below.", hearFailed: "The audio didn't play. The result is written below.",
     outcomePreview: "Preview data: a sample case, not a real result", hearDetails: "Technical details",
     receiptsLede: "Payment is held until the bill shows $0.",
@@ -1098,13 +1098,20 @@ function initPatient() {
     hearNote.detail = detail;
     renderHearNote();
   }
+  $("#hear-zh-btn")?.addEventListener("click", () => {
+    outcome.lang = "zh";
+    if (!hearAudio.paused) hearAudio.pause();
+    $("#hear-btn").dispatchEvent(new MouseEvent("click"));
+    outcome.lang = "en";
+  });
   $("#hear-btn").addEventListener("click", async (e) => {
     const p = P();
     if (!p) return;
     if (!hearAudio.paused) return hearAudio.pause();
     const btn = e.currentTarget;
     setHearNote(null);
-    if (outcome.url && outcome.audioKey === outcome.key) {
+    const lang = outcome.lang ?? "en"; // captured now: the handler awaits before it records the cache key
+    if (outcome.url && outcome.audioKey === `${outcome.key}:${lang}`) {
       hearAudio.currentTime = 0;
       return hearAudio.play().catch(() => undefined);
     }
@@ -1112,7 +1119,7 @@ function initPatient() {
     btn.classList.add("busy");
     setHearNote("hearLoading");
     try {
-      const res = await fetch(`/api/cases/${encodeURIComponent(p.id)}/summary.mp3`);
+      const res = await fetch(`/api/cases/${encodeURIComponent(p.id)}/summary.mp3?lang=${lang}`);
       if (!res.ok) {
         let msg = "";
         try {
@@ -1123,7 +1130,7 @@ function initPatient() {
       }
       if (outcome.url) URL.revokeObjectURL(outcome.url);
       outcome.url = URL.createObjectURL(await res.blob());
-      outcome.audioKey = outcome.key;
+      outcome.audioKey = `${outcome.key}:${lang}`;
       hearAudio.src = outcome.url;
       setHearNote(null);
       await hearAudio.play();
