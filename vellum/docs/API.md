@@ -10,9 +10,16 @@ a missing key is a 503 `{error: "X is not configured — set Y"}`.
 | GET | /api/cases, /api/cases/:id | → CasePacket[] / CasePacket | scaffold |
 | WS | /ws?case=:id | server pushes `CaseEvent` (see types.ts) incl. `audio` chunks | scaffold |
 
-## Patient flow (Mrs. Lin)
+`CasePacket.activity` retains the latest 200 public execution updates. Each update has
+`{id, at, stage, kind, message}` and is pushed as `{type: "activity", entry}` before its
+original log/offer/deal event. The initial WebSocket `case` snapshot includes history;
+clients deduplicate by activity ID and preserve its server order after reconnecting.
+Stages are `review`, `research`, `plan`, `call`, and `outcome`. Audio is not retained there.
+
+## Patient flow
 | Method | Path | Body → Response | Owner |
 |---|---|---|---|
+| POST | /api/cases/start | JSON `{message, caseId?, billText?, imageDataUrl?}` or multipart (`message`, optional `bill` file and `caseId`) → 202 CasePacket immediately; `intake.state` advances from `running` to `needs_bill`, `done`, or `failed` over WS. Needs Claude. A follow-up can attach a bill to the same unparsed case; concurrent analysis / replacing an audited bill returns 409. Does not infer consent or a payment limit. | bill |
 | POST | /api/cases | multipart (`bill` file: image, PDF or text, `patient` JSON field) OR JSON `{patient, billText}` → CasePacket (status `audited`, bill parsed, flags, zh explanations) | bill |
 | POST | /api/cases/demo | `{}` → CasePacket built from fixtures/lin-er-bill.* (runs the same parse+audit code) | bill |
 | POST | /api/cases/:id/research | `{}` → CasePacket with fairPrices, charity, facts, target/opening/walkaway (status `researched`) | research |

@@ -1,3 +1,5 @@
+import { createAgentWorkspace } from "./agent.js";
+
 // Vellum web: shared helpers (exported, reused by clinic.js) + the patient flow.
 // Vanilla ES module, no build step. Contract: vellum/docs/API.md + server/src/types.ts CaseEvent.
 
@@ -42,7 +44,7 @@ export const I18N = {
     steps: ["Mrs. Lin's bill", "Her information", "Research", "The call", "Summary"],
     billTitleDemo: "Mrs. Lin's bill", billTitleOwn: "Your bill",
     dealReached: (amt) => `Deal reached at ${amt}`,
-    sumBilled: "Billed", sumRemoved: "Billing errors flagged", sumAgreed: "Agreed", sumSaved: "She saved",
+    sumBilled: "Billed", sumRemoved: "Billing errors flagged", sumAgreed: "Agreed", sumSaved: "Saved",
     sumNoDeal: "No deal yet", sumErrorsFoot: (n) => `${n} error${n === 1 ? "" : "s"} for the hospital to remove`,
     sumSavedFoot: (pct) => `${pct}% off the bill`,
     stepOf: (n, total, name) => `Step ${n} of ${total}: ${name}`,
@@ -230,16 +232,18 @@ export function wsOrigin() {
   return wsOriginPromise;
 }
 
-export function connectCase(id, onEvent) {
+export function connectCase(id, onEvent, onConnection = () => {}) {
   let ws;
   let closed = false;
   let tries = 0;
   const open = async () => {
     const origin = await wsOrigin();
     if (closed) return;
+    onConnection(tries ? "reconnecting" : "connecting");
     ws = new WebSocket(`${origin}/ws?case=${encodeURIComponent(id)}`);
     ws.onopen = () => {
       tries = 0;
+      onConnection("connected");
     };
     ws.onmessage = (m) => {
       let ev;
@@ -252,6 +256,7 @@ export function connectCase(id, onEvent) {
     };
     ws.onclose = () => {
       if (closed) return;
+      onConnection("reconnecting");
       tries += 1;
       if (tries === 3) showError(t("wsLost"));
       setTimeout(open, Math.min(8000, 500 * 2 ** tries));
@@ -269,6 +274,11 @@ export function connectCase(id, onEvent) {
 /** Merge a CaseEvent into a local CasePacket copy. Returns true if the packet changed. */
 export function mergeEvent(packet, ev) {
   switch (ev.type) {
+    case "activity":
+      packet.activity ??= [];
+      if (!packet.activity.some((entry) => entry.id === ev.entry.id)) packet.activity.push(ev.entry);
+      packet.activity = packet.activity.slice(-200);
+      return true;
     case "status":
       packet.status = ev.status;
       return true;
@@ -448,7 +458,7 @@ export function createRoom({ getPacket, getAsked }) {
     for (const line of p.transcript) {
       list.append(h("li", { class: `line ${sideOf(line.role)}` }, h("span", { class: "who" }, roleLabel(line.role)), h("p", {}, line.text)));
     }
-    if (p.transcript.length !== lastLen) list.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (p.transcript.length !== lastLen && !list.closest("[hidden]")) list.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     lastLen = p.transcript.length;
   }
 
@@ -541,38 +551,34 @@ function chainGlyph(chain) {
 
 /* ===================================================== patient flow ===== */
 
-// The five demo steps. "upload" is the landing (hero + "use your own bill"), not a numbered step.
-const SCREENS = ["bill", "intake", "research", "room", "summary"];
+// The same workspace stays visible throughout the patient journey. "upload" is the landing.
+const SCREENS = ["analysis", "bill", "intake", "research", "room", "summary"];
 
 function initPatient() {
   setupErrorBox();
 
-  const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null, bridgeOn: false };
+  const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null, bridgeOn: false, sending: false, analysisError: "", connected: false };
   const P = () => state.packet;
   // the demo case is Mrs. Lin; a bill the user uploads is "Your bill"
-  const isDemo = (p) => /\bLin\b/i.test(p?.patient?.name ?? "");
+  const isDemo = (p) => p?.bill?.reader === "builtin";
   const room = createRoom({ getPacket: P, getAsked: () => P()?.bill?.patientBalance });
+  const agent = createAgentWorkspace((stage) => {
+    const target = { review: "bill", research: "research", plan: "research", call: "room", outcome: "summary" }[stage];
+    if (target) show(target);
+  });
 
   /* ---- navigation ---- */
   function show(name) {
     state.screen = name;
     for (const s of document.querySelectorAll(".screen")) s.hidden = s.dataset.screen !== name;
     document.getElementById("patient-app")?.classList.toggle("landing", name === "upload");
-    renderProgress();
+    $("#agent-workspace").hidden = name === "upload";
+    $("#activity-panel").hidden = name === "upload";
+    if (name !== "upload") agent.render(P(), state);
+    if (P()) history.replaceState(null, "", `#case=${encodeURIComponent(P().id)}&screen=${name}`);
     if (name === "research") startResearch();
     document.querySelector(`[data-screen="${name}"] h1`)?.focus?.({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-  function renderProgress() {
-    const idx = SCREENS.indexOf(state.screen);
-    const names = t("steps");
-    if (idx < 0) return;
-    document.querySelectorAll("#steps li").forEach((li, i) => {
-      li.className = i < idx ? "done" : i === idx ? "now" : "";
-      li.setAttribute("aria-current", i === idx ? "step" : "false");
-      li.textContent = names[i];
-    });
-    $("#step-label").textContent = t("stepOf", idx + 1, SCREENS.length, names[idx]);
   }
   document.querySelectorAll(".screen h1").forEach((h1) => h1.setAttribute("tabindex", "-1"));
 
@@ -584,7 +590,10 @@ function initPatient() {
     if (fresh) {
       state.sub?.close();
       state.logs = [];
-      state.sub = connectCase(packet.id, onEvent);
+      state.sub = connectCase(packet.id, onEvent, (status) => {
+        state.connected = status === "connected";
+        agent.connection(status);
+      });
       try {
         history.replaceState(null, "", `#case=${packet.id}`);
       } catch {}
@@ -594,11 +603,39 @@ function initPatient() {
     renderAll();
   }
 
+  function syncAnalysis() {
+    if (state.screen === "analysis" && P()?.bill) show("bill");
+    if (P()?.intake?.state === "needs_bill" && state.awaitingAnalysis) {
+      state.awaitingAnalysis = false;
+      messageInput.value = "";
+      selectedFile = null;
+      fileInput.value = "";
+    }
+    updateComposer();
+  }
+
   function onEvent(ev) {
     if (ev.type === "case") {
       if (!ev.packet) return;
+      if ((state.actionError?.stage === "research" && ["running", "done"].includes(ev.packet.research?.state)) ||
+          (state.actionError?.stage === "call" && ["negotiating", "agreed", "settled"].includes(ev.packet.status))) state.actionError = null;
+      if (ev.packet.agreedAmount != null || ["agreed", "failed", "settled"].includes(ev.packet.status)) {
+        state.bridgeOn = false;
+        setCallLabel();
+      } else if (ev.packet.status === "negotiating" && !state.callConvo) {
+        state.bridgeOn = true;
+        setCallLabel();
+      }
       state.packet = ev.packet;
+      state.logs = (ev.packet.activity ?? []).map(e => ({ message: e.message, warn: e.kind === "error" }));
       renderAll();
+      renderFeed();
+      syncAnalysis();
+      return;
+    }
+    if (ev.type === "activity" && P()) {
+      mergeEvent(P(), ev);
+      agent.render(P(), state);
       return;
     }
     if (ev.type === "audio") return room.handle(ev);
@@ -616,7 +653,7 @@ function initPatient() {
         renderFeed();
         return;
       }
-      if (state.researching) setResearching(false, "researchStopped");
+      if (state.researching && !/^charity policy:/i.test(ev.message ?? "")) setResearching(false, "researchStopped");
       return showError(t("failed") + ev.message);
     }
     if (!state.packet) return;
@@ -631,6 +668,7 @@ function initPatient() {
   }
 
   function renderAll() {
+    agent.render(P(), state);
     renderBill();
     renderIntake();
     renderResearch();
@@ -640,41 +678,102 @@ function initPatient() {
     renderReceipts();
   }
 
-  /* ---- 1 upload ---- */
-  $("#bill-file").addEventListener("change", (e) => {
-    const f = e.target.files?.[0];
-    $("#file-name").textContent = f ? f.name : t("takePhoto");
+  /* ---- message + attachment, reused in the landing and agent workspace ---- */
+  let selectedFile = null;
+  const composer = $("#message-form");
+  const messageInput = $("#message-input");
+  const sendButton = $("#send-btn");
+  const fileInput = $("#bill-file");
+  function updateComposer() {
+    const working = state.sending || P()?.intake?.state === "running";
+    sendButton.disabled = working || (!messageInput.value.trim() && !selectedFile);
+    messageInput.disabled = working;
+    $("#attach-btn").disabled = working;
+    $("#remove-file").disabled = working;
+    $("#attachment").hidden = !selectedFile;
+    $("#file-name").textContent = selectedFile?.name || "";
+    composer.setAttribute("aria-busy", String(working));
+  }
+  function selectFile(file) {
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf", "text/plain"].includes(file.type)) {
+      fileInput.value = "";
+      return showError("Choose a PDF, JPEG, PNG, WebP, GIF, or text file.");
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      fileInput.value = "";
+      return showError("This file is too large. Choose a bill smaller than 15 MB.");
+    }
+    selectedFile = file;
+    clearError();
+    updateComposer();
+  }
+  $("#attach-btn").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => selectFile(fileInput.files?.[0]));
+  $("#remove-file").addEventListener("click", () => { selectedFile = null; fileInput.value = ""; updateComposer(); });
+  messageInput.addEventListener("input", updateComposer);
+  messageInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      if (!sendButton.disabled) composer.requestSubmit();
+    }
   });
-  $("#upload-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const file = $("#bill-file").files?.[0];
-    if (!file) return showError(t("needFile"));
-    const name = $("#patient-name").value.trim();
+  for (const type of ["dragenter", "dragover"]) composer.addEventListener(type, (event) => {
+    event.preventDefault();
+    if (!state.sending && P()?.intake?.state !== "running") composer.classList.add("drag-over");
+  });
+  composer.addEventListener("dragleave", () => composer.classList.remove("drag-over"));
+  composer.addEventListener("drop", (event) => {
+    event.preventDefault();
+    composer.classList.remove("drag-over");
+    if (!state.sending && P()?.intake?.state !== "running") selectFile(event.dataTransfer.files?.[0]);
+  });
+  async function submitMessage(event) {
+    event?.preventDefault();
+    if (state.sending || P()?.intake?.state === "running") return;
+    const message = messageInput.value.trim();
+    if (!message && !selectedFile) return;
+    state.sending = true;
+    state.awaitingAnalysis = true;
+    state.analysisError = "";
+    clearError();
     const form = new FormData();
-    if (name) form.append("patient", JSON.stringify({ name, language: "zh", maxPay: 0, consent: false }));
-    form.append("bill", file, file.name);
-    busy($("#upload-btn"), async () => {
-      $("#file-name").textContent = t("reading");
-      adopt(await api("/api/cases", { method: "POST", form }));
-      show("bill");
-    }).finally(() => {
-      $("#file-name").textContent = file.name;
-    });
+    form.append("message", message);
+    if (P() && !P().bill) form.append("caseId", P().id);
+    if (selectedFile) form.append("bill", selectedFile, selectedFile.name);
+    $("#request-card").hidden = false;
+    $("#request-text").textContent = message || "Please review my hospital bill.";
+    $("#request-file").textContent = selectedFile?.name || "";
+    $("#agent-composer").append(composer);
+    show("analysis");
+    $("#agent-title").focus({ preventScroll: true });
+    updateComposer();
+    try {
+      adopt(await api("/api/cases/start", { method: "POST", form }));
+      syncAnalysis();
+    } catch (error) {
+      state.analysisError = error.status === 503 ? "Bill analysis is unavailable right now. Your message is still here. Please try again shortly." : errorText(error);
+      agent.render(P(), { ...state, error: state.analysisError });
+      showError(state.analysisError);
+    } finally {
+      state.sending = false;
+      updateComposer();
+      agent.render(P(), { ...state, error: state.analysisError });
+    }
+  }
+  composer.addEventListener("submit", submitMessage);
+  $("#retry-analysis").addEventListener("click", () => {
+    if (messageInput.value.trim() || selectedFile) composer.requestSubmit();
+    else messageInput.focus();
   });
-  $("#demo-btn").addEventListener("click", (e) =>
-    busy(e.currentTarget, async () => {
-      adopt(await api("/api/cases/demo", { method: "POST", body: {} }));
-      show("bill");
-    }),
-  );
-  // "Or use your own bill": open the upload panel below the hero
-  $("#own-bill-link")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    const d = $("#own-bill");
-    d.open = true;
-    d.scrollIntoView({ block: "start", behavior: "smooth" });
-    d.querySelector("summary")?.focus({ preventScroll: true });
-  });
+  // Recover active work when WebSocket connections are interrupted (including static-host proxies).
+  let refreshing = false;
+  const recovery = setInterval(async () => {
+    if (state.connected || !P() || refreshing || document.hidden) return;
+    refreshing = true;
+    try { onEvent({ type: "case", packet: await api(`/api/cases/${encodeURIComponent(P().id)}`) }); } catch {} finally { refreshing = false; }
+  }, 4000);
+  window.addEventListener("pagehide", () => { clearInterval(recovery); state.sub?.close(); });
 
   /* ---- 2 bill ---- */
   function renderBill() {
@@ -741,6 +840,12 @@ function initPatient() {
   function renderIntake() {
     const pt = P()?.patient;
     const done = $("#intake-done");
+    // Latest UI keeps existing case limits out of the form. A new upload has no mandate
+    // yet, so only those cases need an explicit limit before they can authorize a call.
+    const needsLimit = !(pt?.maxPay > 0);
+    $("#new-case-limit").hidden = !needsLimit;
+    $("#f-maxpay").required = needsLimit;
+    $("#f-maxpay").disabled = !needsLimit;
     if (pt && !$("#f-name").value) {
       $("#f-name").value = pt.name ?? "";
       if (pt.householdSize) $("#f-household").value = pt.householdSize;
@@ -814,8 +919,8 @@ function initPatient() {
       name: $("#f-name").value.trim(),
       household_size: num("#f-household"),
       annual_income: num("#f-income"),
-      // her limit isn't shown on the form any more; keep the case's (still enforced server-side)
-      max_pay: document.getElementById("f-maxpay") ? num("#f-maxpay") : P()?.patient?.maxPay,
+      // Preserve an existing mandate; require a user-provided limit only for a new bill.
+      max_pay: P()?.patient?.maxPay > 0 ? P().patient.maxPay : num("#f-maxpay"),
       consent: true,
     };
     busy($("#intake-submit"), async () => {
@@ -827,7 +932,6 @@ function initPatient() {
       state.intakeSaved = true;
       // "Next": straight into research, which starts on its own
       show("research");
-      startResearch();
     });
   });
 
@@ -860,7 +964,8 @@ function initPatient() {
     const p = P();
     if (!p) return;
     const researched = ["researched", "mandated", "negotiating", "agreed", "settled"].includes(p.status) || p.fairPrices.length > 0;
-    if (p.status === "researching" && !state.researching) setResearching(true);
+    if (p.research?.state === "running" && !state.researching) setResearching(true);
+    if (p.research?.state === "failed" && state.researching) setResearching(false, "researchStopped");
     if (researched && state.researching) setResearching(false, "researchDone");
     const ladder = $("#ladder");
     if (researched) {
@@ -928,8 +1033,9 @@ function initPatient() {
   // Research is async: POST /research answers 202, the result arrives as a "case" event over /ws.
   async function startResearch() {
     const btn = $("#research-btn");
-    if (!P() || state.researching || isResearched(P())) return;
+    if (!P() || !intakeOk() || state.researching || isResearched(P())) return;
     state.logs = [];
+    state.actionError = null;
     renderFeed();
     setResearching(true);
     await busy(btn, async () => {
@@ -938,6 +1044,8 @@ function initPatient() {
         if (res?.id && res?.bill) adopt(res); // a full packet: finished (older servers) or the 202 snapshot
       } catch (err) {
         setResearching(false);
+        state.actionError = { stage: "research", message: errorText(err) };
+        agent.render(P(), state);
         throw err;
       }
     });
@@ -981,12 +1089,20 @@ function initPatient() {
       setCallLabel();
       return;
     }
+    state.actionError = null;
     room.audio.unlock(); // user gesture: lets the browser play the agents' audio
     // ElevenLabs only when a person turned voice on; otherwise a free live-text negotiation.
     const picked = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
     const counterparty = picked === "agent" && !$("#voice-on")?.checked ? "text" : picked;
     await busy(btn, async () => {
-      const res = await api(`/api/cases/${P().id}/negotiate`, { method: "POST", body: { counterparty } });
+      let res;
+      try {
+        res = await api(`/api/cases/${P().id}/negotiate`, { method: "POST", body: { counterparty } });
+      } catch (error) {
+        state.actionError = { stage: "call", message: errorText(error) };
+        agent.render(P(), state);
+        throw error;
+      }
       if (res?.mode === "human") {
         if (!res.advocateSignedUrl) throw new Error("negotiate returned no advocateSignedUrl for human mode");
         $("#room-status").textContent = t("humanMode");
@@ -1009,8 +1125,8 @@ function initPatient() {
           },
         });
       } else {
-        state.bridgeOn = true;
-        $("#room-status").textContent = t("calling");
+        state.bridgeOn = !["agreed", "failed", "settled"].includes(P()?.status);
+        $("#room-status").textContent = state.bridgeOn ? res.channel === "text" ? "Live text negotiation" : t("calling") : "";
       }
     });
     setCallLabel();
@@ -1226,9 +1342,14 @@ function initPatient() {
     api(`/api/cases/${encodeURIComponent(resumeId)}`)
       .then((p) => {
         adopt(p);
-        const byStatus = { intake: "bill", audited: "bill", researching: "research", researched: "research", mandated: "research", negotiating: "room", agreed: "summary", settled: "summary", failed: "room" };
+        if (p.intake && !p.bill) {
+          $("#agent-composer").append(composer);
+          messageInput.value = p.intake.state === "failed" ? p.intake.request : "";
+        }
+        const byStatus = { intake: p.bill ? "bill" : "analysis", audited: "bill", researching: "research", researched: "research", mandated: "research", negotiating: "room", agreed: "summary", settled: "summary", failed: "room" };
         // #case=<id>&screen=<step> deep-links one step (handy for review); otherwise resume where the case is
-        show(SCREENS.includes(deepLink) ? deepLink : byStatus[p.status] ?? "bill");
+        show(!p.bill ? "analysis" : SCREENS.includes(deepLink) && deepLink !== "analysis" ? deepLink : byStatus[p.status] ?? "bill");
+        syncAnalysis();
       })
       .catch(() => history.replaceState(null, "", location.pathname));
   }

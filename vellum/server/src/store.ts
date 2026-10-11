@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { WebSocket } from "ws";
 import { persistedMap } from "./persist.js";
-import type { CaseEvent, CasePacket, Receipt } from "./types.js";
+import type { ActivityStage, CaseActivity, CaseEvent, CasePacket, Receipt } from "./types.js";
 
 // Case store + per-case event bus. Cases live in memory and are persisted (debounced, atomic) to
 // DATA_DIR/cases.json, reloaded on startup. Demo-scale; swap for a DB later.
@@ -72,7 +72,34 @@ export function subscribe(id: string, socket: WebSocket) {
 export function emit(id: string, event: CaseEvent) {
   // Every event follows some change to the case (many routes mutate the packet in place, then emit),
   // so any emit marks the store dirty. Debounced: a burst of events costs one write.
-  if (cases.has(id)) caseStore.save();
+  const packet = cases.get(id);
+  // Keep user-visible activity with the case so reconnecting never loses fast tool updates.
+  // These are execution summaries and tool results, not private model reasoning.
+  if (packet && ["log", "error", "offer", "deal"].includes(event.type)) {
+    let message = "";
+    let kind: CaseActivity["kind"] = "update";
+    if (event.type === "log" || event.type === "error") {
+      message = event.message;
+      if (event.type === "error") kind = "error";
+    } else if (event.type === "offer") {
+      message = `${event.offer.by === "advocate" ? "Vellum proposed" : "Billing offered"} $${event.offer.amount.toLocaleString("en-US")}${event.offer.note ? ` — ${event.offer.note}` : ""}`;
+      kind = "offer";
+    } else if (event.type === "deal") {
+      message = `${packet.voiceSimulation ? "Simulated agreement" : "Agreement"} reached at $${event.amount.toLocaleString("en-US")}`;
+      kind = "result";
+    }
+    let stage: ActivityStage = packet.status === "negotiating" ? "call" : ["agreed", "settled"].includes(packet.status) ? "outcome" : packet.bill ? "research" : "review";
+    if (/negotiation plan|mandate|consent|payment limit/i.test(message)) stage = "plan";
+    else if (/call|voice|elevenlabs|negotiat|bridge/i.test(message) || event.type === "offer") stage = "call";
+    else if (/context.dev|fair.price|research|policy|medicare/i.test(message)) stage = "research";
+    else if (/bill received|reading|read \d+|audit:|statement reader|loaded|reviewing your|upload|intake complete/i.test(message)) stage = "review";
+    if (event.type === "deal") stage = "outcome";
+    const entry: CaseActivity = { id: randomUUID(), at: new Date().toISOString(), stage, kind, message };
+    packet.activity = [...(packet.activity ?? []), entry].slice(-200);
+    const activity = JSON.stringify({ type: "activity", entry } satisfies CaseEvent);
+    for (const s of subscribers.get(id) ?? []) if (s.readyState === 1) s.send(activity);
+  }
+  if (packet) caseStore.save();
   const data = JSON.stringify(event);
   for (const s of subscribers.get(id) ?? []) if (s.readyState === 1) s.send(data);
 }
