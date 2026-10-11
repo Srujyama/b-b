@@ -17,6 +17,7 @@
       <span class="seal" aria-hidden="true">帮</span>
       <span class="brand-name">帮帮</span>
     </a>
+    <a id="dash-link" class="toplink" href="/dashboard.html" data-i18n="dashLink">个案总览</a>
     <a class="toplink" href="/clinic.html" data-i18n="clinicLink">诊所入口</a>
     <button id="lang-toggle" class="lang" type="button" aria-label="Switch language">EN</button>
   </header>
@@ -82,6 +83,7 @@
           <label class="field"><span data-i18n="household">家里几口人</span><input name="household_size" id="f-household" type="number" min="1" inputmode="numeric" /></label>
           <label class="field"><span data-i18n="income">全家一年收入（美元）</span><input name="annual_income" id="f-income" type="number" min="0" inputmode="numeric" /></label>
           <label class="field"><span data-i18n="maxPay">最多愿意付多少（美元）</span><input name="max_pay" id="f-maxpay" type="number" min="1" inputmode="numeric" required /></label>
+          <p class="limit-guard" data-i18n="limitGuard">没有您同意，帮帮不会答应任何价格，也绝不超过您设定的上限。</p>
           <label class="consent"><input id="f-consent" name="consent" type="checkbox" />
             <span data-i18n="consent">我同意帮帮代表我和医院沟通账单，并在我设定的金额内达成协议。</span></label>
           <button id="intake-submit" class="primary" type="submit" data-i18n="saveIntake">保存我的信息</button>
@@ -116,6 +118,7 @@
           <div class="tk saved"><span data-i18n="saved">省下</span><b id="tk-saved">—</b><i id="tk-pct"></i></div>
           <div id="deal-stamp" class="stamp" hidden aria-hidden="true">成交</div>
         </div>
+        <p class="limit-guard" data-i18n="limitGuard">没有您同意，帮帮不会答应任何价格，也绝不超过您设定的上限。</p>
         <fieldset class="seg" id="counterparty">
           <legend data-i18n="counterparty">医院那边是</legend>
           <label><input type="radio" name="counterparty" value="agent" checked /><span data-i18n="cpAgent">AI 账单员</span></label>
