@@ -178,7 +178,8 @@ describe("web: app.js logic in node (DOM stubbed)", () => {
   it("has a Chinese and English label for every receipt kind the server emits", async () => {
     const { readFileSync, readdirSync, statSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const srcDir = new URL("../src/", import.meta.url).pathname;
+    const { fileURLToPath } = await import("node:url");
+    const srcDir = fileURLToPath(new URL("../src/", import.meta.url)); // not .pathname: that yields /C:/... on Windows
     const files: string[] = [];
     const walk = (d: string) => readdirSync(d).forEach((f) => (statSync(join(d, f)).isDirectory() ? (f !== "dev" && walk(join(d, f))) : f.endsWith(".ts") && files.push(join(d, f))));
     walk(srcDir);
