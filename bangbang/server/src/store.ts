@@ -1,9 +1,18 @@
 import { randomUUID } from "node:crypto";
 import type { WebSocket } from "ws";
+import { persistedMap } from "./persist.js";
 import type { CaseEvent, CasePacket, Receipt } from "./types.js";
 
-// In-memory case store + per-case event bus. Demo-scale; swap for a DB later.
-const cases = new Map<string, CasePacket>();
+// Case store + per-case event bus. Cases live in memory and are persisted (debounced, atomic) to
+// DATA_DIR/cases.json, reloaded on startup. Demo-scale; swap for a DB later.
+const caseStore = persistedMap<CasePacket>("cases");
+const cases = caseStore.map;
+/** Mark the case store dirty — call after mutating a packet in place without updateCase/emit. */
+export const persistCases = () => caseStore.save();
+/** Test/ops hook: re-read cases from DATA_DIR (restart simulation). */
+export const reloadCases = () => caseStore.load();
+/** Test/ops hook: write pending case changes now. */
+export const flushCases = () => caseStore.flush();
 const subscribers = new Map<string, Set<WebSocket>>();
 
 export function createCase(init: Partial<CasePacket> & Pick<CasePacket, "mode">): CasePacket {
@@ -20,6 +29,7 @@ export function createCase(init: Partial<CasePacket> & Pick<CasePacket, "mode">)
     ...init,
   };
   cases.set(packet.id, packet);
+  caseStore.save();
   return packet;
 }
 
@@ -60,6 +70,9 @@ export function subscribe(id: string, socket: WebSocket) {
 }
 
 export function emit(id: string, event: CaseEvent) {
+  // Every event follows some change to the case (many routes mutate the packet in place, then emit),
+  // so any emit marks the store dirty. Debounced: a burst of events costs one write.
+  if (cases.has(id)) caseStore.save();
   const data = JSON.stringify(event);
   for (const s of subscribers.get(id) ?? []) if (s.readyState === 1) s.send(data);
 }
