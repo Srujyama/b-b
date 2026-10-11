@@ -145,6 +145,8 @@ const PROBES: Probe[] = [
   { route: "GET /api/cases/:id", url: "/api/cases/..%2F..%2Fetc%2Fpasswd", status: 404, match: /unknown case/ },
 
   // ---- bill.ts (intake needs Claude)
+  { route: "POST /api/cases/start", url: "/api/cases/start", payload: {}, status: 400, match: /Write a message/ },
+  { route: "POST /api/cases/start", url: "/api/cases/start", payload: { message: "Help me review my bill" }, status: 503, match: /ANTHROPIC_API_KEY/ },
   { route: "POST /api/cases", url: "/api/cases", payload: {}, status: 400, match: /No bill provided/ },
   { route: "POST /api/cases", url: "/api/cases", payload: { billText: "x", patient: "notjson" }, status: 400, match: /patient must be a JSON object/ },
   { route: "POST /api/cases", url: "/api/cases", payload: { billText: "x", patient: { name: 5 } }, status: 400, match: /patient\.name is required/ },
@@ -191,6 +193,7 @@ const PROBES: Probe[] = [
   { route: "POST /api/voice/llm/v1/chat/completions", url: "/api/voice/llm/v1/chat/completions", payload: {}, status: 503, match: NOT_CONFIGURED("VOICE_LLM_TOKEN") },
   { route: "POST /api/voice/llm/v1/chat/completions", url: "/api/voice/llm/v1/chat/completions", payload: "{bad", headers: JSON_CT, status: 400, match: /not valid JSON/ },
   { route: "POST /api/voice/browser/llm/v1/chat/completions", url: "/api/voice/browser/llm/v1/chat/completions", payload: {}, status: 503, match: NOT_CONFIGURED("VOICE_LLM_TOKEN") },
+  { route: "POST /api/voice/hospital/llm/v1/chat/completions", url: "/api/voice/hospital/llm/v1/chat/completions", payload: {}, status: 503, match: NOT_CONFIGURED("VOICE_LLM_TOKEN") },
 
   // ---- calls.ts phone-call orchestration (bearer token, job dir, ElevenLabs)
   { route: "GET /api/voice/ready", url: "/api/voice/ready", status: 503, match: NOT_CONFIGURED("VOICE_ORCHESTRATOR_TOKEN") },

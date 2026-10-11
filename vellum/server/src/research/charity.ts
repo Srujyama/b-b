@@ -128,7 +128,8 @@ ${docsPrompt(docs)}`,
     discountPct: ok(out?.discountPct),
     applicationUrl: typeof out?.applicationUrl === "string" && /^https?:\/\//.test(out.applicationUrl) && JSON.stringify(docs).includes(out.applicationUrl) ? out.applicationUrl : undefined,
     summary: out?.summary || `Financial assistance policy for ${hospitalName}.`,
-    sources: [...sources, { ...doc.source, title: `${hospitalName} financial assistance policy` }],
+    // cite a page as this hospital's policy only when the model confirmed it is one
+    sources: out?.hasFap ? [...sources, { ...doc.source, title: `${hospitalName} financial assistance policy` }] : sources,
   };
   if (policy.discountPct !== undefined && policy.discountPct > 100) policy.discountPct = undefined;
   return policy;

@@ -15,6 +15,7 @@ import { outboundAgentConfig, publicVoiceUrl } from "../src/agent/call-plan.js";
 import { checkElevenLabsConnection, smokeTestElevenLabs } from "../src/agent/connection.js";
 import { speechOptions } from "../src/agent/speech.js";
 import { browserAgentConfig } from "../src/agent/browser-demo.js";
+import { hospitalAgentConfig } from "../src/agent/hospital-demo.js";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(`setup-elevenlabs: creates/updates 3 ElevenLabs agents (advocate en, hospital billing en, intake zh)
@@ -23,6 +24,7 @@ language/voice overrides, and prints the agent ids to paste into vellum/server/.
 Tool mode: ELEVENLABS_TOOL_MODE=client (default; no public URL needed) or webhook (needs PUBLIC_URL).
 --outbound: configure a separate Haiku 5.5 + Eleven v4 Turbo phone representative.
 --browser: configure Haiku 5.5 + v4 Turbo for a teammate speaking in the browser; no Twilio.
+--hospital: configure a separate Haiku 5.5 + v4 Turbo hospital for agent-to-agent audio (Eric voice).
 --supporting: configure only Mandarin intake and the simulated hospital (keeps the Haiku advocate unchanged).
 --dry-run: print configs without credentials, network access, or placing a call.
 --check: read-only ElevenLabs credential, voice, agent, and phone inventory checks.
@@ -40,12 +42,14 @@ const check = process.argv.includes("--check");
 const smoke = process.argv.includes("--smoke-test");
 const options = process.argv.includes("--options");
 const browser = process.argv.includes("--browser");
+const hospital = process.argv.includes("--hospital");
 const supporting = process.argv.includes("--supporting");
-if (supporting && ["--browser", "--outbound", "--check", "--smoke-test", "--options"].some((flag) => process.argv.includes(flag)))
+if (supporting && ["--browser", "--hospital", "--outbound", "--check", "--smoke-test", "--options"].some((flag) => process.argv.includes(flag)))
   throw new Error("Use --supporting alone or with --dry-run.");
 const selectedAgents = supporting ? AGENTS.filter((spec) => spec.role !== "advocate") : AGENTS;
-if (browser && process.argv.includes("--outbound")) throw new Error("Choose --browser or --outbound, not both.");
-if ((check || smoke || options) && (dryRun || browser || process.argv.includes("--outbound") || [check, smoke, options].filter(Boolean).length > 1)) {
+if ([browser, hospital, process.argv.includes("--outbound")].filter(Boolean).length > 1)
+  throw new Error("Choose only one of --browser, --hospital or --outbound.");
+if ((check || smoke || options) && (dryRun || browser || hospital || process.argv.includes("--outbound") || [check, smoke, options].filter(Boolean).length > 1)) {
   throw new Error("Use --check, --smoke-test, or --options on its own; none can be combined with setup or --dry-run.");
 }
 if (options) {
@@ -64,7 +68,7 @@ if (smoke) {
   console.log(JSON.stringify({ ...metrics, audioFile, note: "Time to first audio byte includes network latency. This is not end-to-end phone latency." }, null, 2));
   process.exit(0);
 }
-if (browser || process.argv.includes("--outbound")) {
+if (browser || hospital || process.argv.includes("--outbound")) {
   const base = dryRun ? "https://your-voice-server.example" : publicVoiceUrl();
   let secretId = opt("ELEVENLABS_LLM_SECRET_ID");
   if (dryRun) secretId = "<ELEVENLABS_LLM_SECRET_ID>";
@@ -83,13 +87,16 @@ if (browser || process.argv.includes("--outbound")) {
     for (const name of toolNamesForSpec(AGENTS.find((spec) => spec.role === "advocate")!))
       browserTools.push(await upsertTool(toolConfig(name, "client"), existing.filter((tool) => tool.tool_config?.type === "client")));
   }
-  const config = browser ? browserAgentConfig(base, secretId!, browserTools) : outboundAgentConfig(base, secretId!);
+  const config = hospital ? hospitalAgentConfig(base, secretId!)
+    : browser ? browserAgentConfig(base, secretId!, browserTools) : outboundAgentConfig(base, secretId!);
   if (dryRun) console.log(JSON.stringify(config, null, 2));
   else {
-    const envVar = browser ? "ELEVENLABS_BROWSER_AGENT_ID" : "ELEVENLABS_OUTBOUND_AGENT_ID";
+    const envVar = hospital ? "ELEVENLABS_HAIKU_HOSPITAL_AGENT_ID"
+      : browser ? "ELEVENLABS_BROWSER_AGENT_ID" : "ELEVENLABS_OUTBOUND_AGENT_ID";
     const id = await upsertAgent(config, opt(envVar));
     console.log(`${envVar}=${id}`);
-    console.log(browser ? "Select Human mode in the negotiation room. The browser mapping is integrated; no phone number is needed."
+    console.log(hospital ? "Select agent mode after deploying the hospital gateway and importing this ID. No conversation was started."
+      : browser ? "Select Human mode in the negotiation room. The browser mapping is integrated; no phone number is needed."
       : "Import your Twilio number into ElevenLabs and set ELEVENLABS_PHONE_NUMBER_ID. No calls were placed.");
     if (!opt("ANTHROPIC_API_KEY")) console.log("Claude credentials are deferred: set the shared ANTHROPIC_API_KEY before enabling calls.");
   }

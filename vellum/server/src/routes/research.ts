@@ -97,6 +97,7 @@ async function run(id: string, p: Plan, opts: ResearchOpts): Promise<Partial<Cas
   await Promise.all(
     codes.map(async ({ code, description, charge }) => {
       try {
+        log(`Checking ${code}: ${description}`);
         const fp = await resolve<FairPrice>(
           code,
           () => cachedFairPrice(hospital, code),

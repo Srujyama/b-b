@@ -23,6 +23,7 @@ import voiceRoutes from "../src/routes/voice.js";
 import Fastify from "fastify";
 import { checkElevenLabsConnection, smokeTestElevenLabs } from "../src/agent/connection.js";
 import { resolveSpeechProfile, speechInstructions, speechSmokeText } from "../src/agent/speech.js";
+import { hospitalAgentConfig, hospitalDemoInit } from "../src/agent/hospital-demo.js";
 
 describe("ElevenLabs connection setup", () => {
   beforeEach(() => {
@@ -196,6 +197,7 @@ const ENV = {
   ELEVENLABS_HOSPITAL_AGENT_ID: "agent_hosp",
   ELEVENLABS_INTAKE_AGENT_ID: "agent_zh",
   ELEVENLABS_BROWSER_AGENT_ID: "",
+  ELEVENLABS_HAIKU_HOSPITAL_AGENT_ID: "",
 };
 
 describe("bridge", () => {
@@ -293,6 +295,39 @@ describe("bridge", () => {
     await vi.advanceTimersByTimeAsync(100);
     expect(hosp.audioOut().every((b) => b.every((x) => x === 0))).toBe(true);
     handle.stop();
+  });
+
+  it("connects two Haiku ElevenLabs agents with separate case views and distinct voices", async () => {
+    process.env.ELEVENLABS_BROWSER_AGENT_ID = "haiku-browser";
+    process.env.ELEVENLABS_HAIKU_HOSPITAL_AGENT_ID = "haiku-hospital";
+    const c = patientCase();
+    c.facts.push("PRIVATE ADVOCATE STRATEGY"); c.walkaway = 4321;
+    const { handle, adv, hosp } = await start(c.id);
+    expect(adv.url).toBe("wss://signed/haiku-browser");
+    expect(hosp.url).toBe("wss://signed/haiku-hospital");
+    expect(adv.sent[0].custom_llm_extra_body).toEqual({ browser_case_id: c.id });
+    expect(hosp.sent[0].custom_llm_extra_body).toEqual({ hospital_case_id: c.id });
+    expect(adv.sent[0].conversation_config_override.agent.first_message).toBe("");
+    expect(hosp.sent[0].conversation_config_override.agent.first_message).toMatch(/Patient accounts/);
+    expect(hosp.sent[0].conversation_config_override.tts).toMatchObject({ model_id: "eleven_v4_turbo", voice_id: "cjVigY5qzO86Huf0OWal" });
+    expect(hosp.sent[0].conversation_config_override.tts.voice_id).not.toBe(adv.sent[0].conversation_config_override.tts.voice_id);
+    expect(JSON.stringify(hosp.sent[0])).not.toMatch(/PRIVATE ADVOCATE STRATEGY|4321/);
+    handle.stop(); await handle.done;
+  });
+
+  it("refuses all counterparty client tools without changing the case or ending the bridge", async () => {
+    const c = patientCase();
+    const { handle, hosp, adv } = await start(c.id);
+    for (const name of ["log_offer", "accept_offer", "report_outcome"]) {
+      hosp.server({ type: "client_tool_call", client_tool_call: {
+        tool_name: name, tool_call_id: name, parameters: { amount: 2000, outcome: "deal" },
+      } });
+      expect(hosp.sent.at(-1)).toMatchObject({ type: "client_tool_result", is_error: true });
+    }
+    expect(c.offers).toHaveLength(0); expect(c.agreedAmount).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(adv.closed).toBe(false);
+    handle.stop(); await handle.done;
   });
 
   it("translates transcript lines to zh and stores them on the packet", async () => {
@@ -962,6 +997,80 @@ describe("human browser rehearsal", () => {
     const result = await app.inject({ method: "POST", url, headers, payload: {
       stream: true, elevenlabs_extra_body: { browser_case_id: c.id }, messages: [{ role: "user", content: "Hello" }] } });
     expect(result.statusCode).toBe(503); expect(result.body).toContain("ANTHROPIC_API_KEY"); expect(providerFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("Haiku hospital demo gateway", () => {
+  let app: ReturnType<typeof Fastify>;
+  let providerFetch: ReturnType<typeof vi.fn>;
+  const url = "/api/voice/hospital/llm/v1/chat/completions";
+  const headers = { authorization: "Bearer hospital-test" };
+  beforeEach(async () => {
+    for (const [key, value] of Object.entries({ ANTHROPIC_API_KEY: "anthropic-test", VOICE_LLM_TOKEN: "hospital-test",
+      VOICE_LLM_MODEL: "claude-haiku-5-5", VOICE_TTS_MODEL: "", VOICE_VOICE_PRESET: "",
+      ELEVENLABS_HOSPITAL_VOICE_ID: "", ELEVENLABS_ADVOCATE_VOICE_ID: "" })) vi.stubEnv(key, value);
+    providerFetch = vi.fn(async () => new Response(eventStream(spokenEvents)));
+    vi.stubGlobal("fetch", providerFetch);
+    app = Fastify(); await app.register(voiceRoutes);
+  });
+  afterEach(async () => { await app.close(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+  it("provisions a private Haiku/v4 Eric agent without advocate or phone tools", () => {
+    const config = hospitalAgentConfig("https://voice.example", "secret-ref");
+    expect(config.conversation_config.agent.prompt.custom_llm).toMatchObject({
+      url: "https://voice.example/api/voice/hospital/llm/v1", model_id: "claude-haiku-5-5",
+      api_key: { secret_id: "secret-ref" },
+    });
+    expect(config.conversation_config.tts).toMatchObject({ model_id: "eleven_v4_turbo", voice_id: "cjVigY5qzO86Huf0OWal" });
+    expect(config.conversation_config.agent.prompt.tool_ids).toEqual([]);
+    expect(Object.keys(config.conversation_config.agent.prompt.built_in_tools).sort()).toEqual(["end_call", "skip_turn"]);
+    expect(config.platform_settings.auth.enable_auth).toBe(true);
+    expect(config.platform_settings.privacy.record_voice).toBe(false);
+    expect(config.conversation_config.agent.prompt.prompt).not.toContain("You represent a client professionally");
+  });
+
+  it("streams hospital Haiku responses with fresh policy and no private advocate memory", async () => {
+    const c = patientCase();
+    c.facts.push("PRIVATE ADVOCATE STRATEGY"); c.walkaway = 4321;
+    const init = hospitalDemoInit(c);
+    const request = () => app.inject({ method: "POST", url, headers, payload: {
+      stream: true, elevenlabs_extra_body: init.custom_llm_extra_body,
+      messages: [{ role: "system", content: init.conversation_config_override.agent.prompt.prompt },
+        { role: "user", content: "Can you review the duplicate charge?" }],
+      tools: [{ type: "function", function: { name: "skip_turn", parameters: { type: "object" } } }],
+    } });
+    expect((await request()).body).toContain("[DONE]");
+    let sent = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(sent.model).toBe("claude-haiku-5-5");
+    expect(JSON.stringify(sent)).not.toMatch(/PRIVATE ADVOCATE STRATEGY|4321|You represent a client professionally/);
+    expect(sent.messages.at(-1).content[0].text).toBe("Can you review the duplicate charge?");
+    expect(sent.system[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(sent.system.at(-1).cache_control).toBeUndefined();
+    c.bill!.patientBalance = 8765;
+    await request(); sent = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(sent.system.at(-1).text).toContain("8,765");
+    c.patient!.consent = false;
+    await request(); sent = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(sent.system.at(-1).text).toContain("authorization has been revoked");
+    expect(sent.system.at(-1).text).not.toContain("8,765");
+  });
+
+  it("rejects invalid case metadata, cross-role access, mutation tools and missing auth before provider calls", async () => {
+    const c = patientCase();
+    const payload = { stream: true, messages: [{ role: "user", content: "Hello" }], elevenlabs_extra_body: { hospital_case_id: c.id } };
+    for (const extra of [undefined, [], { browser_case_id: c.id }, { voice_job_id: "phone-job", hospital_case_id: c.id }, { hospital_case_id: "bad/id" }])
+      expect((await app.inject({ method: "POST", url, headers, payload: { ...payload, elevenlabs_extra_body: extra } })).statusCode).toBe(400);
+    expect((await app.inject({ method: "POST", url, payload })).statusCode).toBe(401);
+    expect((await app.inject({ method: "POST", url, headers, payload: { ...payload, elevenlabs_extra_body: { hospital_case_id: "missing-case" } } })).statusCode).toBe(404);
+    for (const endpoint of ["/api/voice/browser/llm/v1/chat/completions", "/api/voice/llm/v1/chat/completions"])
+      expect((await app.inject({ method: "POST", url: endpoint, headers, payload })).statusCode).toBe(400);
+    for (const name of ["accept_offer", "log_offer", "report_outcome"])
+      expect((await app.inject({ method: "POST", url, headers, payload: { ...payload,
+        tools: [{ type: "function", function: { name, parameters: { type: "object" } } }],
+      } })).statusCode).toBe(400);
+    c.mode = "clinic";
+    expect((await app.inject({ method: "POST", url, headers, payload })).statusCode).toBe(409);
+    expect(providerFetch).not.toHaveBeenCalled();
   });
 });
 

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/llm.js", () => ({ llmJson: vi.fn(), llmText: vi.fn() }));
 import { llmJson } from "../src/llm.js";
-import { buildScrapeBody, buildSearchBody, mapUrls, scrape, search, answer, brand, CONTEXT_DEV_BASE, CONTEXT_DEV_BUSY, parseRetryAfter } from "../src/research/contextdev.js";
-import { lookupFairPrice, numberAppearsIn } from "../src/research/fairprice.js";
+import { buildScrapeBody, buildSearchBody, mapUrls, scrape, search, answer, brand, brandQueryName, CONTEXT_DEV_BASE, CONTEXT_DEV_BUSY, parseRetryAfter } from "../src/research/contextdev.js";
+import { lookupFairPrice, numberAppearsIn, rateRowsFor, resetRateCache } from "../src/research/fairprice.js";
 import { MEDICARE_SOURCE_DOMAINS, trustOf } from "../src/research/trust.js";
 import { findCharityPolicy, fplPercent, povertyLine } from "../src/research/charity.js";
 import { buildNegotiation } from "../src/research/facts.js";
@@ -33,6 +33,7 @@ const hit = (url: string, title: string, highlights: string[]) => ({ url, title,
 beforeEach(() => {
   process.env.CONTEXT_DEV_API_KEY = "test-key";
   llm.mockReset();
+  resetRateCache();
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -243,7 +244,7 @@ describe("lookupFairPrice", () => {
     mockFetch((r) => (r.url.endsWith("/web/scrape") ? { url: r.body.url, markdown: { requested: true, success: true, data: page } } : { results: [] }));
     llm.mockResolvedValueOnce({ medicareRate: { amount: 356, sourceUrl: "https://www.medicare.gov/procedure-price-lookup/cost/74177/", quote: "Facility Fee $356", kind: "facility", plausible: true } });
     const fp = await lookupFairPrice("74177", "CT abdomen/pelvis");
-    const scrapeCall = calls.find((c) => c.url.endsWith("/web/scrape"))!;
+    const scrapeCall = calls.find((c) => c.body?.url?.includes("medicare.gov"))!;
     expect(scrapeCall.body).toMatchObject({ url: "https://www.medicare.gov/procedure-price-lookup/cost/74177/", formats: { markdown: true }, sharedParams: { mainContentOnly: true, waitFor: 6000 } });
     expect(String(llm.mock.calls[0][1])).toContain("TRUST: official");
     expect(fp.medicareRate).toBe(356);
@@ -261,7 +262,7 @@ describe("lookupFairPrice", () => {
     llm.mockResolvedValueOnce({ medicareRate: { amount: 4000, sourceUrl: "https://www.acep.org/faq", kind: "facility", plausible: false } });
     llm.mockResolvedValueOnce({ medicareRate: { amount: 176.17, sourceUrl: "https://www.cms.gov/lookup", plausible: true } });
     const fp = await lookupFairPrice("99285", "ED visit");
-    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/scrape", "/v1/web/search", "/v1/web/answers", "/v1/web/scrape"]);
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/scrape", "/v1/web/scrape", "/v1/web/search", "/v1/web/answers", "/v1/web/scrape"]); // ACEP table, medicare.gov, search, Answers, the page Answers named
     expect(fp.medicareRate).toBeUndefined(); // 4000 was implausible; Answers claimed 176.17 but the scraped page doesn't print it
     expect(fp.sources).toEqual([]);
   });
@@ -281,6 +282,20 @@ describe("lookupFairPrice", () => {
     expect(fp.sources[0].title).toMatch(new RegExp(`^Medicare hospital facility rate \\(${thisYear}\\) for 99285`));
   });
 
+  it("reads ER codes from the ACEP rate table, scraped once and cut down to the code's rows", async () => {
+    const table = ["# APC FAQ", "", "| Addendum A.-Final OPPS APCs for CY 2026 |", "| APC | CPT | Group Title | SI | Relative Weight | Payment Rate |", "| 5024 | 99284 | Level 4 Type A ED Visits | V | 4.6634 | $426.30 |", "| 5025 | 99285 | Level 5 Type A ED Visits | V | 6.6557 | $608.43 |", "", "| 5693 | 96374 | Ther/proph/diag inj iv push | S | 2.3772 | $217.31 |"].join("\n");
+    expect(rateRowsFor(table, "99285")).toBe("| Addendum A.-Final OPPS APCs for CY 2026 |\n| APC | CPT | Group Title | SI | Relative Weight | Payment Rate |\n| 5025 | 99285 | Level 5 Type A ED Visits | V | 6.6557 | $608.43 |");
+    expect(rateRowsFor(table, "74177")).toBe("");
+    mockFetch((r) => ({ url: r.body.url, markdown: { requested: true, success: true, data: table } }));
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 608.43, sourceUrl: "https://www.acep.org/administration/reimbursement/reimbursement-faqs/apc-ambulatory-payment-classifications-faq", kind: "facility", year: 2026, plausible: true } });
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 217.31, sourceUrl: "https://www.acep.org/administration/reimbursement/reimbursement-faqs/apc-ambulatory-payment-classifications-faq", kind: "facility", year: 2026, plausible: true } });
+    const [a, b] = [await lookupFairPrice("99285", "HC ED VISIT LEVEL 5"), await lookupFairPrice("96374", "IV PUSH")];
+    expect([a.medicareRate, b.medicareRate]).toEqual([608.43, 217.31]);
+    expect(calls).toHaveLength(1); // one scrape serves both codes; no search needed
+    expect(String(llm.mock.calls[0][1])).toContain("TRUST: institutional");
+    expect(String(llm.mock.calls[0][1])).not.toContain("99284");
+  });
+
   it("never scrapes an untrusted page suggested by Answers", async () => {
     mockFetch((r) => {
       if (r.url.endsWith("/web/search")) return { results: [hit("https://blog.example/x", "Blog", ["CPT 99285 pays $171.35"])] };
@@ -288,7 +303,7 @@ describe("lookupFairPrice", () => {
       return emptyMedicareGov(r.body.url);
     });
     const fp = await lookupFairPrice("99285", "ED visit");
-    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/scrape", "/v1/web/search", "/v1/web/answers"]);
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/scrape", "/v1/web/scrape", "/v1/web/search", "/v1/web/answers"]);
     expect(llm).not.toHaveBeenCalled();
     expect(fp.medicareRate).toBeUndefined();
   });
@@ -331,6 +346,28 @@ describe("charity", () => {
     expect(calls.find((c) => c.url.endsWith("/web/search"))?.body.includeDomains).toEqual(["stelsewhere.example"]);
     expect(String(llm.mock.calls[0][1])).not.toContain("advocamed");
     expect(p).toMatchObject({ hasFap: true, freeCareBelowPctFpl: 250 });
+  });
+
+  it("does not cite another hospital's page as this hospital's policy when none is found", async () => {
+    mockFetch((r) => {
+      if (r.url.includes("/web/urls")) return { urls: [] };
+      return { results: [hit("https://othershospital.example.gov/charity", "Charity care", ["Full charity care within 200% of the federal poverty guidelines."])] };
+    });
+    llm.mockResolvedValue({ hasFap: false, freeCareBelowPctFpl: null, discountBelowPctFpl: null, discountPct: null, applicationUrl: null, summary: "The source is a different facility's policy.", sourceUrl: null });
+    const p = await findCharityPolicy("Shoreline Memorial", "https://shoreline.example");
+    expect(p.hasFap).toBe(false);
+    expect(p.sources).toEqual([]);
+  });
+
+  it("brand lookups fit long hospital names into the API's 30-character limit and report validation errors readably", async () => {
+    expect(brandQueryName("Riverside Shore Memorial Hospital")).toBe("Riverside Shore Memorial");
+    expect(brandQueryName("Stanford Health Care")).toBe("Stanford Health Care");
+    expect(brandQueryName("Supercalifragilisticexpialidocious Hospital").length).toBe(30);
+    mockFetch(() => ({ brand: { domain: "riverside.example" } }));
+    await brand({ name: "Riverside Shore Memorial Hospital" });
+    expect(calls[0].body).toEqual({ type: "by_name", name: "Riverside Shore Memorial" });
+    mockFetch(() => ({ __status: 400, error_code: "INPUT_VALIDATION_ERROR", message: [{ path: ["name"], message: "Company name cannot exceed 30 characters" }] }));
+    await expect(search("x")).rejects.toThrow(/400 INPUT_VALIDATION_ERROR\): Company name cannot exceed 30 characters/);
   });
 
   it("reports hasFap:false when nothing is found", async () => {

@@ -23,16 +23,16 @@ describe("web: patient app", () => {
     expect(res.headers["content-type"]).toMatch(/text\/html/);
     const html = res.body;
     expect(html).toContain('<html lang="en">');
-    // the landing ("upload": hero + use your own bill) and the five demo steps
-    for (const screen of ["upload", "bill", "intake", "research", "room", "summary"]) {
+    // The message-first landing opens the analysis workspace and existing case screens.
+    for (const screen of ["analysis", "bill", "intake", "research", "room", "summary"]) {
       expect(html).toContain(`data-screen="${screen}"`);
     }
     for (const id of [
-      "patient-app", "error", "upload-doc", "bill-file", "upload-btn", "demo-btn", "bill-lines", "talk-btn",
+      "patient-app", "error", "message-form", "message-input", "bill-file", "send-btn", "attach-btn", "bill-lines", "talk-btn",
       "intake-form", "f-consent", "research-btn", "research-feed", "mandate-btn", "ticker", "tk-asked", "tk-current",
       "tk-saved", "counterparty", "negotiate-btn", "transcript", "receipts", "fed-card", "settle-btn", "confirm-btn",
       "credential-btn", "loan-btn", "hedge-btn", "financing-btn", "x402-btn", "intake-submit", "to-room", "deal-box",
-      "to-summary", "sum-figs", "outcome-card", "pay-details", "own-bill",
+      "to-summary", "sum-figs", "outcome-card", "pay-details", "agent-timeline", "activity-feed",
     ]) {
       expect(html, id).toContain(`id="${id}"`);
     }
@@ -48,10 +48,12 @@ describe("web: patient app", () => {
     expect(html).toContain('id="research-status"');
     expect(html).toContain('id="research-status-text"');
     // the five-step demo flow, with its exact wording; no "Run everything" in the main flow
-    for (const words of ["Mrs. Lin's bill", "Her information", "Research", "The call", "Summary", "Start the call", "See summary", "Payment &amp; receipts"]) {
+    for (const words of ["Your preferences", "Research", "The call", "Summary", "Start the call", "See summary", "Payment &amp; receipts"]) {
       expect(html, words).toContain(words);
     }
     expect(html).not.toContain('id="run-btn"');
+    expect(html).not.toContain('id="demo-btn"');
+    expect(html).not.toContain("Try the demo bill");
     expect(html).toMatch(/Vellum <span class="accent">negotiates<\/span> your hospital bill\./);
   });
 
@@ -60,7 +62,7 @@ describe("web: patient app", () => {
     expect(res.headers["content-type"]).toMatch(/javascript/);
     const js = res.body;
     for (const path of [
-      "/api/cases", "/api/cases/demo", "/api/intake/signed-url", "/api/eleven/tools/", "/research", "/mandate",
+      "/api/cases", "/api/cases/start", "/api/intake/signed-url", "/api/eleven/tools/", "/research", "/mandate",
       "/negotiate", "/negotiate/stop", "/api/x402/payments", "/ws?case=",
     ]) {
       expect(js, path).toContain(path);
