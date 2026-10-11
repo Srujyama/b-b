@@ -30,6 +30,12 @@ async function app() {
 }
 
 describe("outcome summary template", () => {
+  it("labels a live browser rehearsal as simulated in both spoken languages", () => {
+    const s = buildSummary(realCase({ voiceSimulation: true }));
+    expect(s.simulated).toBe(true);
+    expect(s.en).toMatch(/^Note: this is a simulated call result/);
+    expect(s.zh).toMatch(/^注意：这是模拟通话/);
+  });
   it("speaks only numbers taken from the packet", () => {
     const s = buildSummary(realCase());
     expect(s.preview).toBe(false);

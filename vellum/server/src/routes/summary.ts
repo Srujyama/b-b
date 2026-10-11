@@ -35,6 +35,7 @@ export type OutcomeSummary = {
   /** the same text sentence by sentence (the preview notice, if any, is NOT in lines; see `preview`) */
   lines: { zh: string[]; en: string[] };
   preview: boolean;
+  simulated: boolean;
   numbers: {
     originalBill?: number;
     errorsFound: number;
@@ -131,12 +132,15 @@ export function buildSummary(p: CasePacket): OutcomeSummary {
   // A seeded design-harness case says so out loud, first, in both languages.
   const notice = preview
     ? { zh: "注意：这是界面预览用的示例数据，不是真实的个案。", en: "Note: this is preview data from the design harness, not a real case." }
-    : undefined;
+    : p.voiceSimulation
+      ? { zh: "注意：这是模拟通话的演示结果，没有联系真实医院，也没有达成真实协议。", en: "Note: this is a simulated call result. No real hospital was contacted and no real settlement was agreed." }
+      : undefined;
   return {
     zh: [notice?.zh, ...zh].filter(Boolean).join(""),
     en: [notice?.en, ...en].filter(Boolean).join(" "),
     lines: { zh, en },
     preview,
+    simulated: p.voiceSimulation === true,
     numbers: { originalBill: balance, errorsFound: errors.length, errorAmount: Math.round(errorAmount * 100) / 100, agreedAmount: agreed, saved, savedPct },
     steps: { credential, escrow, loan },
   };

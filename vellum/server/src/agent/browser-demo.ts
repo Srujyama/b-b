@@ -14,7 +14,8 @@ export function browserAgentConfig(baseUrl: string, secretId: string, toolIds: s
       ...phone.conversation_config,
       agent: { ...phone.conversation_config.agent, dynamic_variables: { dynamic_variable_placeholders: { case_id: "" } },
         prompt: { ...phone.conversation_config.agent.prompt, tool_ids: toolIds,
-          custom_llm: { ...phone.conversation_config.agent.prompt.custom_llm, url: `${baseUrl}/api/voice/browser/llm/v1/chat/completions` },
+          // ElevenLabs appends /chat/completions to this OpenAI-compatible base URL.
+          custom_llm: { ...phone.conversation_config.agent.prompt.custom_llm, url: `${baseUrl}/api/voice/browser/llm/v1` },
           built_in_tools: {
             end_call: phone.conversation_config.agent.prompt.built_in_tools.end_call,
             skip_turn: phone.conversation_config.agent.prompt.built_in_tools.skip_turn,
@@ -34,7 +35,7 @@ export function browserDemoInit(packet: CasePacket): ConversationInit {
   init.custom_llm_extra_body = { browser_case_id: packet.id };
   init.conversation_config_override.tts = speechOverride(speech);
   init.conversation_config_override.agent.first_message = "Hello, I'm Vellum, an AI advocate in this simulated billing call. Have I reached patient billing?";
-  init.conversation_config_override.agent.prompt.prompt += `\n\nBROWSER REHEARSAL: The billing representative is a teammate and the account is a demonstration. No hospital has been called. Any tool-recorded agreement is simulated, not a binding settlement or payment authorization. Do not claim any real-world payment or provider confirmation occurred.\n${speechInstructions(speech)}`;
+  init.conversation_config_override.agent.prompt.prompt += `\n\nBROWSER REHEARSAL: The billing representative is a teammate or an AI demo persona and the account is a demonstration. No hospital has been called. Any tool-recorded agreement is simulated, not a binding settlement or payment authorization. Do not claim any real-world payment or provider confirmation occurred.\n${speechInstructions(speech)}`;
   return init;
 }
 

@@ -9,6 +9,8 @@
 // routes/voice.ts, which reports back through notifyToolResult. The call stops on report_outcome,
 // a hang-up (end_call system tool closes the socket), an error, or the timeout.
 import WebSocket from "ws";
+import { opt } from "../env.js";
+import { browserDemoInit } from "./browser-demo.js";
 import { emit, requireCase, updateCase } from "../store.js";
 import type { TranscriptLine } from "../types.js";
 import { handleTool, type ToolResult } from "./tools.js";
@@ -81,6 +83,8 @@ export async function startAgentBridge(
   opts: BridgeOptions = {},
 ): Promise<BridgeHandle> {
   const packet = requireCase(caseId);
+  if (packet.mode === "patient" && packet.patient?.consent !== true)
+    throw Object.assign(new Error("the patient must consent before the rehearsal"), { statusCode: 409 });
   if (bridges.has(caseId)) throw Object.assign(new Error(`a negotiation call is already running for case ${caseId}`), { statusCode: 409 });
 
   const connect = opts.connect ?? ((url: string) => new WebSocket(url) as unknown as WsLike);
@@ -93,7 +97,13 @@ export async function startAgentBridge(
   // Resolve config + signed URLs BEFORE touching state, so a missing key fails loudly with nothing half-open.
   const roles: [VoiceRole, VoiceRole] = ["advocate", counterparty];
   const inits = roles.map((r) => conversationInit(r, packet, caseId));
-  const urls = await Promise.all(roles.map((r) => signed(agentIdFor(r))));
+  const browserAgent = opt("ELEVENLABS_BROWSER_AGENT_ID");
+  if (browserAgent) {
+    inits[0] = browserDemoInit(packet);
+    inits[0].conversation_config_override.agent.first_message = "";
+  }
+  const urls = await Promise.all(roles.map((r) => signed(r === "advocate" && browserAgent ? browserAgent : agentIdFor(r))));
+  updateCase(caseId, { voiceSimulation: true });
 
   let stopped = false;
   let resolveDone!: (v: { reason: StopReason }) => void;
