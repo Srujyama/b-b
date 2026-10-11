@@ -39,7 +39,7 @@ export const I18N = {
     runSteps: { research: "Research fair prices + charity policy", financing: "Lump sum vs payment plan (Gemini Fed odds)", mandate: "Record the patient's mandate on BNB Chain", credential: "Issue the hardship credential on XRPL", negotiate: "Negotiate with the billing office (in English)", loan: "Open a 0% community-fund loan (XRPL)", settle: "Lock the agreed amount in XRPL escrow", recordDeal: "Record the deal on BNB Chain", confirm: "Hospital confirms a $0 balance (escrow release)" },
     flaggedNote: "Flagged for review, not confirmed savings.",
     limitGuard: "Vellum never accepts a price without your approval, and never above the limit you set.",
-    steps: ["Photo", "Your bill", "Your situation", "Fair prices", "Negotiate", "Receipts"],
+    steps: ["Add the bill", "Your bill", "Your situation", "Fair prices", "Negotiate", "Pay and receipts"],
     stepOf: (n, total, name) => `Step ${n} of ${total}: ${name}`,
     uploadTitle: "Take a photo of your hospital bill",
     uploadLede: "Vellum reads it line by line, finds what you were overcharged, and argues it down with the hospital. It talks with you in your own language.",
@@ -61,9 +61,11 @@ export const I18N = {
     consent: "I authorize Vellum to discuss this bill with the hospital and agree to a deal up to my limit.",
     saveIntake: "Save my answers", needConsent: "Vellum can only negotiate for you once you tick the consent box.",
     intakeSaved: (name, max) => `Saved: ${name}, pays at most ${max}.`,
-    researchTitle: "Vellum is checking fair prices",
+    researchTitle: "Fair prices",
     researchLede: "Medicare rates, the hospital's own price file, and the financial-assistance policy it must publish by law.",
-    startResearch: "Start checking", researching: "Checking. Sources appear here as they are found…",
+    startResearch: "Check fair prices", researching: "Researching… this uses cached live data and takes a few seconds.",
+    researchDone: "Fair prices checked. Review the numbers below, then go negotiate.",
+    researchStopped: "Research stopped. See the message above, then try again.",
     sourcesTitle: "Sources found", ladderOpening: "Opening ask", ladderTarget: "Goal", ladderWalkaway: "Your limit",
     mandateLede: "Record your authorization and limit on-chain: the contract rejects any deal above your limit, and anyone can check it.", recordMandate: "Record authorization",
     mandateDone: "Authorization recorded on-chain.", toRoom: "Go negotiate",
@@ -557,7 +559,7 @@ function initPatient() {
     document.querySelectorAll("#steps li").forEach((li, i) => {
       li.className = i < idx ? "done" : i === idx ? "now" : "";
       li.setAttribute("aria-current", i === idx ? "step" : "false");
-      li.title = names[i];
+      li.textContent = names[i];
     });
     $("#step-label").textContent = t("stepOf", idx + 1, SCREENS.length, names[idx]);
   }
@@ -594,7 +596,16 @@ function initPatient() {
       renderFeed();
       return;
     }
-    if (ev.type === "error") return showError(t("failed") + ev.message);
+    if (ev.type === "error") {
+      // one code's lookup failing is not fatal: show it in the research feed, not as a page error
+      if (/^fair price /i.test(ev.message ?? "")) {
+        state.logs.push({ message: ev.message, warn: true });
+        renderFeed();
+        return;
+      }
+      if (state.researching) setResearching(false, "researchStopped");
+      return showError(t("failed") + ev.message);
+    }
     if (!state.packet) return;
     if (mergeEvent(state.packet, ev)) {
       if (ev.type === "deal") $("#room-status").textContent = t("dealAt", usd(ev.amount));
@@ -804,13 +815,33 @@ function initPatient() {
   /* ---- 4 research ---- */
   function renderFeed() {
     const feed = $("#research-feed");
-    feed.replaceChildren(...state.logs.map((l) => h("li", {}, l.message)));
+    feed.replaceChildren(...state.logs.map((l) => h("li", { class: l.warn ? "warn" : null }, l.message)));
+    if (state.researching && state.logs.length) $("#research-status-text").textContent = `${t("researching")} ${state.logs.at(-1).message}`;
     if (state.screen === "research") feed.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  // Research runs in the background: POST /research answers 202 (or, on older servers, the finished
+  // packet), progress arrives as "log" events and the result as a "case" event over /ws.
+  function setResearching(on, doneKey) {
+    state.researching = on;
+    const box = $("#research-status");
+    if (!box) return;
+    if (on) {
+      box.hidden = false;
+      box.classList.remove("done");
+      $("#research-status-text").textContent = t("researching");
+    } else if (doneKey) {
+      box.hidden = false;
+      box.classList.add("done");
+      $("#research-status-text").textContent = t(doneKey);
+    } else box.hidden = true;
+    $("#research-btn").disabled = on;
   }
   function renderResearch() {
     const p = P();
     if (!p) return;
     const researched = ["researched", "mandated", "negotiating", "agreed", "settled"].includes(p.status) || p.fairPrices.length > 0;
+    if (p.status === "researching" && !state.researching) setResearching(true);
+    if (researched && state.researching) setResearching(false, "researchDone");
     const ladder = $("#ladder");
     if (researched) {
       const sources = [...p.fairPrices.flatMap((f) => f.sources ?? []), ...(p.charity?.sources ?? [])];
@@ -848,12 +879,22 @@ function initPatient() {
   const rung = (label, v) => h("div", { class: "rung" }, h("span", {}, label), h("b", {}, usd(v)));
   const receiptList = (rs) => h("ol", { class: "timeline compact" }, ...rs.map(receiptItem));
 
-  $("#research-btn").addEventListener("click", (e) =>
-    busy(e.currentTarget, async () => {
-      if (!state.logs.length) $("#research-feed").replaceChildren(h("li", { class: "empty" }, t("researching")));
-      adopt(await api(`/api/cases/${P().id}/research`, { method: "POST", body: {} }));
-    }),
-  );
+  $("#research-btn").addEventListener("click", async (e) => {
+    state.logs = [];
+    renderFeed();
+    setResearching(true);
+    await busy(e.currentTarget, async () => {
+      try {
+        const res = await api(`/api/cases/${P().id}/research`, { method: "POST", body: {} });
+        if (res?.id && res?.bill) adopt(res); // a full packet: finished (older servers) or the 202 snapshot
+      } catch (err) {
+        setResearching(false);
+        throw err;
+      }
+    });
+    // busy() re-enables the button; keep it off while the background research is still running
+    $("#research-btn").disabled = Boolean(state.researching);
+  });
   $("#mandate-btn").addEventListener("click", (e) =>
     busy(e.currentTarget, async () => {
       const r = await api(`/api/cases/${P().id}/mandate`, { method: "POST", body: {} });
@@ -924,7 +965,7 @@ function initPatient() {
       await api(`/api/cases/${P().id}/run`, { method: "POST", body: { counterparty } });
       $("#room-status").textContent = t("runStarted");
       state.running = true;
-      if (!state.logs.length) $("#research-feed").replaceChildren(h("li", { class: "empty" }, t("researching")));
+      if (!["researched", "mandated", "negotiating", "agreed", "settled"].includes(P().status)) setResearching(true);
     }),
   );
   $("#to-receipts").addEventListener("click", () => show("receipts"));

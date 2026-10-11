@@ -1,7 +1,7 @@
 /* Hospital billing portal (hospital.html). Built on the shared tokens in styles.css: same jade/ink/seal palette,
    but denser and calmer than the patient flow, because this is an office tool used at a desk. */
 
-body.hosp { font-size: 17px; }
+body.hosp { font-size: 15px; }
 .hosp-shell.shell.wide { max-width: 1180px; padding-bottom: 72px; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em; overflow-wrap: anywhere; }
 
@@ -23,7 +23,7 @@ body.hosp { font-size: 17px; }
 }
 
 /* ---- queue ---- */
-#queue-title { font-size: clamp(28px, 6vw, 36px); }
+#queue-title { font-size: 22px; }
 .hosp-lede { font-size: 17px; color: var(--ink-2); margin: 0 0 18px; max-width: 40em; }
 .hosp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .hosp-row {
@@ -35,7 +35,7 @@ body.hosp { font-size: 17px; }
 .hosp-row:hover { border-color: var(--jade); }
 .hosp-row.on { border-left-color: var(--jade); background: var(--jade-soft); }
 .hr-name { font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
-.hr-amt { font: 900 20px/1.2 var(--serif); font-variant-numeric: tabular-nums; }
+.hr-amt { font: 500 20px/1.2 var(--serif); font-variant-numeric: tabular-nums; }
 .hr-meta { grid-column: 1 / -1; font-size: 14px; color: var(--ink-2); }
 .hr-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .hr-tags .pill { font-size: 12px; padding: 1px 8px; }
@@ -47,14 +47,14 @@ body.hosp { font-size: 17px; }
 .hosp-back { display: inline-block; margin: 0 0 12px; font-size: 16px; padding: 8px 0; min-height: 44px; }
 .hosp-back::before { content: "← "; }
 .hosp-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; margin: 0 0 16px; min-width: 0; }
-.hosp-card h3 { font: 600 20px/1.35 var(--serif); margin: 0 0 12px; }
+.hosp-card h3 { font: 600 15px/1.35 var(--sans); margin: 0 0 12px; }
 .hosp-card-title { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .hosp-card-title h3 { margin: 0; }
 
 .hosp-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; }
 .hosp-head-main { min-width: 0; flex: 1 1 240px; }
 @media (max-width: 560px) { .hosp-head .pill { order: -1; margin-top: 0; } }
-.hosp-patient { font: 900 clamp(26px, 5vw, 34px)/1.2 var(--serif); margin: 2px 0 4px; overflow-wrap: anywhere; }
+.hosp-patient { font: 400 22px/1.25 var(--serif); margin: 2px 0 4px; overflow-wrap: anywhere; }
 .hosp-meta { margin: 0; color: var(--ink-2); font-size: 15px; }
 .hosp-head .pill { margin-top: 4px; }
 
@@ -68,9 +68,9 @@ body.hosp { font-size: 17px; }
 
 /* figures: billed -> agreed -> locked */
 .hosp-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
-.fig { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; min-width: 0; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; min-width: 0; }
 .fig dt { font-size: 14px; color: var(--ink-2); font-weight: 600; }
-.fig dd { margin: 2px 0 0; font: 900 clamp(20px, 3.4vw, 28px)/1.2 var(--serif); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.fig dd { margin: 2px 0 0; font: 500 20px/1.25 var(--serif); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .fig dd.struck { color: var(--ink-2); text-decoration: line-through; text-decoration-thickness: 2px; }
 .fig.agreed { border-top-color: var(--jade); }
 .fig.agreed dd { color: var(--jade); }
@@ -98,8 +98,8 @@ body.hosp { font-size: 17px; }
 .hosp-released { position: relative; border: 2px solid var(--jade); overflow: hidden; }
 .hosp-released h3 { padding-right: 96px; }
 .hosp-stamp {
-  position: absolute; top: 14px; right: 16px; padding: 4px 12px; border: 3px solid var(--seal); border-radius: 6px;
-  color: var(--seal); font: 900 20px/1.1 var(--serif); letter-spacing: 0.12em; transform: rotate(6deg); opacity: 0.9;
+  position: absolute; top: 14px; right: 16px; padding: 4px 12px; border-radius: 3px; background: var(--ok-soft);
+  color: var(--ok); font: 600 13px/1.4 var(--sans);
 }
 
 /* escrow + credential */

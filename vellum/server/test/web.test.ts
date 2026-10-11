@@ -36,13 +36,15 @@ describe("web: patient app", () => {
     }
     expect(html).toContain('src="/app.js"');
     expect(html).toContain('href="/styles.css"');
-    // the landing intro is its own module + stylesheet, and the patient flow never depends on it
-    expect(html).toContain('src="/intro.js"');
-    expect(html).toContain('href="/intro.css"');
-    const intro = (await get("/intro.js")).body;
-    expect(intro).toContain("prefers-reduced-motion");
-    expect(intro).toContain("upload-doc");
-    expect(intro).not.toMatch(/\$\s?\d/); // illustrative bars only: no invented dollar figures
+    // no landing intro animation: the page is the flow, plus a short home section
+    expect(html).not.toContain("intro.js");
+    expect(html).not.toContain("intro.css");
+    expect((await app.inject({ method: "GET", url: "/intro.js" })).statusCode).toBe(404);
+    expect(html).toContain('class="home"');
+    for (const sponsor of ["Claude", "ElevenLabs", "Context.dev", "XRPL", "Gemini", "BNB Chain", "AUSD"]) expect(html, sponsor).toContain(sponsor);
+    // research status line for the async (202 + /ws) research step
+    expect(html).toContain('id="research-status"');
+    expect(html).toContain('id="research-status-text"');
   });
 
   it("serves app.js wired to the API contract", async () => {
@@ -163,14 +165,15 @@ describe("web: English-only UI and the shared masthead", () => {
     expect(t("no-such-key")).toBe("no-such-key");
   });
 
-  it("every page carries the same masthead: seal + wordmark and a six-link nav marking the current page", async () => {
+  it("every page carries the same plain masthead: wordmark and a six-link nav marking the current page", async () => {
     for (const page of PAGES) {
       const html = (await get(page)).body;
       expect(html, page).toContain('<html lang="en">');
       expect(html, page).toContain('<header class="masthead">');
-      expect(html, page).toContain('class="seal-mark"');
       expect(html, page).toContain('<span class="wordmark">Vellum</span>');
-      expect(html, page).toMatch(/fonts\.googleapis\.com\/css2\?family=Archivo/);
+      // plain and fast: system fonts only, no decorative seal
+      expect(html, page).not.toContain("fonts.googleapis.com");
+      expect(html, page).not.toContain("seal-mark");
       for (const href of ['href="/"', 'href="/clinic.html"', 'href="/dashboard.html"', 'href="/hospital.html"', 'href="/fund.html"', 'href="/verify.html"']) {
         expect(html, `${page} ${href}`).toContain(href);
       }
@@ -178,6 +181,30 @@ describe("web: English-only UI and the shared masthead", () => {
       expect(html, page).toContain('id="dash-link"');
       expect(html, page).toContain('id="patient-link"');
     }
+  });
+
+  it("every page explains itself first: what it does, and which sponsors it uses", async () => {
+    for (const page of PAGES) {
+      const html = (await get(page)).body;
+      const about = html.indexOf('class="about"');
+      expect(about, page).toBeGreaterThan(-1);
+      expect(html, page).toContain("<b>What this page does:</b>");
+      expect(html, page).toContain("<b>Sponsors used here:</b>");
+      // the explanation comes before the page's own content
+      expect(about, page).toBeLessThan(html.indexOf("<main"));
+    }
+    // honest about what is not live yet
+    expect((await get("/verify.html")).body).toMatch(/not deployed yet/);
+    expect((await get("/")).body).toMatch(/not deployed yet/);
+  });
+
+  it("styles.css is plain: system font stack, no stamps, hard shadows or condensed display type", async () => {
+    const css = (await get("/styles.css")).body;
+    expect(css).toMatch(/--sans: system-ui/);
+    expect(css).not.toMatch(/font-stretch/);
+    expect(css).not.toMatch(/box-shadow: \d+px \d+px 0/); // hard offset shadows
+    expect(css).not.toMatch(/rotate\(-?(?!360)\d+deg\)/); // tilted stamps (the spinner turns 360)
+    expect(css).not.toMatch(/Archivo|Source Serif|IBM Plex/);
   });
 });
 
