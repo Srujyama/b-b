@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>帮帮 社区互助基金</title>
+  <meta name="description" content="帮帮社区医疗债务互助基金：XRPL 开发网上的私有金库、贷款经纪人和零利息分期，全部从账本实时读取。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/fund.css" />
+</head>
+<!-- Community fund dashboard (Ripple lending challenge): broker -> private vault -> depositors -> borrowers.
+     Every number is read live from XRPL devnet via GET /api/fund and /api/fund/donors. Nothing is seeded here. -->
+<body>
+<div id="fund-app" class="shell wide dash fund">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="帮帮 BangBang">
+      <span class="seal" aria-hidden="true">帮</span>
+      <span class="brand-name">帮帮 <small data-i18n="fundBrand">互助基金</small></span>
+    </a>
+    <a class="toplink" href="/dashboard.html" data-i18n="dashLink">个案总览</a>
+    <button id="lang-toggle" class="lang" type="button" aria-label="Switch language">EN</button>
+  </header>
+
+  <div id="error" class="error" role="alert" hidden>
+    <p id="error-text"></p>
+    <button id="error-close" type="button" data-i18n="dismiss">知道了</button>
+  </div>
+
+  <main>
+    <section class="fund-hero">
+      <p class="eyebrow" data-i18n="fundEyebrow">XRPL 开发网 · 实时账本</p>
+      <h1 data-i18n="fundTitle">社区医疗债务互助基金</h1>
+      <p class="lede" data-i18n="fundLede">捐款人把钱存进一个只收经过核实的捐款人的金库，病人从中借零利息分期还医院，再按月还给基金。下面每个数字都是刚从账本上读的。</p>
+      <p id="ledger-line" class="ledger-line" aria-live="polite"></p>
+    </section>
+
+    <p id="loading" class="fine" data-i18n="fundLoading">正在读取 XRPL 开发网……</p>
+
+    <div id="fund-view" hidden>
+      <div id="stats" class="stat-grid" aria-live="polite"></div>
+
+      <!-- the three roles of the lending protocol -->
+      <h2 class="section-h" data-i18n="fundRolesTitle">三个角色</h2>
+      <div class="roles">
+        <section class="card role role-broker" id="role-broker">
+          <div class="role-head"><span class="role-num" aria-hidden="true">1</span><h3 data-i18n="roleBroker">贷款经纪人</h3></div>
+          <p class="role-what"><span data-i18n="roleBrokerWhat">建金库、开贷款。</span> <span id="broker-terms"></span></p>
+          <dl id="broker-facts" class="facts"></dl>
+        </section>
+        <section class="card role role-depositor" id="role-depositor">
+          <div class="role-head"><span class="role-num" aria-hidden="true">2</span><h3 data-i18n="roleDepositor">存款人（捐款人）</h3></div>
+          <p class="role-what" data-i18n="roleDepositorWhat">持有“VerifiedDonor”凭证的人才能存钱，换成金库份额。</p>
+          <ul id="donors" class="people"></ul>
+          <p id="donor-method" class="fine"></p>
+        </section>
+        <section class="card role role-borrower" id="role-borrower">
+          <div class="role-head"><span class="role-num" aria-hidden="true">3</span><h3 data-i18n="roleBorrower">借款人（病人）</h3></div>
+          <p class="role-what" data-i18n="roleBorrowerWhat">有诊所签发的“经济困难”凭证的病人借分期，按月还款。</p>
+          <ul id="borrowers" class="people"></ul>
+        </section>
+      </div>
+
+      <div class="dash-cols">
+        <div class="dash-col">
+          <section class="card" id="vault-card">
+            <div class="card-title">
+              <h2 data-i18n="vaultTitle">金库</h2>
+              <span id="vault-pill" class="pill"></span>
+            </div>
+            <div id="deposit-note" class="deposit-note"></div>
+            <dl id="vault-facts" class="facts"></dl>
+          </section>
+        </div>
+        <div class="dash-col">
+          <section class="card" id="loans-card">
+            <div class="card-title">
+              <h2 data-i18n="loansTitle">贷款</h2>
+              <span id="loans-pill" class="pill review"></span>
+            </div>
+            <ol id="loans" class="loans"></ol>
+          </section>
+
+          <section class="card" id="history-card">
+            <h2 data-i18n="historyTitle">账本上的每一步</h2>
+            <ol id="history" class="timeline fund-history"></ol>
+          </section>
+        </div>
+      </div>
+      <button id="refresh-btn" class="secondary refresh" type="button" data-i18n="refresh">重新读取账本</button>
+    </div>
+  </main>
+</div>
+<script type="module" src="/fund.js"></script>
+</body>
+</html>

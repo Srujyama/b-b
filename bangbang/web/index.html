@@ -139,6 +139,15 @@
     <section class="screen" data-screen="receipts" id="screen-receipts" hidden>
       <h1 data-i18n="receiptsTitle">每一步都有凭证</h1>
       <p class="lede" data-i18n="receiptsLede">钱先放在托管账户里，医院确认您欠款为零才会付出去。</p>
+      <div id="outcome-card" class="outcome" hidden>
+        <h2 data-i18n="outcomeTitle">结果</h2>
+        <p id="outcome-preview" class="outcome-tag" hidden></p>
+        <button id="hear-btn" class="primary hear" type="button"><span class="hear-icon" aria-hidden="true">▶</span><span data-i18n="hearResult">听结果</span></button>
+        <p id="hear-note" class="fine hear-note" role="status" hidden></p>
+        <audio id="hear-audio" preload="none" hidden></audio>
+        <ul id="outcome-zh" class="outcome-zh" lang="zh-CN"></ul>
+        <ul id="outcome-en" class="outcome-en" lang="en"></ul>
+      </div>
       <div class="actions">
         <button id="credential-btn" class="secondary" type="button" data-i18n="credential">证明困难资格</button>
         <button id="settle-btn" class="secondary" type="button" data-i18n="settle">把钱放进托管</button>
