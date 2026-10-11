@@ -194,18 +194,21 @@ button.busy::after {
 
 /* ---- negotiation room ---- */
 .ticker {
-  position: relative; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 6px;
+  position: relative; display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px 12px;
   background: var(--ink); color: var(--bg); border-radius: var(--r-lg); padding: 16px 14px; overflow: hidden;
 }
-.tk { display: grid; gap: 2px; }
+.tk { display: grid; gap: 2px; min-width: 0; }
 .tk span { font-size: 13px; opacity: 0.75; }
-.tk b { font: 900 clamp(18px, 5.4vw, 26px)/1.15 var(--serif); font-variant-numeric: tabular-nums; }
+.tk b { font: 900 clamp(20px, 6vw, 28px)/1.15 var(--serif); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tk.asked b { text-decoration: line-through; text-decoration-thickness: 2px; opacity: 0.7; }
-.tk.current b { font-size: clamp(24px, 7.5vw, 34px); }
-.tk.saved b { color: #8fe0c6; }
-.tk.saved i { font-style: normal; font-weight: 700; color: #8fe0c6; font-size: 15px; }
+.tk.current b { font-size: clamp(26px, 8vw, 36px); }
+/* savings get their own row: it's the number the whole story is about */
+.tk.saved { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.14); padding-top: 10px; padding-right: 96px; }
+.tk.saved b { color: #8fe0c6; font-size: clamp(26px, 8vw, 36px); }
+.tk.saved i { font-style: normal; font-weight: 700; color: #8fe0c6; font-size: 17px; }
 .stamp {
-  position: absolute; right: 10px; bottom: 6px; padding: 4px 10px;
+  position: absolute; right: 14px; bottom: 12px; padding: 4px 10px;
   border: 3px solid var(--seal); color: var(--seal); background: rgba(255, 255, 255, 0.92);
   font: 900 26px/1 var(--serif); letter-spacing: 0.1em; border-radius: 6px;
   transform: rotate(-12deg); animation: stamp 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;

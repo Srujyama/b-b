@@ -55,6 +55,9 @@ export const I18N = {
       CredentialAccept: "您接受资格证明", Batch: "放款和服务费一次完成", VaultDeposit: "社区基金存款",
       LoanSet: "0% 分期贷款", openMandate: "您的授权上链", mandate: "您的授权上链", logEntry: "谈判记录上链",
       deal: "成交记录上链", recordDeal: "成交记录上链", "x402-payment": "帮帮付数据费", odds: "美联储利率概率",
+      "fed-odds": "美联储利率概率", "prediction-hedge-order": "用预测市场对冲利率风险", Payment: "帮帮服务费",
+      LoanPay: "按时还了一期", VaultCreate: "社区医疗基金成立", LoanBrokerSet: "基金开始放贷",
+      CredentialDelete: "旧资格证明作废", AccountSet: "账户设置", TrustSet: "开通美元额度",
     },
   },
   en: {
@@ -106,6 +109,9 @@ export const I18N = {
       CredentialAccept: "Patient accepted credential", Batch: "Release and advocate fee in one batch", VaultDeposit: "Community fund deposit",
       LoanSet: "0% payment-plan loan", openMandate: "Mandate recorded", mandate: "Mandate recorded", logEntry: "Negotiation log entry",
       deal: "Deal recorded", recordDeal: "Deal recorded", "x402-payment": "Data fee paid (x402)", odds: "Fed-decision odds",
+      "fed-odds": "Fed-decision odds", "prediction-hedge-order": "Rate-risk hedge (prediction market)", Payment: "Advocate fee",
+      LoanPay: "Loan installment paid", VaultCreate: "Community medical fund created", LoanBrokerSet: "Fund opened for lending",
+      CredentialDelete: "Old credential revoked", AccountSet: "Account settings", TrustSet: "USD trust line opened",
     },
   },
 };
@@ -154,6 +160,9 @@ export function setupLangToggle() {
 export const $ = (sel, root = document) => root.querySelector(sel);
 const usdFmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
 export const usd = (n) => (typeof n === "number" && Number.isFinite(n) ? usdFmt.format(n) : "—");
+// whole dollars for the big ticker numbers, where cents are noise and cost width on a phone
+const usd0Fmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+export const usd0 = (n) => (typeof n === "number" && Number.isFinite(n) ? usd0Fmt.format(n) : "—");
 
 /** Tiny hyperscript: h("p", {class: "x"}, "text", child). Strings are text nodes (never HTML). */
 export function h(tag, attrs = {}, ...kids) {
@@ -482,10 +491,10 @@ export function createRoom({ getPacket, getAsked }) {
     const asked = getAsked();
     const theirs = [...p.offers].reverse().find((o) => o.by !== "advocate");
     const current = p.agreedAmount ?? theirs?.amount ?? p.offers.at(-1)?.amount;
-    document.getElementById("tk-asked").textContent = usd(asked);
-    document.getElementById("tk-current").textContent = usd(current);
+    document.getElementById("tk-asked").textContent = usd0(asked);
+    document.getElementById("tk-current").textContent = usd0(current);
     const saved = typeof asked === "number" && typeof current === "number" ? asked - current : undefined;
-    document.getElementById("tk-saved").textContent = saved != null && saved > 0 ? usd(saved) : "—";
+    document.getElementById("tk-saved").textContent = saved != null && saved > 0 ? usd0(saved) : "—";
     document.getElementById("tk-pct").textContent = saved != null && saved > 0 && asked > 0 ? `${Math.round((saved / asked) * 100)}%` : "";
     const stamp = document.getElementById("deal-stamp");
     if (stamp) stamp.hidden = p.agreedAmount == null;
