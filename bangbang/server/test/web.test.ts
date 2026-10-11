@@ -74,7 +74,7 @@ describe("web: clinic page", () => {
   it("serves clinic.html with the appeal flow and the shared room", async () => {
     const html = (await get("/clinic.html")).body;
     for (const id of [
-      "clinic-app", "claim-demo-btn", "claim-form", "criteria", "appeal-letter", "copy-letter", "insurer-room",
+      "clinic-app", "claim-demo-btn", "claim-demo-sleep-btn", "claim-form", "criteria", "appeal-letter", "copy-letter", "insurer-room",
       "call-insurer-btn", "transcript", "tk-current", "error",
     ]) {
       expect(html, id).toContain(`id="${id}"`);

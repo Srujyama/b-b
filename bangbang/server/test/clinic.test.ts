@@ -89,6 +89,21 @@ describe("fixture", () => {
   });
 });
 
+describe("second demo denial (sleep study)", () => {
+  const sleep: ClaimCase = JSON.parse(readFileSync(new URL("../fixtures/denial-sleep.json", import.meta.url), "utf8")).claim;
+  it("is a valid, different denial whose notes justify skipping the home test", () => {
+    expect(validateClaim(sleep)).toBe(sleep);
+    expect(sleep.procedure.code).toBe("95810");
+    expect(sleep.payer).not.toBe(claim.payer);
+    expect(sleep.denialReason).toMatch(/home sleep apnea test/i);
+    expect(sleep.clinicalNotes).toMatch(/ejection fraction 30%/);
+    expect(sleep.clinicalNotes).toMatch(/continuous home oxygen/);
+    expect(sleep.clinicalNotes).toMatch(/medical interpreter/);
+    expect(sleep.policy).toBeUndefined(); // looked up live, never seeded
+    expect(sleep.criteriaMet).toBeUndefined();
+  });
+});
+
 describe("policy lookup (pure parts)", () => {
   it("maps payers to their policy domains", () => {
     expect(payerDomains("Aetna Better Health")).toEqual(["aetna.com"]);
@@ -237,6 +252,20 @@ describe("routes", () => {
 
     const bad = await app.inject({ method: "POST", url: "/api/claims", payload: { claim: { payer: "Aetna" } } });
     expect(bad.statusCode).toBe(400);
+    await app.close();
+  });
+  it("POST /api/claims/demo picks a named demo denial and rejects unknown names", async () => {
+    delete process.env.CONTEXT_DEV_API_KEY; // the fixture choice is validated before any lookup
+    const { buildApp } = await import("../src/index.js");
+    const app = await buildApp();
+    for (const fixture of ["nope", "toString", "__proto__"]) {
+      const res = await app.inject({ method: "POST", url: "/api/claims/demo", payload: { fixture } });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toMatch(/mri, sleep/);
+    }
+    // a valid name reaches the live lookup (503 here only because Context.dev has no key in tests)
+    const ok = await app.inject({ method: "POST", url: "/api/claims/demo", payload: { fixture: "sleep" } });
+    expect(ok.statusCode).toBe(503);
     await app.close();
   });
   it("returns 503 when Context.dev is not configured", async () => {

@@ -62,3 +62,10 @@ That's expected, not a bug.
 - Testnets only. Never commit `.env` or private keys (the repo is **public**).
 - Small PRs or pushes per module. Pull often: Claude agents are pushing modules as they finish.
 - The build plan/state is `THINKPAD.md` at the repo root (managed by Claude; read it, don't hand-edit task lines).
+
+## Deploy (live link for the submission)
+
+`bangbang/Dockerfile` + `bangbang/render.yaml`. On Render: **New → Blueprint → this repo**, then paste the keys from
+the shared `.env` into the service's Environment tab (never into git). Any Docker host works:
+`docker build -t bangbang bangbang && docker run -p 8787:8787 --env-file bangbang/server/.env bangbang`.
+Single instance only: cases and escrow fulfillments live in memory.

@@ -61,7 +61,12 @@ a { color: var(--jade); text-underline-offset: 3px; }
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
   transform: rotate(-4deg);
 }
-.toplink { font-size: 15px; color: var(--ink-2); }
+.toplink { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+.lang, .brand-name small { white-space: nowrap; }
+@media (max-width: 420px) {
+  .brand-name small { display: block; margin: 4px 0 0; font-size: 12px; }
+  .topbar { gap: 10px; }
+}
 .lang {
   font: 600 15px/1 var(--sans); padding: 10px 14px; min-height: 44px;
   border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer;
