@@ -7,6 +7,7 @@ import { need, opt } from "../env.js";
 import { readVoiceMemory } from "./shared-context.js";
 import { CallJobStore } from "./calls.js";
 import { resolveSpeechProfile, speechInstructions, type SpeechProfile } from "./speech.js";
+import { browserDemoMemory } from "./browser-demo.js";
 
 export const voiceModel = () => opt("VOICE_LLM_MODEL", "claude-haiku-5-5")!;
 export function voiceError(message: string, statusCode = 400): Error & { statusCode: number } {
@@ -21,7 +22,8 @@ export function checkBearer(header: string | undefined, env: string): void {
 type Message = { role: string; content?: unknown; tool_call_id?: string; tool_calls?: {
   id: string; type: string; function: { name: string; arguments: string };
 }[] };
-export type CompletionRequest = { stream: boolean; messages: Message[]; voice_job_id?: string; tools?: {
+export type CompletionRequest = { stream: boolean; messages: Message[]; voice_job_id?: string;
+  elevenlabs_extra_body?: { voice_job_id?: string; browser_case_id?: string }; tools?: {
   type: string; function: { name: string; description?: string; parameters: Record<string, unknown> };
 }[] };
 
@@ -141,12 +143,25 @@ export async function* completionChunks(body: ReadableStream<Uint8Array>, onFirs
 }
 
 export async function haikuRoutes(app: FastifyInstance) {
-  app.post<{ Body: CompletionRequest }>("/api/voice/llm/v1/chat/completions", { bodyLimit: 256 * 1024 }, async (req, reply) => {
+  for (const browser of [false, true]) app.post<{ Body: CompletionRequest }>(browser
+    ? "/api/voice/browser/llm/v1/chat/completions" : "/api/voice/llm/v1/chat/completions", { bodyLimit: 256 * 1024 }, async (req, reply) => {
     checkBearer(req.headers.authorization, "VOICE_LLM_TOKEN");
     let speech: SpeechProfile;
     let memory;
-    if (req.body?.voice_job_id) {
-      const job = new CallJobStore(need("VOICE_JOB_DIR")).get(req.body.voice_job_id);
+    const extra = req.body?.elevenlabs_extra_body;
+    if (extra != null && (typeof extra !== "object" || Array.isArray(extra))) throw voiceError("Invalid custom LLM metadata");
+    const jobId = extra?.voice_job_id ?? req.body?.voice_job_id;
+    if (jobId !== undefined && (typeof jobId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(jobId)))
+      throw voiceError("Invalid voice job ID");
+    if (extra?.voice_job_id && req.body?.voice_job_id && extra.voice_job_id !== req.body.voice_job_id)
+      throw voiceError("Conflicting voice job IDs");
+    if (!browser && extra?.browser_case_id) throw voiceError("Browser cases must use the browser rehearsal endpoint");
+    if (browser) {
+      if (jobId) throw voiceError("Phone jobs cannot use the browser rehearsal endpoint");
+      memory = browserDemoMemory(extra?.browser_case_id);
+      speech = resolveSpeechProfile();
+    } else if (jobId) {
+      const job = new CallJobStore(need("VOICE_JOB_DIR")).get(jobId);
       if (!job) throw voiceError("Unknown voice job", 404);
       // Old journal entries were dispatched with Flash, before per-job profiles existed.
       speech = job.speech ?? { model: "eleven_flash_v2_5", voiceId: "legacy", voiceName: "Legacy call voice" };

@@ -3,6 +3,13 @@
 **Merging or resuming this work? Read [MERGE_HANDOFF.md](./MERGE_HANDOFF.md) first.** It records the
 agreed architecture, what is implemented, the exact partner-side wiring, and the remaining live checks.
 
+**Current demo choice:** a teammate speaks into the browser, with Haiku 5.5 + Eleven v4 Turbo.
+Use [BROWSER_DEMO.md](./BROWSER_DEMO.md) for the free HTTPS gateway, separate browser agent,
+exact product-owner patch and outstanding Claude-key requirement. Twilio and real phone calls are
+postponed. Browser turns read the current shared CasePacket directly. The phone architecture below
+is retained for later integration. The [medical-bill playbook](./MEDICAL_BILL_PLAYBOOK.md) explains
+the practical workflow and evidence needed before a real client call.
+
 The existing Fastify server remains the control plane. The orchestrator owns tasks and case memory;
 the voice worker performs one authorized phone task. Haiku 5.5 produces streamed text and tool calls,
 Eleven v4 Turbo handles speech by default, and ElevenLabs' native Twilio integration places the call.

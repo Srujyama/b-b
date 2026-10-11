@@ -108,7 +108,7 @@ export function outboundAgentConfig(baseUrl: string, secretId: string) {
       conversation: { max_duration_seconds: 600 },
     },
     platform_settings: {
-      overrides: { conversation_config_override: {
+      overrides: { custom_llm_extra_body: true, conversation_config_override: {
         agent: { prompt: { prompt: true }, first_message: true, language: true },
         tts: { model_id: true, voice_id: true, stability: true, speed: true },
       } },
