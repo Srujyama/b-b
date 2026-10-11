@@ -20,7 +20,7 @@ exposed through this address. `/health` confirms ingress availability, not model
 
 `browser_case_id` travels as SDK `customLlmExtraBody`, then ElevenLabs
 `custom_llm_extra_body`, then `elevenlabs_extra_body` at our endpoint. Each turn reads the current
-`CasePacket` from the same in-process store the pipeline uses: facts, balance, offer ceiling, recent
+`CasePacket` from the same shared server store the pipeline uses: facts, balance, offer ceiling, recent
 offers, and consent. It does not fork memory or call an independent planning agent. The browser
 retains conversation history at ElevenLabs. One shared Anthropic key is sufficient; it does not
 make separate models share prompt caches or hidden reasoning. The real-phone `VoiceContextSource`
@@ -77,7 +77,7 @@ All commands below run from `bangbang/server`. Keep secrets only in the ignored 
    node --import tsx src/agent/public-gateway.ts
    ```
 
-3. Start a free temporary tunnel. This service terminates TLS and can see gateway credentials and
+3. For the first provisioning only, start a free temporary tunnel. This service terminates TLS and can see gateway credentials and
    synthetic conversation text; the user explicitly approved it for this demo. It is not a production
    medical-data deployment. Use a dedicated known-hosts file and no personal SSH credentials:
 
@@ -91,7 +91,8 @@ All commands below run from `bangbang/server`. Keep secrets only in the ignored 
 
 4. Copy the emitted **HTTPS origin** into local `.env` as `PUBLIC_URL`. Free domains are temporary:
    disconnects, sleep or a later tunnel allocation may change them. Keep all three processes and the
-   computer running for the demo. No scheduled restart or stable hosting is installed.
+   computer running for the demo. Free domains can also rotate while connected. Use the launcher
+   below after the first agent provisioning to keep its endpoint synchronized. No stable hosting is installed.
 5. Provision or update the dedicated agent; save both printed IDs to `.env`:
 
    ```sh
@@ -101,7 +102,18 @@ All commands below run from `bangbang/server`. Keep secrets only in the ignored 
    This creates/updates a separate agent and client tools. It never dials a number. Reuse the saved
    secret/agent IDs when updating a changed URL to avoid duplicates. Restart the product server after
    saving a new agent ID or adding the shared Claude key; the gateway must restart after token changes.
-6. After D applies the patch and the shared Claude key is present, open `http://localhost:8787`, load a
+6. Once the browser agent and secret IDs are saved, stop the manual SSH process and start the
+   rotation-aware launcher instead (keep the product server and gateway running):
+
+   ```sh
+   node --import tsx src/agent/demo-tunnel.ts
+   ```
+
+   It updates the existing agent endpoint and local `PUBLIC_URL` whenever the provider allocates a
+   new domain, preserving other environment settings. It prints only the public origin. This is the
+   launcher now used locally. Keep it running; if SSH disconnects, restart it. A domain change can
+   interrupt an active turn, so check the public `/health` and restart the rehearsal if needed.
+7. After D applies the patch and the shared Claude key is present, open `http://localhost:8787`, load a
    synthetic case with consent, select **Human / 真人账单员**, and start the conversation. The teammate
    speaks through that browser's microphone with headphones. The public gateway URL is not the UI.
 
