@@ -21,7 +21,7 @@ needed by Branch A. Do not deploy this feature branch directly.
 
 Both public `/health` endpoints returned 200 during verification. The founder has now imported the
 AI settings: Fly reports `anthropic:true`, `contextDev:true`, `elevenlabs:true`. The temporary tunnel
-is being retired in favor of the Fly endpoint. The code in this PR still needs the normal reviewed
+is stopped and the ElevenLabs agent now targets the Fly endpoint. The code in this PR still needs the normal reviewed
 main release before hosted transcript/context verification can pass. Local live tests used real
 provider requests and synthetic patient data; configuration health is not a full hosted call test.
 
@@ -130,6 +130,16 @@ Live results on this Mac, October 11:
 This is a cross-stream integration PR: minimal edits to `web/`, shared `types.ts`, outcome summaries
 and their tests are included for D to review alongside the A-owned voice code. No wallet, payment,
 Fly workflow, package, lockfile or shared LLM-helper changes are made.
+
+## Hosted verification before this PR is merged
+
+The actual judge frontend created a synthetic case through Vercel -> Fly in 26.8 seconds, preserving
+17 lines and the $14,296 balance. With the local gateway and tunnel stopped, the same synthetic audio
+test recognized the hospital input, received a Haiku reply and 965,846 PCM bytes from ElevenLabs;
+first reply audio arrived 934 ms after input ended. This proves the hosted voice transport, not the
+new transcript endpoint: the smoke test correctly exited nonzero with `saved:0` because the deployed
+main still lacked this PR's transcript route. Rerun after the reviewed merge; do not count that partial
+run as a complete hosted pass. PR CI (server, ownership, secret scan and Vercel preview) passed.
 
 ## Full-pipeline findings
 
