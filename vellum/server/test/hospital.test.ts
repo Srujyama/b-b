@@ -282,6 +282,38 @@ function pipelineDeps(over: Partial<PipelineDeps> = {}) {
   return { deps, calls };
 }
 
+describe("$0 outcome (write-off)", () => {
+  it("no escrow: /settle and /loan say why, the portal confirms the zero balance and the case settles", async () => {
+    const c = agreedCase({ agreedAmount: 0 });
+    const settle = await app.inject({ method: "POST", url: `/api/cases/${c.id}/settle` });
+    expect(settle.statusCode).toBe(409);
+    expect(settle.json().error).toMatch(/\$0 \(a write-off\)/);
+    const loan = await app.inject({ method: "POST", url: `/api/cases/${c.id}/loan`, payload: {} });
+    expect(loan.statusCode).toBe(409);
+    expect(loan.json().error).toMatch(/nothing to finance/);
+
+    const listed = (await app.inject({ method: "GET", url: "/api/hospital/cases" })).json().find((x: any) => x.id === c.id);
+    expect(listed.stage).toBe("awaiting_confirmation");
+    const ev = events(c.id);
+    const res = await app.inject({ method: "POST", url: `/api/hospital/cases/${c.id}/confirm-zero-balance`, payload: { attest: true, staffName: "Dana" } });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().receipts).toEqual([]);
+    expect(res.json().case.stage).toBe("released");
+    expect(requireCase(c.id).status).toBe("settled");
+    expect(releaseOnZeroBalance).not.toHaveBeenCalled();
+    expect(ev.some((e) => e.type === "log" && /written off/.test(e.message))).toBe(true);
+    const again = await app.inject({ method: "POST", url: `/api/hospital/cases/${c.id}/confirm-zero-balance`, payload: { attest: true } });
+    expect(again.statusCode).toBe(409);
+  });
+
+  it("a paid deal still needs its escrow before the portal can confirm", async () => {
+    const c = agreedCase({ agreedAmount: 4000 });
+    const res = await app.inject({ method: "POST", url: `/api/hospital/cases/${c.id}/confirm-zero-balance`, payload: { attest: true } });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toMatch(/no open escrow/);
+  });
+});
+
 describe("pipeline confirm:\"portal\"", () => {
   const researched = () =>
     agreedCase({ status: "agreed", target: 500, opening: 400, walkaway: 2500, facts: ["f"] });

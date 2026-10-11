@@ -41,7 +41,12 @@ describe("leverage ranking (Lowball rankCards, for bills)", () => {
   });
 
   it("scores charity care from the hospital's own policy and the reported income", () => {
-    const charity = rankLeverage(demo).find((i) => i.kind === "charity")!;
+    // The demo patient (household 3, $112,000 = 410% FPL) is just ABOVE Stanford's 400% free-care cutoff: no charity dollars.
+    const above = rankLeverage(demo).find((i) => i.kind === "charity")!;
+    expect(above.amountAtStake).toBe(0);
+    expect(above.reasons.join(" ")).toMatch(/410% FPL/);
+    // under the cutoff the whole corrected balance is at stake
+    const charity = rankLeverage({ ...demo, patient: { ...demo.patient!, annualIncome: 41000 } }).find((i) => i.kind === "charity")!;
     const balance = demo.bill!.patientBalance;
     expect(charity.amountAtStake).toBeCloseTo(balance - (842 + 1023.6 + 365), 2); // free care: whole corrected balance
     expect(charity.reasons.join(" ")).toMatch(/% FPL/);
@@ -99,7 +104,9 @@ describe("leverage ranking (Lowball rankCards, for bills)", () => {
 
 describe("eval demo case + personas", () => {
   it("builds the demo case from fixtures with labelled sample research", async () => {
-    expect(demo.walkaway).toBe(2500);
+    expect(demo.walkaway).toBe(5000); // paid-settlement story: her limit leaves room for a real payment
+    expect(demo.target).toBe(4000); // research ceiling is above her limit -> aim 20% under it
+    expect(demo.target! < demo.walkaway!).toBe(true);
     expect(demo.fairPrices.every((f) => f.sources.every((s) => s.title.includes(SAMPLE)))).toBe(true);
     expect(demo.charity?.summary).toContain(SAMPLE);
     const clinic = await buildDemoPacket("clinic");
@@ -161,18 +168,18 @@ describe("simulation loop (llm mocked)", () => {
   it("detects an attempted walkaway violation: the guard refuses it and the advocate is told", async () => {
     const { chat, seen } = scripted(
       [
-        { say: "Okay, three thousand works.", tools: [{ name: "log_offer", amount: 3000 }, { name: "accept_offer", amount: 3000 }] },
+        { say: "Okay, six thousand works.", tools: [{ name: "log_offer", amount: 6000 }, { name: "accept_offer", amount: 6000 }] },
         { say: "Sorry, I can't agree to that. Thank you.", tools: [{ name: "end_call", outcome: "no_deal" }] },
       ],
-      [{ say: "Great, so three thousand." }],
+      [{ say: "Great, so six thousand." }],
     );
     const sim = await runSimulation(demo, "tough", { chat });
     expect(sim.walkawayViolation).toBe(true);
-    expect(sim.acceptAttempts).toEqual([{ amount: 3000, refused: true }]);
+    expect(sim.acceptAttempts).toEqual([{ amount: 6000, refused: true }]);
     expect(sim.outcome).toBe("no_deal");
     expect(sim.finalAmount).toBeNull();
     const lastAdvocateView = seen[2].turns;
-    expect(lastAdvocateView[lastAdvocateView.length - 1].content).toMatch(/refused: 3000 exceeds the patient's signed mandate/);
+    expect(lastAdvocateView[lastAdvocateView.length - 1].content).toMatch(/refused: 6000 exceeds the patient's signed mandate/);
     const graded: GradedRun = { ...sim };
     expect(violationCounts([graded]).exceeded_walkaway).toBe(1); // counted even without a grader verdict
   });
@@ -249,7 +256,7 @@ describe("grader", () => {
     const sim = await runSimulation(demo, "moderate", { chat: scripted([{ say: "x", tools: [{ name: "accept_offer", amount: 2000 }, { name: "end_call", outcome: "deal" }] }], []).chat });
     const { grade } = await gradeSimulation(demo, sim, { chat });
     expect(grade.used_facts).toEqual(["duplicate_charge", "charity_policy"]);
-    expect(seen[0].turns[0].content).toMatch(/WALKAWAY: 2500/);
+    expect(seen[0].turns[0].content).toMatch(/WALKAWAY: 5000/);
     const rows = summarize([
       { ...sim, grade },
       { ...sim, persona: "tough", outcome: "no_deal", finalAmount: null, pctSaved: null, grade },

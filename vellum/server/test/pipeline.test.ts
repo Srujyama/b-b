@@ -200,6 +200,17 @@ describe("runPipeline", () => {
     expect(ev.some((e) => e.type === "error" && /mandate/i.test(e.message))).toBe(true);
   });
 
+  it("BNB not live: the mandate step is skipped (not a failure) and the deal still settles on XRPL", async () => {
+    const c = patientCase();
+    const { deps, calls } = fakeDeps({ bnbConfigured: () => false });
+    const run = await runPipeline(c.id, deps);
+    expect(run.status).toBe("done");
+    expect(calls).not.toContain("mandate");
+    expect(run.steps.find((s) => s.name === "mandate")).toMatchObject({ status: "skipped", message: expect.stringMatching(/not live/) });
+    expect(run.steps.filter((s) => s.status === "failed")).toEqual([]);
+    expect(calls).toContain("settle");
+  });
+
   it("a call without a deal fails the run and nothing settles", async () => {
     const c = patientCase();
     const { deps, calls } = fakeDeps({ negotiate: async () => {} });
@@ -207,7 +218,81 @@ describe("runPipeline", () => {
     expect(run.status).toBe("failed");
     expect(run.error).toMatch(/without a deal/);
     expect(calls).not.toContain("settle");
-    expect(requireCase(c.id).status).toBe("failed");
+    // never stuck in "negotiating": back to researched so the user can simply run it again
+    expect(requireCase(c.id).status).toBe("researched");
+    const ev = events(c.id);
+    const retry = await runPipeline(c.id, fakeDeps().deps);
+    expect(retry.status).toBe("done");
+    expect(retry.steps.find((s) => s.name === "research")?.status).toBe("skipped");
+    expect(requireCase(c.id).status).toBe("settled");
+    expect(ev.some((e) => e.type === "deal")).toBe(true);
+  });
+
+  it("a call that errors (e.g. voice credits exhausted) also returns the case to researched with a retry hint", async () => {
+    const c = patientCase();
+    const ev = events(c.id);
+    const { deps } = fakeDeps({
+      negotiate: async (id) => {
+        requireCase(id).status = "negotiating";
+        throw new Error("ElevenLabs quota exceeded");
+      },
+    });
+    const run = await runPipeline(c.id, deps);
+    expect(run.status).toBe("failed");
+    expect(requireCase(c.id).status).toBe("researched");
+    expect(ev.some((e) => e.type === "log" && /back to researched/.test(e.message))).toBe(true);
+  });
+
+  it("opens the 0% loan when her wallet cannot cover the deal, even if Gemini says lump sum", async () => {
+    const c = patientCase();
+    const { deps, calls } = fakeDeps({ fundConfigured: () => true, patientWalletUsd: async () => 500 });
+    const run = await runPipeline(c.id, deps);
+    expect(run.status).toBe("done");
+    expect(calls.indexOf("loan")).toBeGreaterThan(-1);
+    expect(calls.indexOf("loan")).toBeLessThan(calls.indexOf("settle"));
+    // a full wallet + lump-sum advice: no loan
+    const c2 = patientCase();
+    const full = fakeDeps({ fundConfigured: () => true, patientWalletUsd: async () => 50_000 });
+    await runPipeline(c2.id, full.deps);
+    expect(full.calls).not.toContain("loan");
+    expect(getRun(c2.id)?.steps.find((s) => s.name === "loan")?.message).toMatch(/wallet covers/);
+  });
+
+  it("a $0 deal is a write-off: no loan, no escrow, the hospital confirms and the case settles", async () => {
+    const c = patientCase();
+    const { deps, calls } = fakeDeps({
+      negotiate: async (id) => {
+        handleTool(id, "accept_offer", { amount: 0 });
+      },
+      patientWalletUsd: async () => 0,
+      fundConfigured: () => true,
+      financing: async (id) => (requireCase(id).financing = { recommendation: "payment_plan", reason: "x", sources: [] }),
+      confirm: async (id) => {
+        calls.push("confirm");
+        requireCase(id).status = "settled";
+      },
+    });
+    const run = await runPipeline(c.id, deps);
+    expect(run.status).toBe("done");
+    expect(calls).not.toContain("loan");
+    expect(calls).not.toContain("settle");
+    expect(calls).toContain("recordDeal:0:write-off (no escrow)");
+    expect(calls).toContain("confirm");
+    expect(run.steps.find((s) => s.name === "settle")?.message).toMatch(/write-off/);
+    expect(run.steps.filter((s) => s.status === "failed")).toEqual([]);
+    expect(requireCase(c.id).status).toBe("settled");
+  });
+
+  it("a $0 deal in portal mode waits for the hospital to confirm (no escrow to watch)", async () => {
+    const c = patientCase();
+    const { deps } = fakeDeps({ negotiate: async (id) => void handleTool(id, "accept_offer", { amount: 0 }) });
+    const p = runPipeline(c.id, deps, { confirm: "portal", hospitalTimeoutMs: 2000 });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(getRun(c.id)?.awaiting).toBe("hospital-portal");
+    requireCase(c.id).status = "settled";
+    const run = await p;
+    expect(run.status).toBe("done");
+    expect(run.steps.find((s) => s.name === "confirm")?.status).toBe("ok");
   });
 
   it("opens the 0% loan before the escrow when Gemini says payment plan and the fund exists", async () => {

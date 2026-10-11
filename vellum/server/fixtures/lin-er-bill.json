@@ -6,11 +6,11 @@
     { "kind": "unbundling", "code": "80053", "amountAtStake": 365.0, "why": "Creatinine 82565, BUN 84520 and glucose 82947 billed separately although all are inside the comprehensive metabolic panel 80053 billed the same day." }
   ],
   "patient": {
-    "name": "Lin Mei (林美)",
+    "name": "Lin Mei",
     "language": "zh",
     "householdSize": 3,
-    "annualIncome": 41000,
-    "maxPay": 2500,
+    "annualIncome": 112000,
+    "maxPay": 5000,
     "consent": true
   },
   "statementLines": [

@@ -238,7 +238,7 @@ describe("keyless demo path (no ANTHROPIC_API_KEY)", () => {
     const c = res.json();
     expect(mocked).not.toHaveBeenCalled();
     expect(c.status).toBe("audited");
-    expect(c.patient).toMatchObject({ name: fixture.patient.name, maxPay: 2500, consent: true });
+    expect(c.patient).toMatchObject({ name: fixture.patient.name, maxPay: fixture.patient.maxPay, consent: true });
     // exactly what the deterministic reader produces from the fixture text (real parse, not canned data)
     expect(c.bill).toEqual({ ...parseStatementText(statement), reader: "builtin" });
     // the marker is stored on the case, not only sent as a WebSocket log line

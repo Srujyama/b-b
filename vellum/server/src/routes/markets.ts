@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { addReceipt, emit, requireCase, updateCase } from "../store.js";
 import { fetchFedOdds, fetchPolicyRate, financingAdvice, impliedRateChangeBps, placeHedge } from "../markets/gemini.js";
 import { jsonErrors, upstream } from "./errors.js";
+import type { FinancingAdvice } from "../types.js";
 
 type FinancingBody = {
   lumpSumDiscountPct?: number; // prompt-pay discount the hospital offers for paying in full now
@@ -60,8 +61,21 @@ export default async function marketsRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string }; Body: FinancingBody | null }>("/api/cases/:id/financing", async (req) => {
     const c = requireCase(req.params.id);
     const s = scenario(req.body);
+    // The amount she will actually pay: the deal once agreed, the research target before. $0 is a real answer
+    // (a write-off), not a missing one, so test for null rather than truthiness.
     const balance = c.agreedAmount ?? c.target ?? c.bill?.patientBalance;
-    if (!balance) throw Object.assign(new Error("case has no agreedAmount, target or bill balance yet"), { statusCode: 409 });
+    if (balance == null) throw Object.assign(new Error("case has no agreedAmount, target or bill balance yet"), { statusCode: 409 });
+    if (balance <= 0) {
+      const advice: FinancingAdvice = {
+        recommendation: "lump_sum",
+        reason: "Nothing to finance: the expected amount owed is $0 (a full write-off), so no payment plan is needed.",
+        reasonZh: "预计您不用付钱（全额减免），所以不需要分期。",
+        sources: [],
+      };
+      updateCase(c.id, { financing: advice });
+      emit(c.id, { type: "log", message: advice.reason, messageZh: advice.reasonZh });
+      return advice;
+    }
     const [odds, rate] = await marketInputs();
     const advice = financingAdvice(balance, s.lumpSumDiscountPct, s.planMonths, s.planAprPct, {
       odds,
