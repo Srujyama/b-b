@@ -53,8 +53,8 @@ required authorization, correct a claim, or obtain a collections hold; it need n
 | Collections notice or legal deadline | Preserve notice and route for appropriate review | That informal negotiation pauses every deadline |
 
 For the CMS self-pay dispute route, check the actual requirements: care without using insurance,
-advance notice of that choice, a qualifying good faith estimate, initial bill within 120 calendar days,
-and at least $400 above one provider/facility's estimate. There is a $25 filing fee. This is a screening
+advance notice of that choice, a qualifying good faith estimate, filing within 120 calendar days of
+the initial bill, and at least $400 above one provider/facility's estimate. There is a $25 filing fee. This is a screening
 task, not permission for the voice worker to file or pay. See the full
 [CMS qualification rules](https://www.cms.gov/initiatives/your-patient-rights/medical-bill-rights/get-help/dispute-bill).
 

@@ -904,3 +904,36 @@ describe("public browser voice gateway", () => {
     } finally { await app.close(); }
   });
 });
+
+import { readFileSync, writeFileSync } from "node:fs";
+import { syncBrowserTunnel, tunnelOrigin } from "../src/agent/demo-tunnel.js";
+describe("temporary tunnel rotation", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("recognizes only expected provider origins, ignoring banners and hostile event data", () => {
+    const event = (id: string) => JSON.stringify({ type: "v1.tcpip_forward.register.accepted", id });
+    expect(tunnelOrigin(event("localhost/demo123.lhr.life"))).toBe("https://demo123.lhr.life");
+    for (const id of ["localhost/attacker.example", "localhost/demo.lhr.life/path", "localhost/user@demo.lhr.life", "localhost/demo.lhr.life:443"])
+      expect(tunnelOrigin(event(id))).toBeUndefined();
+    expect(tunnelOrigin("Welcome to localhost.run")).toBeUndefined();
+  });
+  it("updates the existing agent and only PUBLIC_URL, without creating agents or losing other environment settings", async () => {
+    for (const [k, v] of Object.entries({ ELEVENLABS_BROWSER_AGENT_ID: "browser-test", ELEVENLABS_LLM_SECRET_ID: "secret-ref",
+      ELEVENLABS_API_KEY: "test-key", VOICE_TTS_MODEL: "", VOICE_VOICE_PRESET: "", ELEVENLABS_ADVOCATE_VOICE_ID: "" })) vi.stubEnv(k, v);
+    vi.stubEnv("PUBLIC_URL", "https://old.lhr.life");
+    const directory = mkdtempSync(join(tmpdir(), "bb-tunnel-test-")), path = join(directory, ".env");
+    writeFileSync(path, 'PUBLIC_URL=https://old.lhr.life\nVOICE_LLM_TOKEN=preserve-test-token\n');
+    const f = vi.fn(async (_url: any, init?: RequestInit) => init?.method === "PATCH" ? Response.json({}) :
+      Response.json({ conversation_config: { agent: { prompt: { tool_ids: ["t1", "t2", "t3"] } } } }));
+    try {
+      await syncBrowserTunnel("https://new.lhr.life", path, f);
+      expect(f).toHaveBeenCalledTimes(2);
+      expect(f.mock.calls[1][0]).toBe("https://api.elevenlabs.io/v1/convai/agents/browser-test");
+      const config = JSON.parse(f.mock.calls[1][1]!.body as string);
+      expect(config.conversation_config.agent.prompt.custom_llm.url).toBe("https://new.lhr.life/api/voice/browser/llm/v1/chat/completions");
+      expect(readFileSync(path, "utf8")).toBe('PUBLIC_URL=https://new.lhr.life\nVOICE_LLM_TOKEN=preserve-test-token\n');
+      f.mockResolvedValueOnce(Response.json({}, { status: 503 }));
+      await expect(syncBrowserTunnel("https://failed.lhr.life", path, f)).rejects.toThrow();
+      expect(readFileSync(path, "utf8")).toContain("PUBLIC_URL=https://new.lhr.life");
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+});

@@ -1,11 +1,11 @@
 # Branch A merge handoff: voice execution under the orchestrator
 
-Prepared 2026-10-11 for the session merging `codex/eleven-v4-voice` into the combined Vellum application.
+Prepared 2026-10-11 for the session merging `codex/browser-voice-demo` into the combined BangBang application.
 Read this file before connecting the real phone worker to the product pipeline. The complete request
 example, environment setup, route table, and provider references are in [README.md](./README.md).
 
-This branch includes integrated `origin/main` through `2150edb` (partner dashboard and updated docs).
-The remaining diff adds the v4 upgrade, browser rehearsal, and this handoff. There are no new npm
+This branch includes integrated `origin/main` through `85b4028` (including persistence, deployment and merged voice PR #11).
+The remaining diff adds browser rehearsal, HTTPS ingress/URL synchronization, and this handoff. There are no new npm
 dependencies or edits to the product owner's files.
 
 ## Current priority: browser rehearsal, no Twilio
@@ -21,9 +21,11 @@ Implemented and provisioned locally on October 11:
 - Public HTTPS tunnel to a loopback-only gateway; only browser completions are forwarded. The product
   server, case routes, tools and money routes remain local. The free temporary domain and provider IDs
   are saved only in ignored `.env`; they are not durable deployment configuration.
+- A tunnel launcher follows free-domain rotation and updates the existing ElevenLabs agent and local
+  `PUBLIC_URL`. A manual tunnel rotated during verification; the launcher addresses that failure.
 - Gateway token stored in an ElevenLabs workspace secret. The Anthropic key remains deferred. The
   user approved localhost.run TLS termination for synthetic demo traffic.
-- Each model turn reads the SAME in-process CasePacket: facts, budget, recent offers and consent.
+- Each model turn reads the SAME CasePacket in the shared server store: facts, budget, recent offers and consent.
   Missing metadata fails closed. ElevenLabs sends it in `elevenlabs_extra_body`; the gateway now
   reads that nested object. The older top-level phone-job field remains backward compatible.
 - [Medical-bill playbook](./MEDICAL_BILL_PLAYBOOK.md) with CMS/CFPB/IRS/HHS sources, and a revised
@@ -80,6 +82,7 @@ number is provisioned, and no phone calls have been placed. Real dialing remains
 | `src/agent/shared-context.ts` | Orchestrator storage hooks, bounded task/memory/result operations, shared-context registration |
 | `src/agent/calls.ts` | `runVoiceTask`, `syncVoiceTask`, real Twilio-through-ElevenLabs dispatch, persistent job journal, polling, reconciliation, authenticated routes, signed callbacks |
 | `src/agent/browser-demo.ts` | Browser configuration, simulated first message, direct CasePacket reads |
+| `src/agent/demo-tunnel.ts` | Free SSH tunnel launcher; validates provider domains, updates agent URL and local environment on rotation |
 | `src/agent/public-gateway.ts` | Loopback ingress for authenticated browser completions, with bounded streaming proxy |
 | `src/agent/haiku.ts` | Protected ElevenLabs-compatible SSE endpoint backed by native Anthropic Messages, text/tool conversion, prompt caching, memory injection, cancellation and latency logging |
 | `src/agent/elevenlabs.ts` | Adds creation of the ElevenLabs workspace secret that holds the gateway token; updates advocate default to included Bella voice |
@@ -238,7 +241,7 @@ endpoint as a successful end-to-end health check.
 
 ## Verified locally and still pending
 
-At the latest checkpoint, the baseline plus new tests total **231 passing tests across 14 files**.
+At the latest checkpoint, the baseline plus new tests total **253 passing tests across 15 files**.
 TypeScript typecheck and whitespace checks pass. Outbound setup config generation has been exercised
 without keys using a dry run. Provider network requests in tests are mocked.
 
