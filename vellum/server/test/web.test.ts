@@ -194,7 +194,9 @@ describe("web: English-only UI and the shared masthead", () => {
   });
 
   it("every page explains itself first: what it does, and which sponsors it uses", async () => {
-    for (const page of PAGES) {
+    // the demo page ("/") keeps text minimal: its landing lists the sponsors once ("Built with")
+    expect((await get("/")).body).toContain("Built with");
+    for (const page of PAGES.filter((p) => p !== "/" && p !== "/index.html")) {
       const html = (await get(page)).body;
       const about = html.indexOf('class="about"');
       expect(about, page).toBeGreaterThan(-1);

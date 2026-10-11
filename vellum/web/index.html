@@ -30,7 +30,7 @@
   <section class="home" aria-labelledby="home-title">
     <div class="hero">
       <h1 id="home-title">Vellum <span class="accent">negotiates</span> your hospital bill.</h1>
-      <p class="hero-sub">It reads the bill line by line, finds the billing errors, and talks the price down with the hospital, never above the limit you set.</p>
+      <p class="hero-sub">Finds the billing errors and talks the price down for you.</p>
       <div class="hero-actions">
         <button id="demo-btn" class="primary" type="button">Try the demo bill</button>
         <a class="secondary" href="#how">How it works</a>
@@ -40,31 +40,26 @@
 
     <div id="how" class="how">
       <h2>How it works</h2>
-      <p>Vellum reads a hospital bill line by line and finds the billing errors. It then negotiates the bill down with the hospital, never above the limit the patient sets. The patient's money waits in escrow and is paid only when the hospital confirms the account is at $0.</p>
       <ol class="how-steps">
-        <li><b>Mrs. Lin's bill</b><span>Claude reads every line and marks the likely errors.</span></li>
-        <li><b>Her information</b><span>Household, income, the most she can pay, and her consent.</span></li>
-        <li><b>Research</b><span>Medicare rates and the hospital's own charity policy, with sources.</span></li>
-        <li><b>The call</b><span>Vellum's advocate talks the bill down with the hospital's billing rep.</span></li>
-        <li><b>Summary</b><span>What was billed, removed and agreed, and what happens next.</span></li>
+        <li><b>Mrs. Lin's bill</b><span>Errors marked.</span></li>
+        <li><b>Her information</b><span>Income and her limit.</span></li>
+        <li><b>Research</b><span>Fair prices, with sources.</span></li>
+        <li><b>The call</b><span>Two AI agents negotiate.</span></li>
+        <li><b>Summary</b><span>What she saved.</span></li>
       </ol>
       <h3>Built with</h3>
       <ul class="tracks" aria-label="Sponsor tracks">
-        <li><b>Claude (Anthropic)</b><span>Reads the bill, flags errors, plans the negotiation, writes appeals. <span class="live-tag">live</span></span></li>
-        <li><b>ElevenLabs</b><span>Voice for the call and the intake; Claude runs it as text if voice is unavailable.</span></li>
-        <li><b>Context.dev</b><span>Web research: Medicare rates, price files, charity-care and payer policies.</span></li>
-        <li><b>XRPL (Ripple)</b><span>Escrow, release via Batch, hardship credentials, fund vault and 0% loans. <span class="live-tag">live on devnet</span></span></li>
-        <li><b>Gemini</b><span>Fed-decision odds, to advise lump sum or payment plan.</span></li>
-        <li><b>BNB Chain</b><span>A tamper-evident log of the limit and every offer. <span class="notlive-tag">contract not deployed yet</span></span></li>
-        <li><b>AUSD (x402)</b><span>Pays per request for fair-price data on Base Sepolia. <span class="notlive-tag">wallet not funded yet</span></span></li>
+        <li><b>Claude (Anthropic)</b><span>Reads bills, runs the agents. <span class="live-tag">live</span></span></li>
+        <li><b>ElevenLabs</b><span>Voice for the call.</span></li>
+        <li><b>Context.dev</b><span>Finds fair prices and policies.</span></li>
+        <li><b>XRPL (Ripple)</b><span>Holds the payment until the bill is $0. <span class="live-tag">live on devnet</span></span></li>
+        <li><b>Gemini</b><span>Pay now or later.</span></li>
+        <li><b>BNB Chain</b><span>Public log of her limit. <span class="notlive-tag">contract not deployed yet</span></span></li>
+        <li><b>AUSD (x402)</b><span>Pays for data per request. <span class="notlive-tag">wallet not funded yet</span></span></li>
       </ul>
     </div>
   </section>
 
-  <div class="about">
-    <p><b>What this page does:</b> this is the patient's side. Five steps take one bill from the demo statement to an agreed price and a plain summary. Each step has one button.</p>
-    <p class="sponsors"><b>Sponsors used here:</b> Claude reads the bill; Context.dev researches fair prices; ElevenLabs runs the call (text fallback by Claude); XRPL holds the payment in escrow; Gemini odds advise lump sum vs payment plan; BNB Chain logs the limit (not deployed yet).</p>
-  </div>
 
   <nav class="progress" aria-label="progress">
     <ol id="steps">
@@ -84,7 +79,7 @@
     <section class="screen screen-upload" data-screen="upload" id="screen-upload">
       <details id="own-bill" class="own-bill">
         <summary>Use your own bill</summary>
-        <p class="what">Upload a photo or PDF of the bill. Claude reads every line in about 30 seconds.</p>
+        <p class="what">Upload a photo or PDF.</p>
         <div id="upload-doc" class="doc upload-doc">
           <form id="upload-form" class="stack">
             <label class="dropzone" for="bill-file">
@@ -98,7 +93,6 @@
               <input id="patient-name" name="name" autocomplete="name" placeholder="As it appears on the bill" /></label>
             <div><button id="upload-btn" class="secondary" type="submit">Read my bill</button></div>
           </form>
-          <p class="fine">The demo bill is a made-up patient (Mrs. Lin) at Stanford Health Care, for demonstration only.</p>
         </div>
       </details>
     </section>
@@ -106,10 +100,10 @@
     <!-- 1 the bill -->
     <section class="screen" data-screen="bill" id="screen-bill" hidden>
       <h1 id="bill-title">Mrs. Lin's bill</h1>
-      <p class="what">Vellum read every line and marked the ones that look like billing errors. These are leads for the hospital to check, not confirmed savings.</p>
+      <p class="what">Likely errors are marked.</p>
       <figure id="bill-image" class="bill-image">
         <img src="/img/lin-bill.jpg" width="954" height="1100" alt="Mrs. Lin's itemized emergency-room statement from Stanford Health Care: 17 charges, balance due $14,296" />
-        <figcaption>The demo bill. The patient, account and charges are made up for this demo.</figcaption>
+        <figcaption>Demo bill (made-up patient).</figcaption>
       </figure>
       <div id="bill-summary" class="summary"></div>
       <h2>Every line on the bill</h2>
@@ -120,7 +114,7 @@
     <!-- 2 her information -->
     <section class="screen" data-screen="intake" id="screen-intake" hidden>
       <h1>Her information</h1>
-      <p class="what">Vellum uses this to check charity care, and it never agrees to a price above her limit. Filled in from the demo case; you can change any of it.</p>
+      <p class="what">Prefilled. Edit anything.</p>
       <form id="intake-form" class="stack doc">
         <label class="field"><span>Name</span><input name="name" id="f-name" required /></label>
         <div class="row">
@@ -129,7 +123,7 @@
         </div>
         <label class="field"><span>The most she can pay (USD)</span><input name="max_pay" id="f-maxpay" type="number" min="1" inputmode="numeric" required /></label>
         <label class="consent"><input id="f-consent" name="consent" type="checkbox" />
-          <span>I authorize Vellum to discuss this bill with the hospital and agree to a deal up to my limit.</span></label>
+          <span>Vellum may negotiate up to my limit.</span></label>
       </form>
       <div id="intake-done" class="note" hidden></div>
       <details class="formwrap talk-wrap">
@@ -150,7 +144,7 @@
     <!-- 3 research -->
     <section class="screen" data-screen="research" id="screen-research" hidden>
       <h1>Research</h1>
-      <p class="what">Vellum looks up the Medicare rate for each billed code and the hospital's financial-assistance policy. From these it sets an opening ask, a target and her limit.</p>
+      <p class="what">Fair prices set the plan.</p>
       <button id="research-btn" class="secondary" type="button" hidden>Check fair prices again</button>
       <p id="research-status" class="status-line" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="research-status-text"></span></p>
       <div id="ladder" class="ladder" hidden></div>
@@ -164,7 +158,7 @@
     <!-- 4 the call -->
     <section class="screen" data-screen="room" id="screen-room" hidden>
       <h1>The call</h1>
-      <p class="what">Vellum's advocate calls the hospital billing office and argues the price down with the errors and fair prices it found. Demo: the hospital side is a second AI agent.</p>
+      <p class="what">Vellum's agent vs. the hospital's agent.</p>
       <div id="room" class="room">
         <div id="ticker" class="ticker" aria-live="polite">
           <div class="tk asked"><span>Hospital asked</span><b id="tk-asked">—</b></div>
@@ -176,7 +170,7 @@
           <span id="deal-text"></span>
           <button id="to-summary" class="primary" type="button">See summary</button>
         </div>
-        <p class="limit-guard">Vellum never accepts a price without her approval, and never above the limit she set.</p>
+        <p class="limit-guard">Never above her limit.</p>
         <div class="voices">
           <span class="voice" id="v-advocate"><i></i><span>Vellum</span></span>
           <span class="voice" id="v-hospital"><i></i><span>Hospital</span></span>
@@ -209,9 +203,9 @@
       </div>
       <h2>Next steps</h2>
       <ol class="next-steps">
-        <li>The hospital removes the flagged errors and confirms the agreed price in writing.</li>
-        <li>She pays the agreed amount. Vellum holds it until the hospital confirms a $0 balance.</li>
-        <li>If paying at once is hard, a 0% payment plan is available.</li>
+        <li>The hospital confirms the price in writing.</li>
+        <li>Her payment is held until the bill shows $0.</li>
+        
       </ol>
 
       <details id="pay-details" class="pay-row">
@@ -248,7 +242,7 @@
     </section>
   </main>
 </div>
-<footer class="colophon">Vellum runs on test networks only (XRPL devnet, BNB Chain testnet, Base Sepolia). No real money moves. Vellum never agrees to a price above the limit you set.</footer>
+<footer class="colophon">Test networks only. No real money moves.</footer>
 <script type="module" src="/app.js"></script>
 </body>
 </html>
