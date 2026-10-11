@@ -1,10 +1,16 @@
 import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // LLM is mocked at the boundary: these tests need NO API keys.
 vi.mock("../src/llm.js", () => ({ llmJson: vi.fn(), llmText: vi.fn() }));
+// emit is wrapped (still the real one) so the keyless test can see the route's log events.
+vi.mock("../src/store.js", async (importOriginal) => {
+  const m = await importOriginal<typeof import("../src/store.js")>();
+  return { ...m, emit: vi.fn(m.emit) };
+});
 
 import { llmJson } from "../src/llm.js";
+import { emit, listCases } from "../src/store.js";
 import { auditBill, totalAtStake } from "../src/bill/audit.js";
 import { explainZh, normalizeBill, parseBill, parseStatementText } from "../src/bill/parse.js";
 import type { Bill } from "../src/types.js";
@@ -145,7 +151,10 @@ describe("routes (llm mocked)", () => {
   beforeEach(() => {
     mocked.mockReset();
     installLlm();
+    // these exercise the LLM path, which only runs when a key is configured (the mock never sees the value)
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
   });
+  afterEach(() => vi.unstubAllEnvs());
 
   it("POST /api/cases/demo builds an audited case from the fixture", async () => {
     const { buildApp } = await import("../src/index.js");
@@ -202,6 +211,74 @@ describe("routes (llm mocked)", () => {
     const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
     expect(res.statusCode).toBe(503);
     expect(res.json().error).toMatch(/ANTHROPIC_API_KEY is not configured/);
+    await app.close();
+  });
+});
+
+describe("keyless demo path (no ANTHROPIC_API_KEY)", () => {
+  beforeEach(() => {
+    mocked.mockReset();
+    installLlm();
+    vi.mocked(emit).mockClear();
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("POST /api/cases/demo reads the bundled statement deterministically and audits it, no LLM call", async () => {
+    const { buildApp } = await import("../src/index.js");
+    const { BUILTIN_READER_LOG } = await import("../src/routes/bill.js");
+    const app = await buildApp();
+    const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
+    expect(res.statusCode).toBe(200);
+    const c = res.json();
+    expect(mocked).not.toHaveBeenCalled();
+    expect(c.status).toBe("audited");
+    expect(c.patient).toMatchObject({ name: fixture.patient.name, maxPay: 2500, consent: true });
+    // exactly what the deterministic reader produces from the fixture text (real parse, not canned data)
+    expect(c.bill).toEqual(parseStatementText(statement));
+    expect(c.bill.lineItems).toHaveLength(17);
+    expect(c.bill.patientBalance).toBe(14296);
+    expect(c.bill.lineItems.some((l: { descriptionZh?: string }) => l.descriptionZh)).toBe(false);
+    for (const p of fixture._plantedErrors) expect(c.flags.find((f: { kind: string }) => f.kind === p.kind).amountAtStake).toBe(p.amountAtStake);
+    const logs = vi
+      .mocked(emit)
+      .mock.calls.filter(([id, ev]) => id === c.id && ev.type === "log")
+      .map(([, ev]) => (ev as { message: string }).message);
+    expect(BUILTIN_READER_LOG).toBe(
+      "Parsed with Vellum's built-in statement reader (no AI key configured); plain-language explanations need ANTHROPIC_API_KEY",
+    );
+    expect(logs).toContain(BUILTIN_READER_LOG);
+    expect(logs).not.toContain("Explained every line in Chinese");
+    await app.close();
+  });
+
+  it("an uploaded bill still needs the key: 503 with an actionable message, and no case is created", async () => {
+    const { buildApp } = await import("../src/index.js");
+    const app = await buildApp();
+    const before = listCases().length;
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/cases",
+      payload: { patient: { name: "Lin Mei", language: "zh", maxPay: 2500, consent: true }, billText: statement },
+    });
+    expect(res.statusCode).toBe(503);
+    expect(res.json().error).toMatch(/ANTHROPIC_API_KEY is not configured/);
+    expect(res.json().error).toContain("/api/cases/demo");
+    expect(listCases().length).toBe(before);
+    expect(mocked).not.toHaveBeenCalled();
+    // an empty body is still a 400, not a 503
+    expect((await app.inject({ method: "POST", url: "/api/cases", payload: {} })).statusCode).toBe(400);
+    await app.close();
+  });
+
+  it("with a key the demo goes through the LLM reader (unchanged)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const { buildApp } = await import("../src/index.js");
+    const app = await buildApp();
+    const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
+    expect(res.statusCode).toBe(200);
+    expect(mocked).toHaveBeenCalledTimes(2); // transcribe + explain
+    expect(res.json().bill.lineItems[0].descriptionZh).toBeTruthy();
     await app.close();
   });
 });

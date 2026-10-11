@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { auditBill, totalAtStake } from "../bill/audit.js";
-import { explainZh, parseBill } from "../bill/parse.js";
+import { explainZh, parseBill, parseStatementText } from "../bill/parse.js";
 import { createCase, emit, updateCase } from "../store.js";
 import type { CasePacket, Patient } from "../types.js";
 
@@ -66,21 +66,37 @@ async function readIntake(req: FastifyRequest): Promise<IntakeInput> {
   return out;
 }
 
-/** Shared intake pipeline: parse -> explain in Chinese -> deterministic audit -> status audited. */
-export async function intakeCase(input: IntakeInput, seed?: string): Promise<CasePacket> {
+// ---- keyless demo path (keyless-e2e) ----
+// Without ANTHROPIC_API_KEY the bundled demo statement is still read for real: it is in the fixed-column itemized
+// format parseStatementText (bill/parse.ts) reads deterministically, and it goes through the same auditBill. Only the
+// Chinese line explanations (explainZh, an LLM call) are skipped. Arbitrary uploads still need the key (503), since
+// photos/PDFs and free-form statements can only be read by the vision model.
+export const BUILTIN_READER_LOG =
+  "Parsed with Vellum's built-in statement reader (no AI key configured); plain-language explanations need ANTHROPIC_API_KEY";
+const hasLlmKey = () => Boolean(process.env.ANTHROPIC_API_KEY);
+export type BillReader = "llm" | "builtin";
+
+/** Shared intake pipeline: parse -> explain in Chinese -> deterministic audit -> status audited.
+ *  reader "builtin" (keyless demo only): deterministic parseStatementText, no explainZh. */
+export async function intakeCase(input: IntakeInput, seed?: string, reader: BillReader = "llm"): Promise<CasePacket> {
   if (!input.text?.trim() && !input.imageDataUrl) throw badRequest("No bill provided — send a `bill` image file or `billText`");
   const c = createCase({ mode: "patient", patient: input.patient });
   try {
     emit(c.id, { type: "log", message: seed ? `Loaded ${seed}` : "Bill received", messageZh: "收到账单了" });
     emit(c.id, { type: "log", message: "Reading the bill line by line", messageZh: "正在一行一行地读您的账单" });
-    const parsed = await parseBill({ text: input.text, imageDataUrl: input.imageDataUrl });
+    const parsed = reader === "builtin" ? parseStatementText(input.text ?? "") : await parseBill({ text: input.text, imageDataUrl: input.imageDataUrl });
     emit(c.id, {
       type: "log",
       message: `Read ${parsed.lineItems.length} charge lines from ${parsed.provider.name}; balance due $${parsed.patientBalance.toFixed(2)}`,
       messageZh: `读到 ${parsed.lineItems.length} 项收费，医院说您要付 $${parsed.patientBalance.toFixed(2)}`,
     });
-    const bill = await explainZh(parsed);
-    emit(c.id, { type: "log", message: "Explained every line in Chinese", messageZh: "每一项都用中文解释好了" });
+    let bill = parsed;
+    if (reader === "builtin") {
+      emit(c.id, { type: "log", message: BUILTIN_READER_LOG, messageZh: "用 Vellum 内置的账单读取程序读好了（未配置 AI 密钥）；逐项中文解释需要 ANTHROPIC_API_KEY" });
+    } else {
+      bill = await explainZh(parsed);
+      emit(c.id, { type: "log", message: "Explained every line in Chinese", messageZh: "每一项都用中文解释好了" });
+    }
     const flags = auditBill(bill);
     const stake = totalAtStake(flags);
     emit(c.id, {
@@ -110,7 +126,15 @@ export async function loadDemoFixture(): Promise<{ patient: Patient; text: strin
 export default async function billRoutes(app: FastifyInstance) {
   app.post("/api/cases", async (req, reply) => {
     try {
-      return await intakeCase(await readIntake(req));
+      const input = await readIntake(req);
+      if (!input.text?.trim() && !input.imageDataUrl) throw badRequest("No bill provided — send a `bill` image file or `billText`");
+      // keyless-e2e: fail before creating a case, so a missing key does not leave a "failed" case in the shared store
+      if (!hasLlmKey())
+        throw Object.assign(
+          new Error("ANTHROPIC_API_KEY is not configured — set it in vellum/server/.env to read uploaded bills (the bundled demo bill still works: POST /api/cases/demo)"),
+          { statusCode: 503 },
+        );
+      return await intakeCase(input);
     } catch (err) {
       return sendError(reply, err);
     }
@@ -120,7 +144,8 @@ export default async function billRoutes(app: FastifyInstance) {
   app.post("/api/cases/demo", async (_req, reply) => {
     try {
       const { patient, text } = await loadDemoFixture();
-      return await intakeCase({ patient, text }, "demo seed bill (fixtures/lin-er-bill.json)");
+      // keyless-e2e: no key -> the deterministic reader (real parse + audit of the bundled statement); key -> unchanged
+      return await intakeCase({ patient, text }, "demo seed bill (fixtures/lin-er-bill.json)", hasLlmKey() ? "llm" : "builtin");
     } catch (err) {
       return sendError(reply, err);
     }
