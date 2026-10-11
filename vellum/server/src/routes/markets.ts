@@ -25,7 +25,11 @@ export default async function marketsRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string }; Body: FinancingBody | null }>("/api/cases/:id/financing", async (req) => {
     const c = requireCase(req.params.id);
     const b = req.body ?? {};
-    const balance = c.agreedAmount ?? c.target ?? c.bill?.patientBalance;
+    if (c.agreedAmount === 0) throw Object.assign(new Error("nothing to finance: the agreed amount is $0"), { statusCode: 409 });
+    if (c.agreedAmount === undefined && c.bill?.patientBalance === 0) throw Object.assign(new Error("nothing to finance: the bill's balance due is $0"), { statusCode: 409 });
+    // Once a deal exists, finance that. Before one, plan for what she may really owe: the target, or, when the
+    // target is $0 (free care is the ask, not yet granted), the most she agreed to pay, else the billed balance.
+    const balance = c.agreedAmount || c.target || c.walkaway || c.bill?.patientBalance;
     if (!balance) throw Object.assign(new Error("case has no agreedAmount, target or bill balance yet"), { statusCode: 409 });
     const [odds, rate] = await Promise.all([fetchFedOdds(), fetchPolicyRate()]);
     const advice = financingAdvice(

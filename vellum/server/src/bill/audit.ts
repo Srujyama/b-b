@@ -27,6 +27,7 @@ export const LAB_PANELS: Record<string, { name: string; components: string[] }> 
 };
 
 /** Codes that are reportable at most once per encounter (initial-service codes). */
+const NOMINAL_CHARGE = 1; // USD; below this a line is a reporting entry, not a charge worth disputing
 const ONCE_PER_ENCOUNTER = new Set(["96374", "96360", "96365", "99281", "99282", "99283", "99284", "99285"]);
 
 const CRITICAL_CARE = new Set(["99291", "99292"]);
@@ -54,6 +55,8 @@ export function auditBill(bill: Bill): AuditFlag[] {
   items.forEach((li, i) => {
     const code = norm(li.code);
     if (!code) return;
+    // nominal lines (a $0.01 reporting code such as G1004, entered once per scan) are not billing errors
+    if (li.charge < NOMINAL_CHARGE) return;
     const key = `${code}|${li.date ?? ""}|${r2(li.charge)}|${li.qty}`;
     const first = seen.get(key);
     if (first === undefined) {

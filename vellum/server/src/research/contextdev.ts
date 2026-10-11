@@ -41,6 +41,9 @@ async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
     else active--;
   }
 }
+/** The API's `message` is a string, or for validation errors a list of { message } objects. */
+const errorText = (m: unknown): string | undefined =>
+  typeof m === "string" ? m : Array.isArray(m) ? m.map((x) => (typeof x?.message === "string" ? x.message : JSON.stringify(x))).join("; ") : m == null ? undefined : JSON.stringify(m);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function call<T>(method: Method, path: string, body?: unknown, query?: Record<string, string | number | boolean | undefined>): Promise<T> {
@@ -68,7 +71,7 @@ async function call<T>(method: Method, path: string, body?: unknown, query?: Rec
         throw new ContextDevError(`Context.dev ${path} returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
       }
       if (!res.ok) {
-        throw new ContextDevError(`Context.dev ${path} failed (HTTP ${res.status}${json?.error_code ? ` ${json.error_code}` : ""}): ${json?.message ?? text.slice(0, 200)}`, res.status === 401 || res.status === 403 ? 503 : 502, json?.error_code);
+        throw new ContextDevError(`Context.dev ${path} failed (HTTP ${res.status}${json?.error_code ? ` ${json.error_code}` : ""}): ${errorText(json?.message) ?? text.slice(0, 200)}`, res.status === 401 || res.status === 403 ? 503 : 502, json?.error_code);
       }
       return json as T;
     }
@@ -146,8 +149,16 @@ export async function answer<T extends Record<string, unknown>>(task: string, js
 
 // ---------- brand / company data ----------
 export type Brand = { domain: string; title?: string; description?: string; phone?: string; address?: Record<string, string>; source: Source };
+const BRAND_NAME_MAX = 30; // the API rejects longer names, and many hospital names are longer
+/** Fit a name into the API's limit by dropping whole trailing words ("Riverside Shore Memorial Hospital" -> "Riverside Shore Memorial"). */
+export function brandQueryName(name: string): string {
+  const words = name.trim().split(/\s+/);
+  while (words.length > 1 && words.join(" ").length > BRAND_NAME_MAX) words.pop();
+  return words.join(" ").slice(0, BRAND_NAME_MAX);
+}
+
 export async function brand(lookup: { name: string } | { domain: string }): Promise<Brand> {
-  const body = "domain" in lookup ? { type: "by_domain", domain: lookup.domain } : { type: "by_name", name: lookup.name };
+  const body = "domain" in lookup ? { type: "by_domain", domain: lookup.domain } : { type: "by_name", name: brandQueryName(lookup.name) };
   const r = await call<{ brand: any }>("POST", "/brand/retrieve", body);
   const b = r.brand ?? {};
   if (!b.domain) throw new ContextDevError(`Context.dev brand lookup returned no domain for ${JSON.stringify(lookup)}`);

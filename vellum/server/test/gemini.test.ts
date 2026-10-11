@@ -10,6 +10,7 @@ import {
   financingAdvice,
   parseFredCsv,
   pickHedgeOutcome,
+  pickProxyHedge,
   monthlyPayment,
   presentValue,
   FED_EVENTS_URL,
@@ -346,6 +347,33 @@ describe("parsing the recorded Gemini response", () => {
     expect(meeting.eventTicker).toBe("FED261030");
     expect(outcome.ticker).toBe("HIKE25");
   });
+
+  it("proxy hedge: Brent nearest the Fed decision, highest strike with a real quote, price from sandbox else production", () => {
+    const c = (event: string, ticker: string, prices: object = { buy: {}, sell: {} }) => ({ label: `$${ticker.slice(2)} or above`, ticker, instrumentSymbol: `GEMI-${event}-${ticker}`, prices });
+    const ev = (ticker: string, expiryDate: string, contracts: ReturnType<typeof c>[]) => ({ id: ticker, title: ticker, slug: ticker, ticker, category: "Commodities", expiryDate, contracts });
+    // the sandbox as observed: oil markets listed, books empty
+    const sandbox = [
+      ev("XAU2610312100", "2026-10-31T21:00:00.000Z", [c("XAU2610312100", "HI4200", { lastTradePrice: "0.53" })]),
+      ev("WTI2610312100", "2026-10-31T21:00:00.000Z", [c("WTI2610312100", "HI99")]),
+      ev("BRENT2610122100", "2026-10-12T21:00:00.000Z", [c("BRENT2610122100", "HI105")]),
+      ev("BRENT2610312100", "2026-10-31T21:00:00.000Z", [c("BRENT2610312100", "HI102"), c("BRENT2610312100", "HI108"), c("BRENT2610312100", "HI105")]),
+    ];
+    const production = [
+      ev("BRENT2610122100", "2026-10-12T21:00:00.000Z", [c("BRENT2610122100", "HI105", { bestAsk: "0.10" })]),
+      ev("BRENT2610312100", "2026-10-31T21:00:00.000Z", [c("BRENT2610312100", "HI102", { bestBid: "0.60", bestAsk: "0.70" }), c("BRENT2610312100", "HI105", { lastTradePrice: "0.54" })]),
+      ev("WTI2610312100", "2026-10-31T21:00:00.000Z", [c("WTI2610312100", "HI99", { bestAsk: "0.35" })]),
+    ];
+    const pick = pickProxyHedge(sandbox, production, "2026-10-30")!;
+    expect(pick.contract.instrumentSymbol).toBe("GEMI-BRENT2610312100-HI105"); // HI108 has no quote anywhere
+    expect(pick).toMatchObject({ limit: 0.54, priceFrom: "production" });
+    // a sandbox quote wins over production
+    sandbox[3].contracts[1].prices = { bestAsk: "0.20" };
+    expect(pickProxyHedge(sandbox, production, "2026-10-30")).toMatchObject({ limit: 0.2, priceFrom: "sandbox", contract: { ticker: "HI108" } });
+    // no Brent quote at all -> WTI; nothing quoted -> no hedge (never an invented price)
+    expect(pickProxyHedge([sandbox[1]], production, "2026-10-30")?.contract.instrumentSymbol).toBe("GEMI-WTI2610312100-HI99");
+    expect(pickProxyHedge([sandbox[0]], production)).toBeUndefined();
+    expect(pickProxyHedge([sandbox[1]], [])).toBeUndefined();
+  });
 });
 
 describe("pure helpers", () => {
@@ -478,6 +506,22 @@ describe("network boundary + routes (fetch mocked)", () => {
     expect(r.json().recommendation).toBe("lump_sum"); // default 10% off vs 0% 12-month plan at ~4%
     expect(r.json().detail.balance).toBe(3000);
     expect(c.financing?.recommendation).toBe("lump_sum");
+
+    // free-care ask (target $0) before any deal: plan around the most she agreed to pay
+    const free = createCase({ mode: "patient", target: 0, walkaway: 2500 });
+    const rf = await app.inject({ method: "POST", url: `/api/cases/${free.id}/financing`, payload: {} });
+    expect(rf.statusCode).toBe(200);
+    expect(rf.json().detail.balance).toBe(2500);
+    const settledFree = createCase({ mode: "patient", target: 0, walkaway: 2500, agreedAmount: 0 });
+    const rs = await app.inject({ method: "POST", url: `/api/cases/${settledFree.id}/financing`, payload: {} });
+    expect(rs.statusCode).toBe(409);
+    expect(rs.json().message).toMatch(/nothing to finance/);
+
+    // insurance already paid everything: nothing to finance, whatever the patient said she could pay
+    const paid = createCase({ mode: "patient", target: 0, walkaway: 800, bill: { provider: { name: "H" }, lineItems: [], totalCharges: 13658.83, patientBalance: 0 } });
+    const rp = await app.inject({ method: "POST", url: `/api/cases/${paid.id}/financing`, payload: {} });
+    expect(rp.statusCode).toBe(409);
+    expect(rp.json().message).toMatch(/balance due is \$0/);
 
     const none = createCase({ mode: "patient" });
     const r2 = await app.inject({ method: "POST", url: `/api/cases/${none.id}/financing`, payload: {} });

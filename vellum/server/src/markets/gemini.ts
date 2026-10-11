@@ -15,6 +15,9 @@
 // Current policy rate: FRED series DFEDTARU (Fed funds target range, upper limit) — public CSV, no key.
 //
 // Optional hedge: placeHedge() buys a small YES position in the Gemini SANDBOX only (never production).
+// The sandbox lists crypto and commodity markets but NO Fed-decision markets (checked 2026-10-11), so when the Fed
+// contract is not listed there the hedge falls back to an oil-price market as a PROXY: an oil spike feeds inflation,
+// which raises the odds of a rate hike. It is a loose, indirect hedge and the receipt says so (detail.proxyFor).
 
 import { need } from "../env.js";
 import type { FinancingAdvice, Receipt, Source } from "../types.js";
@@ -22,6 +25,7 @@ import type { FinancingAdvice, Receipt, Source } from "../types.js";
 export const GEMINI_PUBLIC_API = "https://api.gemini.com";
 export const FED_EVENTS_URL = `${GEMINI_PUBLIC_API}/v1/prediction-markets/events?status=active&category=Economics`;
 export const FRED_POLICY_RATE_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFEDTARU";
+export const COMMODITY_EVENTS_URL = `${GEMINI_PUBLIC_API}/v1/prediction-markets/events?status=active&category=Commodities&limit=100`;
 export const geminiEventUrl = (slug: string) => `https://www.gemini.com/predictions/${slug}`;
 
 // ---------- shapes (local to this module; the shared one is FinancingAdvice in types.ts) ----------
@@ -341,11 +345,45 @@ export function pickHedgeOutcome(odds: FedOdds): { meeting: FedMeeting; outcome:
   throw new Error("no hike outcome listed in any Fed market — nothing to hedge");
 }
 
+const OIL_TICKERS = [/^BRENT\d/, /^WTI\d/]; // Brent (the global benchmark) first
+/** "HI105" -> 105, "HI6D70" -> 6.7: the "at or above" strike of a commodity contract. */
+const strikeOf = (ticker: string) => {
+  const m = /^HI(\d+)(?:D(\d+))?$/.exec(ticker);
+  return m ? Number(`${m[1]}.${m[2] ?? "0"}`) : undefined;
+};
+
+export type ProxyHedge = { event: RawEvent; contract: RawContract; limit: number; priceFrom: "sandbox" | "production" };
+
+/**
+ * Stand-in for a Fed hike contract the sandbox doesn't list: YES on "oil at or above $X" at the expiry closest to the
+ * Fed decision, taking the highest strike that has a real quote (the oil-spike scenario). The quote comes from the
+ * sandbox book, else from the same contract on production (sandbox books are mostly empty); never an invented price.
+ */
+export function pickProxyHedge(sandboxEvents: RawEvent[], productionEvents: RawEvent[], decisionDate?: string): ProxyHedge | undefined {
+  const quote = (c?: RawContract) => num(c?.prices?.bestAsk) ?? contractPrice(c?.prices)?.price;
+  const prod = new Map(productionEvents.flatMap((e) => e.contracts ?? []).map((c) => [c.instrumentSymbol, c]));
+  const target = decisionDate ? Date.parse(decisionDate) : Date.now();
+  const distance = (e: RawEvent) => (e.expiryDate ? Math.abs(Date.parse(e.expiryDate) - target) : Infinity);
+  for (const oil of OIL_TICKERS) {
+    const events = sandboxEvents.filter((e) => oil.test(e.ticker)).sort((a, b) => distance(a) - distance(b));
+    for (const event of events) {
+      const byStrikeDesc = [...(event.contracts ?? [])].filter((c) => c.instrumentSymbol && strikeOf(c.ticker) !== undefined).sort((a, b) => strikeOf(b.ticker)! - strikeOf(a.ticker)!);
+      for (const contract of byStrikeDesc) {
+        const own = quote(contract);
+        const limit = own ?? quote(prod.get(contract.instrumentSymbol));
+        if (limit !== undefined) return { event, contract, limit, priceFrom: own !== undefined ? "sandbox" : "production" };
+      }
+    }
+  }
+  return undefined;
+}
+
 /**
  * Buy a small YES position on the hike outcome in the Gemini SANDBOX (env is hard-wired to "sandbox").
  * The symbol is taken from the sandbox's own event listing (instrumentSymbol), never constructed.
+ * If the sandbox doesn't list the Fed contract, buys the oil proxy instead (see pickProxyHedge).
  */
-export async function placeHedge(opts: { quantity?: string; odds?: FedOdds } = {}): Promise<Receipt> {
+export async function placeHedge(opts: { quantity?: string; odds?: FedOdds; fetchImpl?: FetchLike } = {}): Promise<Receipt> {
   const apiKey = need("GEMINI_API_KEY");
   const apiSecret = need("GEMINI_API_SECRET");
   const odds = opts.odds ?? (await fetchFedOdds());
@@ -358,12 +396,31 @@ export async function placeHedge(opts: { quantity?: string; odds?: FedOdds } = {
   const listed: any = await gemini.predictions.listEvents({ status: ["active"] } as never);
   const events: RawEvent[] = listed?.data ?? [];
   const ev = events.find((e) => e.ticker === meeting.eventTicker);
-  const contract = ev?.contracts?.find((c) => c.ticker === outcome.ticker);
-  if (!contract?.instrumentSymbol) {
-    throw Object.assign(new Error(`Gemini sandbox does not list ${meeting.eventTicker}/${outcome.ticker} — cannot hedge`), { statusCode: 502 });
+  const fedContract = ev?.contracts?.find((c) => c.ticker === outcome.ticker);
+  let symbol: string;
+  let limit: number;
+  let label = outcome.label;
+  let proxy: Record<string, unknown> = {};
+  if (fedContract?.instrumentSymbol) {
+    symbol = fedContract.instrumentSymbol;
+    limit = num(fedContract.prices?.bestAsk) ?? contractPrice(fedContract.prices)?.price ?? outcome.bestAsk ?? outcome.price;
+  } else {
+    const res = await (opts.fetchImpl ?? fetch)(COMMODITY_EVENTS_URL);
+    const production: RawEvent[] = res.ok ? (((await res.json()) as { data?: RawEvent[] }).data ?? []) : [];
+    const pick = pickProxyHedge(events, production, meeting.decisionDate);
+    if (!pick) {
+      throw Object.assign(new Error(`Gemini sandbox does not list ${meeting.eventTicker}/${outcome.ticker} and has no quoted oil market to use as a proxy — cannot hedge`), { statusCode: 502 });
+    }
+    symbol = pick.contract.instrumentSymbol;
+    limit = pick.limit;
+    label = `${pick.event.title} ${pick.contract.label}`;
+    proxy = {
+      proxyFor: `${meeting.eventTicker}/${outcome.ticker}`,
+      priceFrom: pick.priceFrom,
+      fedHikeProb: outcome.prob,
+      note: "Gemini's sandbox lists no Fed-decision markets, so this is an oil-price proxy: an oil spike feeds inflation, which raises the odds of a rate hike. It is an indirect hedge, not a bet on the Fed decision itself.",
+    };
   }
-  const sandboxPrice = contractPrice(contract.prices);
-  const limit = num(contract.prices?.bestAsk) ?? sandboxPrice?.price ?? outcome.bestAsk ?? outcome.price;
   const price = Math.min(0.99, Math.max(0.01, Math.round(limit * 100) / 100)).toFixed(2);
   const quantity = opts.quantity ?? "1";
 
@@ -371,7 +428,7 @@ export async function placeHedge(opts: { quantity?: string; odds?: FedOdds } = {
   const p: any = gemini.predictions;
   const terms = await p.getPredictionMarketsTermsStatus?.();
   if (terms && terms.hasAcceptedLatest === false) await p.acceptTerms();
-  const order = await p.placeOrder({ symbol: contract.instrumentSymbol, orderType: "limit", side: "buy", outcome: "yes", price, quantity });
+  const order = await p.placeOrder({ symbol, orderType: "limit", side: "buy", outcome: "yes", price, quantity });
   const orderId = String(order?.orderId ?? order?.id ?? "");
   if (!orderId) throw Object.assign(new Error(`Gemini sandbox order returned no orderId: ${JSON.stringify(order)}`), { statusCode: 502 });
   return {
@@ -379,7 +436,7 @@ export async function placeHedge(opts: { quantity?: string; odds?: FedOdds } = {
     kind: "prediction-hedge-order",
     txHash: orderId,
     explorerUrl: "https://exchange.sandbox.gemini.com/",
-    detail: { env: "sandbox", symbol: contract.instrumentSymbol, outcome: "yes", label: outcome.label, price, quantity, marketProb: outcome.prob, status: order?.status },
+    detail: { env: "sandbox", symbol, outcome: "yes", label, price, quantity, marketProb: proxy.proxyFor ? limit : outcome.prob, status: order?.status, ...proxy },
     at: new Date().toISOString(),
   };
 }
