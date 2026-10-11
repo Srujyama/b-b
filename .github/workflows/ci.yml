@@ -42,8 +42,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      # Voice settings come from GitHub Actions secrets, so the ElevenLabs key never lives in git. All eight belong
+      # to ONE ElevenLabs account (agents and the gateway secret are per account) and must change together.
+      # Staged here and applied by the deploy below in the same release. Skipped while ELEVENLABS_API_KEY is unset.
+      - name: Stage voice secrets
+        id: voice
+        working-directory: vellum
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_ADVOCATE_AGENT_ID: ${{ secrets.ELEVENLABS_ADVOCATE_AGENT_ID }}
+          ELEVENLABS_HOSPITAL_AGENT_ID: ${{ secrets.ELEVENLABS_HOSPITAL_AGENT_ID }}
+          ELEVENLABS_INTAKE_AGENT_ID: ${{ secrets.ELEVENLABS_INTAKE_AGENT_ID }}
+          ELEVENLABS_INTAKE_VOICE_ID: ${{ secrets.ELEVENLABS_INTAKE_VOICE_ID }}
+          ELEVENLABS_BROWSER_AGENT_ID: ${{ secrets.ELEVENLABS_BROWSER_AGENT_ID }}
+          ELEVENLABS_LLM_SECRET_ID: ${{ secrets.ELEVENLABS_LLM_SECRET_ID }}
+          VOICE_LLM_TOKEN: ${{ secrets.VOICE_LLM_TOKEN }}
+        run: |
+          if [ -z "$ELEVENLABS_API_KEY" ]; then
+            echo "No ELEVENLABS_API_KEY secret: leaving Fly's voice secrets as they are."
+            exit 0
+          fi
+          args=()
+          for name in ELEVENLABS_API_KEY ELEVENLABS_ADVOCATE_AGENT_ID ELEVENLABS_HOSPITAL_AGENT_ID ELEVENLABS_INTAKE_AGENT_ID ELEVENLABS_INTAKE_VOICE_ID ELEVENLABS_BROWSER_AGENT_ID ELEVENLABS_LLM_SECRET_ID VOICE_LLM_TOKEN; do
+            value="${!name}"
+            if [ -z "$value" ]; then
+              echo "::error::$name is not set. The voice secrets belong to one ElevenLabs account; set all eight or none."
+              exit 1
+            fi
+            args+=("$name=$value")
+          done
+          flyctl secrets set --stage "${args[@]}"
+          echo "synced=true" >> "$GITHUB_OUTPUT"
       - run: flyctl deploy --remote-only --ha=false
         working-directory: vellum
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - run: curl -fsS https://vellum-app.fly.dev/health
+      # /health only reports that a key is present. A signed intake URL proves the key and agent belong together;
+      # 401 from the Haiku gateway proves its token is configured (503 = missing) without spending credits.
+      - name: Check hosted voice wiring
+        if: steps.voice.outputs.synced == 'true'
+        run: |
+          curl -fsS -o /dev/null https://vellum-app.fly.dev/api/intake/signed-url
+          gateway=https://vellum-app.fly.dev/api/voice/browser/llm/v1/chat/completions
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' "$gateway")
+          if [ "$code" != "401" ]; then
+            echo "::error::voice gateway answered $code to an unauthenticated request, expected 401"
+            exit 1
+          fi
