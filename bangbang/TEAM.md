@@ -30,7 +30,7 @@ That's expected, not a bug.
 | Fair-price + charity research | Context.dev | `src/research/*`, `src/routes/research.ts` | ✅ done, needs a live run with the key |
 | Negotiation prompts + tools | ElevenLabs | `src/agent/prompts.ts`, `tools.ts`, `translate.ts` | ✅ done |
 | Voice runtime + agent-vs-agent bridge | ElevenLabs | `src/agent/elevenlabs.ts`, `bridge.ts`, `src/routes/voice.ts` | ✅ done, needs key + `npm run setup:agents` + live turn-taking test |
-| XRPL credentials, escrow, batch, vault, loan | Ripple | `src/chain/xrpl*.ts`, `src/routes/xrpl.ts` | 🚧 Claude building |
+| XRPL credentials, escrow, batch, vault, loan | Ripple | `src/chain/xrpl*.ts`, `src/routes/xrpl.ts` | ✅ done, LIVE-verified on devnet (`npm run live:xrpl`) |
 | BNB mandate + tamper-evident log | YZi | `contracts/AdvocateLedger.sol`, `src/chain/bnb.ts`, `src/routes/bnb.ts` | ✅ done, needs tBNB + deploy |
 | x402 paid APIs in AUSD | Agora | `src/chain/ausd.ts`, `x402.ts`, `src/routes/x402.ts` | ✅ done, needs faucet funds |
 | Fed odds → financing advice | Gemini | `src/markets/gemini.ts`, `src/routes/markets.ts` | ✅ done (live-verified); sandbox hedge needs keys |

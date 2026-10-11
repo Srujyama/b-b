@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { addReceipt, emit, requireCase, updateCase } from "../store.js";
 import type { Receipt } from "../types.js";
 import { createSettlementEscrow, defaultCtx, escrowFor, issueHardshipCredential, releaseOnZeroBalance } from "../chain/xrpl.js";
-import { donate, fundIdsFromEnv, openZeroInterestLoan } from "../chain/xrplFund.js";
+import { fundIdsFromEnv, openZeroInterestLoan } from "../chain/xrplFund.js";
 
 type IdParams = { Params: { id: string } };
 
@@ -68,8 +68,9 @@ export default async function xrplRoutes(app: FastifyInstance) {
     }
   });
 
-  // 0% payment plan from the community fund vault (optional donation top-up first)
-  app.post<IdParams & { Body: { months?: number; donate?: number } }>("/api/cases/:id/loan", async (req, reply) => {
+  // 0% payment plan from the community fund vault. Donor deposits happen at fund setup: devnet's
+  // closed-ended vault rejects VaultDeposit (tecEXPIRED) once loans may originate.
+  app.post<IdParams & { Body: { months?: number } }>("/api/cases/:id/loan", async (req, reply) => {
     try {
       const { id } = req.params;
       const months = Number(req.body?.months ?? 12);
@@ -77,11 +78,8 @@ export default async function xrplRoutes(app: FastifyInstance) {
       const principal = agreedAmount(id);
       const ids = fundIdsFromEnv();
       const ctx = await defaultCtx();
-      const receipts: Receipt[] = [];
-      const extra = Number(req.body?.donate ?? 0);
-      if (extra > 0) receipts.push(await donate(ctx, ids.vaultId, ctx.actors.issuer, extra));
       const loan = await openZeroInterestLoan(id, principal, months, ctx, ids);
-      receipts.push(...loan.receipts);
+      const receipts = loan.receipts;
       emit(id, { type: "log", message: `0% payment plan: ${principal} USD over ${months} months`, messageZh: `零利息分期：${principal} 美元，分 ${months} 个月` });
       return record(id, receipts);
     } catch (e) {

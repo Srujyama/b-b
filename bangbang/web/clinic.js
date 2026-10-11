@@ -2,7 +2,7 @@
 // Reuses the shared helpers and the negotiation room from app.js.
 import {
   I18N, $, h, api, busy, t, getLang, safeUrl, showError, setupLangToggle, setupErrorBox, onLangChange,
-  connectCase, mergeEvent, createRoom, startElevenConversation,
+  connectCase, mergeEvent, createRoom, startElevenConversation, ADVOCATE_TOOLS,
 } from "./app.js";
 
 Object.assign(I18N.en, {
@@ -42,7 +42,7 @@ Object.assign(I18N.zh, {
   humanMode: "真人模式：请对着麦克风扮演保险公司审核员，帮帮会跟您谈。",
 });
 
-const state = { packet: null, sub: null, convo: null };
+const state = { packet: null, sub: null, convo: null, bridgeOn: false };
 const P = () => state.packet;
 const room = createRoom({
   getPacket: P,
@@ -75,6 +75,10 @@ function onEvent(ev) {
   if (ev.type === "log") {
     $("#room-status").textContent = getLang() === "zh" ? ev.messageZh || ev.message : ev.message;
     return;
+  }
+  if (ev.type === "deal" || (ev.type === "status" && ["agreed", "failed", "settled"].includes(ev.status))) {
+    state.bridgeOn = false;
+    setCallLabel();
   }
   if (state.packet && mergeEvent(state.packet, ev)) render();
 }
@@ -164,46 +168,62 @@ $("#copy-letter").addEventListener("click", async (e) => {
   }
 });
 
+function setCallLabel() {
+  $("#call-insurer-btn").textContent = state.convo || state.bridgeOn ? t("endCall") : t("callInsurer");
+}
+
 $("#call-insurer-btn").addEventListener("click", async (e) => {
   const btn = e.currentTarget;
   if (state.convo) {
     const c = state.convo;
     state.convo = null;
-    btn.textContent = t("callInsurer");
+    setCallLabel();
     await c.endSession().catch(() => {});
     return;
   }
-  room.audio.unlock();
+  if (state.bridgeOn) {
+    await busy(btn, async () => {
+      await api(`/api/cases/${P().id}/negotiate/stop`, { method: "POST", body: {} });
+      state.bridgeOn = false;
+    });
+    setCallLabel();
+    return;
+  }
+  if (!P()) return showError(t("failed") + "load a denial first");
+  room.audio.unlock(); // user gesture: lets the browser play the agents' audio
   const counterparty = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
   await busy(btn, async () => {
     const res = await api(`/api/cases/${P().id}/negotiate`, { method: "POST", body: { counterparty } });
     if (res?.mode === "human") {
       if (!res.advocateSignedUrl) throw new Error("negotiate returned no advocateSignedUrl for human mode");
       $("#room-status").textContent = t("humanMode");
-      state.convo = await startElevenConversation(
-        res.advocateSignedUrl,
-        {
-          onMessage: ({ message, source }) => {
-            if (!message) return;
-            mergeEvent(P(), { type: "transcript", line: { role: source === "ai" ? "advocate" : "insurer", text: message, at: new Date().toISOString() } });
-            room.render();
-          },
-          onError: (m) => showError(t("failed") + m),
-          onDisconnect: () => {
-            state.convo = null;
-            $("#call-insurer-btn").textContent = t("callInsurer");
-          },
+      state.convo = await startElevenConversation(res.advocateSignedUrl, {
+        init: res.advocateInit,
+        caseId: P().id,
+        tools: ADVOCATE_TOOLS,
+        onMessage: ({ message, source }) => {
+          if (!message) return;
+          mergeEvent(P(), { type: "transcript", line: { role: source === "ai" ? "advocate" : "insurer", text: message, at: new Date().toISOString() } });
+          room.render();
         },
-        { case_id: P().id },
-      );
-      btn.textContent = t("endCall");
+        onError: (m) => showError(t("failed") + m),
+        onDisconnect: () => {
+          state.convo = null;
+          setCallLabel();
+        },
+      });
     } else {
+      state.bridgeOn = true;
       $("#room-status").textContent = t("calling");
     }
   });
+  setCallLabel();
 });
 
-onLangChange(render);
+onLangChange(() => {
+  render();
+  setCallLabel();
+});
 
 const resumeId = new URLSearchParams(location.hash.slice(1)).get("case");
 if (resumeId) {

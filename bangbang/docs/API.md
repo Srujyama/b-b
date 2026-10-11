@@ -28,7 +28,7 @@ a missing key is a 503 `{error: "X is not configured — set Y"}`.
 | POST | /api/eleven/tools/:name | ElevenLabs server-tool webhook (`log_offer`, `accept_offer`, `end_call`, `submit_intake`) | voice |
 | POST | /api/cases/:id/settle | `{}` → Receipt[] (XRPL EscrowCreate with crypto-condition for agreedAmount) | xrpl |
 | POST | /api/cases/:id/confirm-zero-balance | `{}` (hospital side) → Receipt[] (Batch: EscrowFinish + advocate fee) (status `settled`) | xrpl |
-| POST | /api/cases/:id/loan | `{months}` → Receipt[] (devnet Vault deposit + LoanSet 0% plan) | xrpl |
+| POST | /api/cases/:id/loan | `{months}` → Receipt[] (0% LoanSet from the community-fund LoanBroker; donor deposits happen once in setup:xrpl — closed-ended vault). Requires accepted hardship credential + agreedAmount | xrpl |
 | POST | /api/cases/:id/run | `{counterparty}` → starts the whole pipeline, progress over /ws | pipeline |
 
 ## Clinic flow (doctor's office)

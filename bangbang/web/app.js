@@ -45,7 +45,7 @@ export const I18N = {
     receiptsTitle: "每一步都有凭证",
     receiptsLede: "钱先放在托管账户里，医院确认您欠款为零才会付出去。",
     credential: "证明困难资格", settle: "把钱放进托管", confirmZero: "医院确认余额为零",
-    months: "分期月数", loan: "0% 分期", fedTitle: "一次付清，还是分期？", getAdvice: "看建议",
+    months: "分期月数", loan: "0% 分期", fedTitle: "一次付清，还是分期？", getAdvice: "看建议", hedge: "用 Gemini 测试盘对冲利率风险",
     lumpSum: "建议一次付清", paymentPlan: "建议分期付款", rateMove: (bps) => `市场预期利率变化：${bps > 0 ? "+" : ""}${bps} 基点`,
     loadPayments: "显示帮帮付的数据费", noReceipts: "还没有凭证。每做一步，这里会多一条。",
     viewTx: "在区块浏览器查看", noPayments: "帮帮还没有付过数据费。",
@@ -96,7 +96,7 @@ export const I18N = {
     receiptsTitle: "A receipt for every step",
     receiptsLede: "Your money waits in escrow and is paid only after the hospital confirms a zero balance.",
     credential: "Prove hardship eligibility", settle: "Put the money in escrow", confirmZero: "Hospital confirms zero balance",
-    months: "Months", loan: "0% payment plan", fedTitle: "Pay at once, or in installments?", getAdvice: "Get advice",
+    months: "Months", loan: "0% payment plan", fedTitle: "Pay at once, or in installments?", getAdvice: "Get advice", hedge: "Hedge rate risk (Gemini sandbox)",
     lumpSum: "Pay in one lump sum", paymentPlan: "Use a payment plan", rateMove: (bps) => `Market-implied rate move: ${bps > 0 ? "+" : ""}${bps} bps`,
     loadPayments: "Show the data fees BangBang paid", noReceipts: "No receipts yet. Each step adds one here.",
     viewTx: "View on explorer", noPayments: "BangBang has not paid for any data yet.",
@@ -369,8 +369,47 @@ export function createAudio(onSpeaking) {
 }
 
 let elevenModule;
-/** Lazy-load @elevenlabs/client (pinned) and start a browser conversation from a signed URL. */
-export async function startElevenConversation(signedUrl, callbacks = {}, dynamicVariables) {
+export const INTAKE_TOOLS = ["submit_intake"];
+export const ADVOCATE_TOOLS = ["log_offer", "accept_offer", "report_outcome", "end_call"];
+
+/** Client tools: the ElevenLabs session calls them in the browser; we forward to the server and hand back its answer. */
+export function forwardTools(names, caseId, onResult) {
+  const tools = {};
+  for (const name of names) {
+    tools[name] = async (params) => {
+      try {
+        const r = await api(`/api/eleven/tools/${encodeURIComponent(name)}`, { method: "POST", body: { ...(params ?? {}), case_id: caseId } });
+        onResult?.(name, r);
+        return r?.message ?? (r?.ok ? "ok" : "failed");
+      } catch (e) {
+        showError(errorText(e));
+        return `error: ${e.message}`;
+      }
+    };
+  }
+  return tools;
+}
+
+/** conversation_initiation_client_data (server shape) -> @elevenlabs/client startSession options. */
+export function initToSessionOptions(init, caseId) {
+  const agent = init?.conversation_config_override?.agent ?? {};
+  const overrides = {};
+  if (agent.prompt || agent.first_message != null || agent.language) {
+    overrides.agent = {};
+    if (agent.prompt) overrides.agent.prompt = agent.prompt;
+    if (agent.first_message != null) overrides.agent.firstMessage = agent.first_message;
+    if (agent.language) overrides.agent.language = agent.language;
+  }
+  const opts = { dynamicVariables: { ...(init?.dynamic_variables ?? {}), case_id: caseId } };
+  if (overrides.agent) opts.overrides = overrides;
+  return opts;
+}
+
+/**
+ * Lazy-load @elevenlabs/client (pinned) and start a browser conversation from a signed URL.
+ * `init` is the server's conversation_initiation_client_data; `tools` are the client tools to forward.
+ */
+export async function startElevenConversation(signedUrl, { init, caseId, tools = [], onToolResult, ...callbacks } = {}) {
   if (!elevenModule) {
     try {
       elevenModule = await import(ELEVEN_CLIENT_URL);
@@ -379,14 +418,17 @@ export async function startElevenConversation(signedUrl, callbacks = {}, dynamic
     }
   }
   try {
-    await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((tr) => tr.stop());
   } catch {
     throw new Error(t("micDenied"));
   }
   return elevenModule.Conversation.startSession({
     signedUrl,
     connectionType: "websocket",
-    ...(dynamicVariables ? { dynamicVariables } : {}),
+    ...initToSessionOptions(init, caseId),
+    clientTools: forwardTools(tools, caseId, onToolResult),
+    onUnhandledClientToolCall: (call) => showError(`${t("failed")}unhandled voice tool ${call?.tool_name ?? "?"}`),
     ...callbacks,
   });
 }
@@ -529,7 +571,7 @@ function initPatient() {
   setupLangToggle();
   setupErrorBox();
 
-  const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null };
+  const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null, bridgeOn: false };
   const P = () => state.packet;
   const room = createRoom({ getPacket: P, getAsked: () => P()?.bill?.patientBalance });
 
@@ -586,6 +628,10 @@ function initPatient() {
     if (!state.packet) return;
     if (mergeEvent(state.packet, ev)) {
       if (ev.type === "deal") $("#room-status").textContent = t("dealAt", usd(ev.amount));
+      if (ev.type === "deal" || (ev.type === "status" && ["agreed", "failed", "settled"].includes(ev.status))) {
+        state.bridgeOn = false;
+        setCallLabel();
+      }
       renderAll();
     }
   }
@@ -722,11 +768,13 @@ function initPatient() {
     await busy(e.currentTarget, async () => {
       $("#talk-status").textContent = t("connecting");
       try {
-        const { signedUrl } = await api("/api/intake/signed-url");
+        const { signedUrl, init } = await api(`/api/intake/signed-url?case=${encodeURIComponent(P().id)}`);
         if (!signedUrl) throw new Error("/api/intake/signed-url returned no signedUrl");
-        state.convo = await startElevenConversation(
-          signedUrl,
-          {
+        state.convo = await startElevenConversation(signedUrl, {
+            init,
+            caseId: P().id,
+            tools: INTAKE_TOOLS,
+            onToolResult: () => api(`/api/cases/${P().id}`).then(adopt).catch(() => {}),
             onMessage: ({ message, source }) => message && addBubble(source, message),
             onModeChange: ({ mode }) => {
               $("#talk-status").textContent = mode === "speaking" ? t("speaking") : t("listening");
@@ -739,9 +787,7 @@ function initPatient() {
               $("#talk-status").textContent = t("disconnected");
               api(`/api/cases/${P().id}`).then(adopt).catch(() => {});
             },
-          },
-          { case_id: P().id },
-        );
+          });
         setTalking(true);
         $("#talk-status").textContent = t("listening");
       } catch (err) {
@@ -839,13 +885,24 @@ function initPatient() {
   $("#to-room").addEventListener("click", () => show("room"));
 
   /* ---- 5 room ---- */
+  function setCallLabel() {
+    $("#negotiate-btn").textContent = state.callConvo || state.bridgeOn ? t("endCall") : t("startCall");
+  }
   $("#negotiate-btn").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
     if (state.callConvo) {
       const c = state.callConvo;
       state.callConvo = null;
-      btn.textContent = t("startCall");
+      setCallLabel();
       await c.endSession().catch(() => {});
+      return;
+    }
+    if (state.bridgeOn) {
+      await busy(btn, async () => {
+        await api(`/api/cases/${P().id}/negotiate/stop`, { method: "POST", body: {} });
+        state.bridgeOn = false;
+      });
+      setCallLabel();
       return;
     }
     room.audio.unlock(); // user gesture: lets the browser play the agents' audio
@@ -855,28 +912,28 @@ function initPatient() {
       if (res?.mode === "human") {
         if (!res.advocateSignedUrl) throw new Error("negotiate returned no advocateSignedUrl for human mode");
         $("#room-status").textContent = t("humanMode");
-        state.callConvo = await startElevenConversation(
-          res.advocateSignedUrl,
-          {
-            onMessage: ({ message, source }) => {
-              if (!message) return;
-              const line = { role: source === "ai" ? "advocate" : "hospital", text: message, at: new Date().toISOString() };
-              mergeEvent(P(), { type: "transcript", line });
-              room.render();
-            },
-            onError: (m) => showError(t("failed") + m),
-            onDisconnect: () => {
-              state.callConvo = null;
-              $("#negotiate-btn").textContent = t("startCall");
-            },
+        state.callConvo = await startElevenConversation(res.advocateSignedUrl, {
+          init: res.advocateInit,
+          caseId: P().id,
+          tools: ADVOCATE_TOOLS,
+          onMessage: ({ message, source }) => {
+            if (!message) return;
+            const line = { role: source === "ai" ? "advocate" : "hospital", text: message, at: new Date().toISOString() };
+            mergeEvent(P(), { type: "transcript", line });
+            room.render();
           },
-          { case_id: P().id },
-        );
-        btn.textContent = t("endCall");
+          onError: (m) => showError(t("failed") + m),
+          onDisconnect: () => {
+            state.callConvo = null;
+            setCallLabel();
+          },
+        });
       } else {
+        state.bridgeOn = true;
         $("#room-status").textContent = t("calling");
       }
     });
+    setCallLabel();
   });
   $("#to-receipts").addEventListener("click", () => show("receipts"));
 
@@ -902,6 +959,7 @@ function initPatient() {
   receiptAction("#credential-btn", () => post("credential"));
   receiptAction("#settle-btn", () => post("settle"));
   receiptAction("#confirm-btn", () => post("confirm-zero-balance"));
+  receiptAction("#hedge-btn", () => post("hedge"));
   receiptAction("#loan-btn", () => post("loan", { months: Number($("#loan-months").value) || 12 }));
   $("#x402-btn").addEventListener("click", (e) =>
     busy(e.currentTarget, async () => {
@@ -958,6 +1016,7 @@ function initPatient() {
     renderAll();
     renderFeed();
     setTalking(Boolean(state.convo));
+    setCallLabel();
     if (!$("#bill-file").files?.length) $("#file-name").textContent = t("takePhoto");
   });
 
