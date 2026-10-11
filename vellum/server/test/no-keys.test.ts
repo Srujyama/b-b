@@ -365,7 +365,10 @@ describe("no API keys: every route answers cleanly", () => {
   });
 
   // Known bugs in files this audit may not edit (bill.ts / index.ts). `it.fails` passes while the bug is there and
-  // turns red once it is fixed, so whoever fixes it flips these to plain `it`.
+  // turns red once it is fixed, so whoever fixes it flips these to plain `it`. The JSON one (and the unknown-route
+  // `.message` assertion above) is fixed by one line in index.ts buildApp(), right after Fastify():
+  //   rootJsonErrors(app);   // import { rootJsonErrors } from "./routes/errors.js"
+  // test/errors.test.ts already proves that helper on a root-plus-plugin app shaped like this one.
   it.fails("POST /api/cases with a truncated multipart body is a 400, not a 500 (bill.ts readIntake)", async () => {
     const res = await app.inject({ method: "POST", url: "/api/cases", payload: "garbage", headers: { "content-type": "multipart/form-data; boundary=zz" } });
     assertClean(res, 0, "POST /api/cases multipart");
