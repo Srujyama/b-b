@@ -12,7 +12,9 @@ import type { TranscriptLine } from "../types.js";
 
 // Voice routes (see docs/API.md):
 //   GET  /api/intake/signed-url[?case=]   → {signedUrl, init}  browser opens the Mandarin intake agent
-//   POST /api/cases/:id/negotiate          {counterparty:"agent"|"human"} → {mode, advocateSignedUrl?, advocateInit?}
+//   POST /api/cases/:id/negotiate          {counterparty:"agent"|"human"|"text"} → {mode, channel?, advocateSignedUrl?, advocateInit?}
+//                                          "agent" = ElevenLabs voice call, falling back to a live text negotiation
+//                                          when voice can't run; "text" = the live text negotiation directly
 //   POST /api/eleven/tools/:name           ElevenLabs webhook tools AND browser-forwarded client tools
 // `init` = the conversation_initiation_client_data the browser must send first (per-case prompt overrides +
 // dynamic_variables {case_id}).
@@ -35,10 +37,10 @@ export default async function voiceRoutes(app: FastifyInstance) {
     return { signedUrl, init: conversationInit("intake", packet, caseId) };
   });
 
-  app.post<{ Params: { id: string }; Body: { counterparty?: "agent" | "human" } }>("/api/cases/:id/negotiate", async (req, reply) => {
+  app.post<{ Params: { id: string }; Body: { counterparty?: "agent" | "human" | "text" } }>("/api/cases/:id/negotiate", async (req, reply) => {
     const packet = requireCase(req.params.id);
     const mode = req.body?.counterparty ?? "agent";
-    if (mode !== "agent" && mode !== "human") return reply.code(400).send({ error: "counterparty must be 'agent' or 'human'" });
+    if (mode !== "agent" && mode !== "human" && mode !== "text") return reply.code(400).send({ error: "counterparty must be 'agent', 'human' or 'text'" });
     if (packet.mode === "patient" && packet.patient?.consent !== true)
       return reply.code(409).send({ error: "the patient has not consented — Vellum will not negotiate" });
 
@@ -56,8 +58,12 @@ export default async function voiceRoutes(app: FastifyInstance) {
     }
 
     if (activeBridge(packet.id)) return reply.code(409).send({ error: "a negotiation call is already running for this case" });
-    const handle = await startAgentBridge(packet.id, packet.mode === "clinic" ? "insurer" : "hospital");
-    return { mode, counterparty: handle.counterparty };
+    // Voice needs ElevenLabs; the live-text fallback needs Claude. With neither, say so up front instead of
+    // starting a negotiation that can only fail in the background.
+    if (!process.env.ANTHROPIC_API_KEY && (mode === "text" || !process.env.ELEVENLABS_API_KEY))
+      return reply.code(503).send({ error: "ANTHROPIC_API_KEY is not configured — the live negotiation needs Claude (set it in vellum/server/.env)" });
+    const handle = await startAgentBridge(packet.id, packet.mode === "clinic" ? "insurer" : "hospital", mode === "text" ? { channel: "text" } : {});
+    return { mode, counterparty: handle.counterparty, channel: handle.channel };
   });
 
   app.post<{ Params: { id: string }; Body: TranscriptLine }>("/api/cases/:id/voice/transcript", {
@@ -72,7 +78,6 @@ export default async function voiceRoutes(app: FastifyInstance) {
     browserTranscripts.append(req.params.id, req.headers["x-voice-session"], { role, text, at });
     return { ok: true };
   });
-
   app.post<{ Params: { id: string } }>("/api/cases/:id/negotiate/stop", async (req, reply) => {
     const b = activeBridge(req.params.id);
     if (!b) return reply.code(404).send({ error: "no negotiation call is running for this case" });

@@ -173,7 +173,9 @@ const PROBES: Probe[] = [
   { route: "POST /api/cases/:id/negotiate", url: caseUrl("unknown", "/negotiate"), payload: {}, status: 404, match: /unknown case/ },
   { route: "POST /api/cases/:id/negotiate", url: caseUrl("neg", "/negotiate"), payload: { counterparty: "x" }, status: 400, match: /counterparty must be/ },
   { route: "POST /api/cases/:id/negotiate", url: caseUrl("noConsent", "/negotiate"), payload: {}, status: 409, match: /not consented/ },
-  { route: "POST /api/cases/:id/negotiate", url: caseUrl("neg", "/negotiate"), payload: { counterparty: "agent" }, status: 503, match: NOT_CONFIGURED("ELEVENLABS_ADVOCATE_AGENT_ID") },
+  // no ElevenLabs AND no Claude: neither voice nor the live-text fallback can run
+  { route: "POST /api/cases/:id/negotiate", url: caseUrl("neg", "/negotiate"), payload: { counterparty: "agent" }, status: 503, match: /ANTHROPIC_API_KEY/ },
+  { route: "POST /api/cases/:id/negotiate", url: caseUrl("neg", "/negotiate"), payload: { counterparty: "text" }, status: 503, match: /ANTHROPIC_API_KEY/ },
   { route: "POST /api/cases/:id/negotiate", url: caseUrl("neg", "/negotiate"), payload: { counterparty: "human" }, status: 503, match: NOT_CONFIGURED("ELEVENLABS_ADVOCATE_AGENT_ID") },
   { route: "POST /api/cases/:id/negotiate/stop", url: caseUrl("neg", "/negotiate/stop"), status: 404, match: /no negotiation call is running/ },
   { route: "POST /api/cases/:id/voice/transcript", url: caseUrl("neg", "/voice/transcript"), payload: { role: "hospital", text: "Synthetic billing reply", at: "2026-10-11T22:00:00Z" }, status: 401, match: /session is missing or expired/ },
