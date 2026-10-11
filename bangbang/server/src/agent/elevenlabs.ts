@@ -90,9 +90,10 @@ export async function getSignedUrl(agentId: string, f: FetchLike = fetch): Promi
 // ---------- per-conversation initiation (overrides + dynamic variables) ----------
 export type ConversationInit = {
   type: "conversation_initiation_client_data";
+  custom_llm_extra_body?: Record<string, unknown>;
   conversation_config_override: {
     agent: { prompt: { prompt: string }; first_message?: string; language: "en" | "zh" };
-    tts?: { voice_id: string };
+    tts?: { voice_id: string; model_id?: string; stability?: number; speed?: number };
   };
   dynamic_variables: Record<string, string | number | boolean>;
 };
@@ -229,7 +230,7 @@ export function agentConfig(spec: AgentSpec, toolIds: string[]): Record<string, 
 }
 
 // ---------- REST: tools + agents ----------
-type ToolRow = { id: string; tool_config?: { name?: string } };
+type ToolRow = { id: string; tool_config?: { name?: string; type?: string } };
 
 export async function upsertTool(config: Record<string, unknown>, existing: ToolRow[], f: FetchLike = fetch): Promise<string> {
   const hit = existing.find((t) => t.tool_config?.name === config.name);
