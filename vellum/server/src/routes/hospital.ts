@@ -18,6 +18,7 @@ import { emit, getCase, listCases, requireCase } from "../store.js";
 import type { CasePacket, Receipt } from "../types.js";
 import { defaultCtx, escrowFor, explorerFor, hasHardshipCredential, networkUrl } from "../chain/xrpl.js";
 import { getRun } from "./pipeline.js";
+import { jsonErrors } from "./errors.js";
 
 /** XRPL "ripple epoch" (2000-01-01) offset from the Unix epoch, in seconds. */
 const RIPPLE_EPOCH = 946684800;
@@ -187,6 +188,7 @@ const inFlight = new Set<string>();
 export const _resetHospital = () => inFlight.clear();
 
 export default async function hospitalRoutes(app: FastifyInstance) {
+  jsonErrors(app);
   app.get("/api/hospital/cases", async () => {
     const order: Record<HospitalStage, number> = { awaiting_confirmation: 0, awaiting_escrow: 1, released: 2 };
     return listCases()

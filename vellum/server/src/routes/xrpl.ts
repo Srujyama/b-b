@@ -3,6 +3,7 @@ import { addReceipt, emit, requireCase, updateCase } from "../store.js";
 import type { Receipt } from "../types.js";
 import { createSettlementEscrow, defaultCtx, escrowFor, issueHardshipCredential, releaseOnZeroBalance } from "../chain/xrpl.js";
 import { fundIdsFromEnv, openZeroInterestLoan } from "../chain/xrplFund.js";
+import { jsonErrors } from "./errors.js";
 
 type IdParams = { Params: { id: string } };
 
@@ -28,6 +29,7 @@ function agreedAmount(id: string): number {
 }
 
 export default async function xrplRoutes(app: FastifyInstance) {
+  jsonErrors(app);
   // Clinic social worker attests FinancialHardship (CredentialCreate), patient accepts (CredentialAccept)
   app.post<IdParams>("/api/cases/:id/credential", async (req, reply) => {
     try {

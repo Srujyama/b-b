@@ -494,7 +494,7 @@ describe("network boundary + routes (fetch mocked)", () => {
       const c = createCase({ mode: "patient", target: 3000 });
       const r = await app.inject({ method: "POST", url: `/api/cases/${c.id}/hedge`, payload: {} });
       expect(r.statusCode).toBe(503);
-      expect(r.json().message).toMatch(/GEMINI_API_KEY/);
+      expect(r.json().error).toMatch(/GEMINI_API_KEY/);
     } finally {
       if (saved.k !== undefined) process.env.GEMINI_API_KEY = saved.k;
       if (saved.s !== undefined) process.env.GEMINI_API_SECRET = saved.s;

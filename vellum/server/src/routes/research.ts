@@ -5,6 +5,7 @@ import { contextDevKey } from "../research/contextdev.js";
 import { lookupFairPrice } from "../research/fairprice.js";
 import { findCharityPolicy } from "../research/charity.js";
 import { buildNegotiation } from "../research/facts.js";
+import { jsonErrors } from "./errors.js";
 
 const MAX_CODES = 6; // research the highest-charge codes; keeps Context.dev credits + latency bounded
 const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -91,6 +92,7 @@ export async function researchCase(id: string, opts: { lookup?: FairPriceLookup 
 }
 
 export default async function researchRoutes(app: FastifyInstance) {
+  jsonErrors(app);
   app.post<{ Params: { id: string } }>("/api/cases/:id/research", async (req, reply) => {
     try {
       return await researchCase(req.params.id);

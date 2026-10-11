@@ -16,8 +16,8 @@ a missing key is a 503 `{error: "X is not configured — set Y"}`.
 | POST | /api/cases | multipart (`bill` file: image, PDF or text, `patient` JSON field) OR JSON `{patient, billText}` → CasePacket (status `audited`, bill parsed, flags, zh explanations) | bill |
 | POST | /api/cases/demo | `{}` → CasePacket built from fixtures/lin-er-bill.* (runs the same parse+audit code) | bill |
 | POST | /api/cases/:id/research | `{}` → CasePacket with fairPrices, charity, facts, target/opening/walkaway (status `researched`) | research |
-| POST | /api/cases/:id/financing | `{}` → FinancingAdvice (Gemini Fed odds) | markets |
-| GET | /api/markets/fed | → current Fed-decision market odds (public Gemini data) | markets |
+| POST | /api/cases/:id/financing | `{lumpSumDiscountPct?: [0,100) = 10, planMonths?: 1-120 = 12, planAprPct?: [0,100] = 0, fundLumpSumWith?: "savings"\|"card", planVariable?: boolean}` → FinancingAdvice (Gemini Fed odds; keyless). 400 on a bad field (checked before any network call), 409 if the case has no balance, 502 if Gemini/FRED is unreachable (8 s timeout) | markets |
+| GET | /api/markets/fed | → current Fed-decision market odds (public Gemini data; keyless). 502 `{error: "... is unreachable: ..."}` if Gemini or FRED is down (8 s timeout) | markets |
 | POST | /api/cases/:id/hedge | `{}` → Receipt (Gemini SANDBOX YES order hedging rate risk) | markets |
 | POST | /api/cases/:id/mandate | `{}` → Receipt (BNB AdvocateLedger.openMandate) (status `mandated`) | bnb |
 | GET | /api/cases/:id/ledger | → on-chain mandate + log entries + chain-head verification | bnb |

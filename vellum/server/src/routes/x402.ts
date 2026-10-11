@@ -3,6 +3,7 @@ import { lookupFairPrice } from "../research/fairprice.js";
 import { draftAppeal } from "../claims/appeal.js";
 import { listPayments, requirePayment, settlePayment } from "../chain/x402.js";
 import type { ClaimCase } from "../types.js";
+import { jsonErrors } from "./errors.js";
 
 export const FAIR_PRICE_AUSD = "0.05";
 export const APPEAL_AUSD = "0.50";
@@ -25,6 +26,7 @@ async function paidWork<T>(req: FastifyRequest, reply: FastifyReply, caseId: str
 }
 
 export default async function x402Routes(app: FastifyInstance) {
+  jsonErrors(app);
   app.get<{ Querystring: { code?: string; description?: string; hospital?: string; case?: string } }>(
     "/x402/fair-price",
     {

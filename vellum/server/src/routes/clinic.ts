@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { claimFacts, draftAppeal, validateClaim, type ClaimMeta } from "../claims/appeal.js";
 import { createCase, emit, updateCase } from "../store.js";
 import type { CasePacket, ClaimCase, Patient } from "../types.js";
+import { jsonErrors } from "./errors.js";
 
 // Demo seed denials, keyed by the name the UI sends. Each one still goes through the live policy lookup.
 export const DEMO_DENIALS = {
@@ -56,6 +57,7 @@ export async function loadDemoClaim(name: DemoDenial = "mri"): Promise<ClaimCase
 }
 
 export default async function clinicRoutes(app: FastifyInstance) {
+  jsonErrors(app);
   app.post<{ Body: { claim?: unknown } | undefined }>("/api/claims", async (req, reply) => {
     try {
       const body = (req.body ?? {}) as Record<string, unknown>;
