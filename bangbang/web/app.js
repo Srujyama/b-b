@@ -324,13 +324,26 @@ export async function busy(btn, fn) {
 /* ----------------------------------------------------------- live events */
 
 /** Subscribe to WS /ws?case=<id>; reconnects with backoff. Returns {close}. */
+// Where /ws lives. Same host by default; when the page is served from a static host (Vercel) that proxies
+// /api to the backend, GET /api/config names the backend's own WebSocket origin (static hosts can't proxy WS).
+let wsOriginPromise;
+export function wsOrigin() {
+  const local = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
+  wsOriginPromise ??= fetch("/api/config")
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((c) => (typeof c?.wsOrigin === "string" && /^wss?:\/\//.test(c.wsOrigin) ? c.wsOrigin : local))
+    .catch(() => local);
+  return wsOriginPromise;
+}
+
 export function connectCase(id, onEvent) {
   let ws;
   let closed = false;
   let tries = 0;
-  const open = () => {
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    ws = new WebSocket(`${proto}://${location.host}/ws?case=${encodeURIComponent(id)}`);
+  const open = async () => {
+    const origin = await wsOrigin();
+    if (closed) return;
+    ws = new WebSocket(`${origin}/ws?case=${encodeURIComponent(id)}`);
     ws.onopen = () => {
       tries = 0;
     };
