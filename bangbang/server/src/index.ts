@@ -29,6 +29,7 @@ export async function buildApp() {
   const has = (k: string) => Boolean(process.env[k]);
   app.get("/health", async () => ({
     ok: true,
+    anthropic: has("ANTHROPIC_API_KEY"),
     openai: has("OPENAI_API_KEY"),
     elevenlabs: has("ELEVENLABS_API_KEY"),
     contextDev: has("CONTEXT_DEV_API_KEY"),
