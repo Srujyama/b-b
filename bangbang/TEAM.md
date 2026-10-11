@@ -35,7 +35,7 @@ That's expected, not a bug.
 | x402 paid APIs in AUSD | Agora | `src/chain/ausd.ts`, `x402.ts`, `src/routes/x402.ts` | ✅ done, needs faucet funds |
 | Fed odds → financing advice | Gemini | `src/markets/gemini.ts`, `src/routes/markets.ts` | ✅ done (live-verified); sandbox hedge needs keys |
 | Clinic denial appeals | core | `src/claims/*`, `src/routes/clinic.ts` | ✅ done |
-| Web UI (Mandarin-first) | all | `web/*` | 🚧 Claude building |
+| Web UI (Mandarin-first) | all | `web/*` | ✅ done (patient `/`, clinic `/clinic.html`) |
 | One-button pipeline + README + demo | all | `src/routes/pipeline.ts`, `README.md`, `docs/DEMO.md` | ⏳ after the above |
 
 🚧 = a Claude agent is editing these files **right now**. Don't edit them until the row turns ✅ (pull first).
