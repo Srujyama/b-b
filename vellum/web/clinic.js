@@ -1,7 +1,7 @@
 // Clinic mode: denial -> payer policy criteria -> appeal letter -> argue it with the insurer's agent.
 // Reuses the shared helpers and the negotiation room from app.js.
 import {
-  I18N, $, h, api, busy, t, getLang, safeUrl, showError, setupLangToggle, setupErrorBox, onLangChange,
+  I18N, $, h, api, busy, t, safeUrl, showError, setupErrorBox,
   connectCase, mergeEvent, createRoom, startElevenConversation, ADVOCATE_TOOLS,
 } from "./app.js";
 
@@ -23,24 +23,6 @@ Object.assign(I18N.en, {
   calling: "On the call with the insurer's agent.",
   humanMode: "Human mode: play the insurer's reviewer into the microphone. Vellum will argue the appeal with you.",
 });
-Object.assign(I18N.zh, {
-  clinicBrand: "诊所申诉",
-  clinicTitle: "申诉被拒的理赔",
-  clinicLede: "输入拒赔理由和病历。Vellum 会找到保险公司的医疗政策，逐条对照病历，并写好申诉信。",
-  useDemoClaim: "示范：腰椎核磁共振被拒（Aetna）", useDemoSleep: "示范：睡眠检查被拒（UnitedHealthcare）", ownClaim: "或者输入您自己的拒赔",
-  payer: "保险公司", denialReason: "拒赔理由（原文）", procCode: "项目代码", procDesc: "检查/治疗项目",
-  diagnoses: "诊断，每行一个：代码 + 描述", notes: "病历记录", buildAppeal: "生成申诉",
-  building: "正在找保险政策并写申诉信……",
-  criteriaTitle: "政策条件 vs 病历", thCriterion: "条件", thMet: "符合", thEvidence: "病历里的证据",
-  met: "符合", notMet: "不符合", noCriteria: "没有拿到这条政策的条件。", policy: "保险政策：",
-  letterTitle: "申诉信", copyLetter: "复制申诉信", copied: "已复制", noLetter: "没有生成申诉信。",
-  callInsurerTitle: "和保险公司谈", insurerSide: "保险公司那边是", callInsurer: "打给保险公司",
-  denied: "拒赔", procedure: "项目",
-  metCount: (m, n) => `${n} 条中符合 ${m} 条`,
-  asked: "账单金额", current: "保险现在给", saved: "追回",
-  calling: "正在和保险公司的 AI 通话。",
-  humanMode: "真人模式：请对着麦克风扮演保险公司审核员，Vellum 会跟您谈。",
-});
 
 const state = { packet: null, sub: null, convo: null, bridgeOn: false };
 const P = () => state.packet;
@@ -49,7 +31,6 @@ const room = createRoom({
   getAsked: () => P()?.bill?.patientBalance ?? P()?.offers.find((o) => o.by === "advocate")?.amount,
 });
 
-setupLangToggle();
 setupErrorBox();
 
 function adopt(packet) {
@@ -73,7 +54,7 @@ function onEvent(ev) {
   if (ev.type === "audio") return room.handle(ev);
   if (ev.type === "error") return showError(t("failed") + ev.message);
   if (ev.type === "log") {
-    $("#room-status").textContent = getLang() === "zh" ? ev.messageZh || ev.message : ev.message;
+    $("#room-status").textContent = ev.message;
     return;
   }
   if (ev.type === "deal" || (ev.type === "status" && ["agreed", "failed", "settled"].includes(ev.status))) {
@@ -219,11 +200,6 @@ $("#call-insurer-btn").addEventListener("click", async (e) => {
       $("#room-status").textContent = t("calling");
     }
   });
-  setCallLabel();
-});
-
-onLangChange(() => {
-  render();
   setCallLabel();
 });
 

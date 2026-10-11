@@ -272,7 +272,7 @@ describe("web: fund page", () => {
     const app = await buildApp();
     try {
       const html = (await app.inject({ method: "GET", url: "/fund.html" })).body;
-      for (const id of ["fund-app", "lang-toggle", "error", "stats", "role-broker", "role-depositor", "role-borrower", "vault-card", "deposit-note", "loans", "history", "refresh-btn"]) {
+      for (const id of ["fund-app", "error", "stats", "role-broker", "role-depositor", "role-borrower", "vault-card", "deposit-note", "loans", "history", "refresh-btn"]) {
         expect(html, id).toContain(`id="${id}"`);
       }
       expect(html).toContain('href="/fund.css"');

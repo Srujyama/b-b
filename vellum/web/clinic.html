@@ -7,83 +7,90 @@
   <meta name="description" content="Turn a claim denial into a cited medical-necessity appeal, then argue it with the insurer's agent." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Source+Serif+4:opsz,wght@8..60,400..700&amp;display=swap" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body data-default-lang="en" class="clinic">
-<div id="clinic-app" class="shell wide">
-  <header class="topbar">
-    <a class="brand" href="/clinic.html" aria-label="Vellum for clinics">
-      <span class="seal" aria-hidden="true">V</span>
-      <span class="brand-name">Vellum <small data-i18n="clinicBrand">Clinic appeals</small></span>
+<body class="clinic">
+<header class="masthead">
+  <div class="masthead-in">
+    <a class="brand" href="/" aria-label="Vellum home">
+      <svg class="seal-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path class="seal-wax" d="M20 1 23 2.8 26.4 2.3 28.8 4.8 32 5.7 33.3 8.9 36.5 10.5 36.4 14 38.5 16.7 37.6 20 38.4 23.2 36.3 25.9 36.5 29.5 33.4 31.2 32.1 34.4 28.8 35.2 26.4 37.6 23 37 20 39 17 37.2 13.6 37.7 11.2 35.2 8 34.3 6.7 31.1 3.5 29.5 3.6 26 1.5 23.3 2.4 20 1.6 16.8 3.7 14.1 3.5 10.5 6.6 8.8 7.9 5.6 11.2 4.8 13.6 2.4 17 3Z"/><circle class="seal-ring" cx="20" cy="20" r="13"/><path class="seal-v" d="M14 13.5 20 27 26 13.5"/></svg>
+      <span class="wordmark">Vellum</span>
     </a>
-    <a class="toplink" href="/dashboard.html" data-i18n="dashLink">Case overview</a>
-    <a class="toplink" href="/" data-i18n="patientLink">For patients</a>
-    <button id="lang-toggle" class="lang" type="button" aria-label="Switch language">中文</button>
-  </header>
+    <nav class="nav" aria-label="Vellum">
+      <a id="patient-link" href="/">Patient</a>
+      <a href="/clinic.html" aria-current="page">Clinic</a>
+      <a id="dash-link" href="/dashboard.html">Case overview</a>
+      <a href="/hospital.html">Hospital</a>
+      <a href="/fund.html">Fund</a>
+      <a href="/verify.html">Verify</a>
+    </nav>
+  </div>
+</header>
+<div id="clinic-app" class="shell wide">
 
   <div id="error" class="error" role="alert" hidden>
     <p id="error-text"></p>
-    <button id="error-close" type="button" data-i18n="dismiss">Dismiss</button>
+    <button id="error-close" type="button">Dismiss</button>
   </div>
 
   <main>
     <section class="panel" id="claim-intake">
-      <h1 data-i18n="clinicTitle">Appeal a denied claim</h1>
-      <p class="lede" data-i18n="clinicLede">Enter the denial and the clinical notes. Vellum pulls the payer's medical policy, checks each criterion against the chart, and drafts the appeal.</p>
-      <button id="claim-demo-btn" class="primary" type="button" data-i18n="useDemoClaim">Demo: denied lumbar MRI (Aetna)</button>
-      <button id="claim-demo-sleep-btn" class="secondary" type="button" data-i18n="useDemoSleep">Demo: denied sleep study (UnitedHealthcare)</button>
+      <h1>Appeal a denied claim</h1>
+      <p class="lede">Enter the denial and the clinical notes. Vellum pulls the payer's medical policy, checks each criterion against the chart, and drafts the appeal.</p>
+      <button id="claim-demo-btn" class="primary" type="button">Demo: denied lumbar MRI (Aetna)</button>
+      <button id="claim-demo-sleep-btn" class="secondary" type="button">Demo: denied sleep study (UnitedHealthcare)</button>
       <details class="formwrap">
-        <summary data-i18n="ownClaim">Or enter your own denial</summary>
+        <summary>Or enter your own denial</summary>
         <form id="claim-form" class="stack">
-          <label class="field"><span data-i18n="payer">Payer</span><input id="c-payer" required placeholder="Aetna" /></label>
-          <label class="field"><span data-i18n="denialReason">Denial reason as written</span><input id="c-reason" required /></label>
+          <label class="field"><span>Payer</span><input id="c-payer" required placeholder="Aetna" /></label>
+          <label class="field"><span>Denial reason as written</span><input id="c-reason" required /></label>
           <div class="row">
-            <label class="field"><span data-i18n="procCode">Procedure code</span><input id="c-code" required placeholder="72148" /></label>
-            <label class="field grow"><span data-i18n="procDesc">Procedure</span><input id="c-desc" required placeholder="MRI lumbar spine w/o contrast" /></label>
+            <label class="field"><span>Procedure code</span><input id="c-code" required placeholder="72148" /></label>
+            <label class="field grow"><span>Procedure</span><input id="c-desc" required placeholder="MRI lumbar spine w/o contrast" /></label>
           </div>
-          <label class="field"><span data-i18n="diagnoses">Diagnoses, one per line: code then description</span>
+          <label class="field"><span>Diagnoses, one per line: code then description</span>
             <textarea id="c-dx" rows="3" placeholder="M54.16 Radiculopathy, lumbar region"></textarea></label>
-          <label class="field"><span data-i18n="notes">Clinical notes</span><textarea id="c-notes" rows="7" required></textarea></label>
-          <button id="claim-submit" class="primary" type="submit" data-i18n="buildAppeal">Build the appeal</button>
+          <label class="field"><span>Clinical notes</span><textarea id="c-notes" rows="7" required></textarea></label>
+          <button id="claim-submit" class="primary" type="submit">Build the appeal</button>
         </form>
       </details>
     </section>
 
     <section class="panel" id="claim-result" hidden>
       <div id="claim-head" class="claim-head"></div>
-      <h2 data-i18n="criteriaTitle">Policy criteria against the chart</h2>
+      <h2>Policy criteria against the chart</h2>
       <p id="policy-link" class="fine"></p>
       <div class="table-wrap">
         <table id="criteria">
-          <thead><tr><th data-i18n="thCriterion">Criterion</th><th data-i18n="thMet">Met</th><th data-i18n="thEvidence">Evidence in the notes</th></tr></thead>
+          <thead><tr><th>Criterion</th><th>Met</th><th>Evidence in the notes</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <h2 data-i18n="letterTitle">Appeal letter</h2>
+      <h2>Appeal letter</h2>
       <pre id="appeal-letter" class="letter"></pre>
-      <button id="copy-letter" class="secondary" type="button" data-i18n="copyLetter">Copy letter</button>
+      <button id="copy-letter" class="secondary" type="button">Copy letter</button>
     </section>
 
     <section class="panel" id="insurer-room" hidden>
-      <h2 data-i18n="callInsurerTitle">Argue it with the insurer</h2>
+      <h2>Argue it with the insurer</h2>
       <div id="room" class="room">
         <div id="ticker" class="ticker" aria-live="polite">
-          <div class="tk asked"><span data-i18n="asked">Asked</span><b id="tk-asked">—</b></div>
-          <div class="tk current"><span data-i18n="current">Now</span><b id="tk-current">—</b></div>
-          <div class="tk saved"><span data-i18n="saved">Saved</span><b id="tk-saved">—</b><i id="tk-pct"></i></div>
-          <div id="deal-stamp" class="stamp" hidden aria-hidden="true">成交</div>
+          <div class="tk asked"><span>Billed</span><b id="tk-asked">—</b></div>
+          <div class="tk current"><span>Insurer now</span><b id="tk-current">—</b></div>
+          <div class="tk saved"><span>Recovered</span><b id="tk-saved">—</b><i id="tk-pct"></i></div>
+          <div id="deal-stamp" class="stamp" hidden aria-hidden="true">Agreed</div>
         </div>
         <fieldset class="seg" id="counterparty">
-          <legend data-i18n="insurerSide">Insurer side is</legend>
-          <label><input type="radio" name="counterparty" value="agent" checked /><span data-i18n="cpAgent">AI agent</span></label>
-          <label><input type="radio" name="counterparty" value="human" /><span data-i18n="cpHuman">A person</span></label>
+          <legend>Insurer side is</legend>
+          <label><input type="radio" name="counterparty" value="agent" checked /><span>AI billing agent</span></label>
+          <label><input type="radio" name="counterparty" value="human" /><span>A person</span></label>
         </fieldset>
         <div class="voices">
-          <span class="voice" id="v-advocate"><i></i><span data-i18n="whoAdvocate">Vellum</span></span>
-          <span class="voice" id="v-hospital"><i></i><span data-i18n="whoInsurer">Insurer</span></span>
+          <span class="voice" id="v-advocate"><i></i><span>Vellum</span></span>
+          <span class="voice" id="v-hospital"><i></i><span>Insurer</span></span>
         </div>
-        <button id="call-insurer-btn" class="primary" type="button" data-i18n="callInsurer">Call the insurer</button>
+        <button id="call-insurer-btn" class="primary" type="button">Call the insurer</button>
         <p id="room-status" class="fine" aria-live="polite"></p>
         <ol id="transcript" class="transcript"></ol>
       </div>

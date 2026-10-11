@@ -3,12 +3,11 @@
 // A teammate on a second laptop plays the hospital. They pick a settlement from the queue, check the XRPL escrow
 // the patient locked for them (amount, transaction, condition) and the hardship credential, then confirm the
 // account is at $0. That calls POST /api/hospital/cases/:id/confirm-zero-balance, which runs the same release path
-// as /api/cases/:id/confirm-zero-balance: one XRPL Batch [EscrowFinish + advocate fee]. English first; 中文 toggle.
+// as /api/cases/:id/confirm-zero-balance: one XRPL Batch [EscrowFinish + advocate fee].
 // Every value on the page comes from the server (GET /api/hospital/...) or live CaseEvents over /ws.
 
 import {
-  $, I18N, api, applyI18n, busy, connectCase, getLang, h, onLangChange, receiptItem, safeUrl, setupErrorBox,
-  setupLangToggle, t, usd,
+  $, I18N, api, busy, connectCase, h, receiptItem, safeUrl, setupErrorBox, t, usd,
 } from "./app.js";
 
 Object.assign(I18N.en, {
@@ -68,68 +67,17 @@ Object.assign(I18N.en, {
   hospLedgerCredMissing: "Credential not found on the ledger",
 });
 
-Object.assign(I18N.zh, {
-  hospBrand: "医院收费端",
-  hospNet: "XRPL 开发网：测试网络，不涉及真钱。",
-  hospQueueTitle: "待确认的结算",
-  hospQueueLede: "下面每位病人都已和 Vellum 代理谈好结算金额。钱已经锁在托管里给医院（或即将锁入），只有您确认账户余额为零后才会放款。",
-  hospEmpty: "还没有结算。代理和医院谈好金额后，个案会出现在这里。",
-  hospBack: "全部结算",
-  hospPreview: "这是界面预览数据（开发用），不是真实病人，凭证也不是真实交易。",
-  hospPatient: "病人",
-  hospWaiting: "病人的代理正在等您确认。",
-  hospBilled: "账单余额",
-  hospAgreed: "谈好的结算金额",
-  hospLocked: "已锁入托管",
-  hospConfirmTitle: "确认账户余额",
-  hospStaff: "您的名字（可不填，会显示给病人的代理）",
-  hospConfirmBtn: "确认余额为零并放行托管",
-  hospStamp: "已付",
-  hospReleasedTitle: "托管款已放给医院",
-  hospEscrowTitle: "XRPL 托管",
-  hospConditionNote: "托管条件是 PREIMAGE-SHA-256 加密条件。解锁密钥由 Vellum 保管，只在放款交易里才公开到链上，所以谁都不能提前取钱。",
-  hospCredTitle: "经济困难证明",
-  hospCredNote: "由病人诊所的社工在 XRPL 上签发，病人已接受。它是这笔结算享受经济援助的依据。",
-  hospActivity: "这个个案的动态",
-  hospActivityEmpty: "打开本页之后的实时动态会显示在这里。",
-  hospStage: { awaiting_confirmation: "可以确认", awaiting_escrow: "等托管", released: "已放款" },
-  hospAdvocateWaiting: "代理在等",
-  hospRowAgreed: (a) => `谈好 ${a}`,
-  hospAcct: (a) => `账号 ${a}`,
-  hospServed: (d) => `就诊日期 ${d}`,
-  hospConfirmLede: (prov, pat, amt, locked) => `${prov} 同意以 ${amt} 结清 ${pat} 的账户。${locked} 已锁入托管，收款方是医院的 XRPL 账户。`,
-  hospConfirmLedeNoEscrow: (prov, pat, amt) => `${prov} 同意以 ${amt} 结清 ${pat} 的账户。这笔钱还没锁入托管。`,
-  hospAttest: (prov, pat, amt) => `我已核对 ${prov} 的记录：计入这笔 ${amt} 的结算后，${pat} 的账户余额为零。`,
-  hospWhyNoEscrow: "病人一方还没把钱锁入托管。锁好后本页会自动更新。",
-  hospWhyAttest: "请先勾选上面的确认框。",
-  hospReleasedLede: (amt) => `${amt} 已通过一笔原子化的 XRPL 批量交易付给医院，同时付了 Vellum 的服务费。`,
-  hospReleasedNoAmt: "托管款已通过一笔原子化的 XRPL 批量交易付给医院，同时付了 Vellum 的服务费。",
-  hospReleasedBy: (who) => `确认人：${who}。`,
-  hospDl: {
-    state: "状态", amount: "金额", tx: "托管交易", from: "付款方（病人钱包）", to: "收款方（医院钱包）",
-    seq: "托管序号", condition: "托管条件", expires: "若未放款，到期退回病人",
-    type: "类型", credStatus: "状态", issuer: "签发方（诊所）", holder: "持有人（病人）", issued: "签发", accepted: "接受",
-  },
-  hospEscrowState: { open: "已锁定，等您确认", released: "已放给医院", none: "还没建立" },
-  hospCredState: { yes: "病人已接受", issued: "已签发，病人尚未接受", no: "这个个案没有签发" },
-  hospLedgerOk: (time) => `链上已找到（${time} 核对）`,
-  hospLedgerMissing: "链上没找到",
-  hospLedgerChecking: "正在核对链上记录…",
-  hospLedgerUnknown: (why) => `暂时无法核对链上记录：${why}`,
-  hospLedgerCredOk: "链上已找到这份证明",
-  hospLedgerCredMissing: "链上没找到这份证明",
-});
 
 const state = { list: [], caseId: null, detail: null, ledger: null, sub: null, logs: [], confirmedBy: null, listTimer: null, refreshTimer: null };
 
 const shortHash = (x) => (x && x.length > 18 ? `${x.slice(0, 8)}…${x.slice(-6)}` : x || "");
 const timeStr = (iso) => {
   const d = new Date(iso);
-  return isNaN(d) ? "" : d.toLocaleTimeString(getLang() === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" });
+  return isNaN(d) ? "" : d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 };
 const dateStr = (iso) => {
   const d = new Date(iso);
-  return isNaN(d) ? "" : d.toLocaleDateString(getLang() === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "short", day: "numeric" });
+  return isNaN(d) ? "" : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 };
 const stageClass = (s) => ({ awaiting_confirmation: "live", awaiting_escrow: "review", released: "done" })[s] ?? "review";
 const nameOf = (c) => c.patientName ?? "—";
@@ -305,12 +253,11 @@ function renderDetail() {
 function renderActivity() {
   const ol = $("#activity");
   if (!state.logs.length) return ol.replaceChildren(h("li", { class: "empty" }, t("hospActivityEmpty")));
-  const zh = getLang() === "zh";
   ol.replaceChildren(
     ...state.logs
       .slice(-30)
       .reverse()
-      .map((l) => h("li", { class: l.error ? "err" : "" }, h("time", {}, timeStr(l.at)), h("span", {}, zh ? l.messageZh || l.message : l.message))),
+      .map((l) => h("li", { class: l.error ? "err" : "" }, h("time", {}, timeStr(l.at)), h("span", {}, l.message))),
   );
 }
 
@@ -359,7 +306,7 @@ function openCase(id) {
   loadDetail({ ledger: true });
   state.sub = connectCase(id, (ev) => {
     if (ev.type === "log" || ev.type === "error") {
-      state.logs.push({ message: ev.message, messageZh: ev.messageZh, at: new Date().toISOString(), error: ev.type === "error" });
+      state.logs.push({ message: ev.message, at: new Date().toISOString(), error: ev.type === "error" });
       renderActivity();
     }
     if (["log", "receipt", "status", "deal"].includes(ev.type)) scheduleRefresh();
@@ -375,13 +322,7 @@ function route() {
 /* ---------------------------------------------------------------- boot */
 
 function boot() {
-  setupLangToggle();
   setupErrorBox();
-  onLangChange(() => {
-    applyI18n();
-    renderList();
-    renderDetail();
-  });
   $("#back").addEventListener("click", (e) => {
     e.preventDefault();
     history.pushState(null, "", location.pathname);
