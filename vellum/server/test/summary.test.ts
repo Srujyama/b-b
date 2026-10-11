@@ -51,6 +51,18 @@ describe("outcome summary template", () => {
     expect(s.zh).toContain("下一步：把谈妥的 2,500 美元 放进托管账户");
   });
 
+  it("above the assistance cutoff the credential line does not claim financial-assistance eligibility", () => {
+    const charity = { hospital: "Test Hospital", hasFap: true, freeCareBelowPctFpl: 400, summary: "free below 400%", sources: [] };
+    const receipts = [rc("CredentialCreate"), rc("CredentialAccept")];
+    const lin = { name: "Lin Mei", language: "zh" as const, householdSize: 3, annualIncome: 112000, maxPay: 5000, consent: true }; // 410% FPL
+    const above = buildSummary(realCase({ charity, receipts, patient: lin }));
+    expect(above.en).not.toMatch(/financial-hardship credential/);
+    expect(above.en).toContain("This is not the hospital's financial assistance.");
+    expect(above.zh).not.toContain("经济困难证明");
+    const below = buildSummary(realCase({ charity, receipts, patient: { ...lin, annualIncome: 38000 } }));
+    expect(below.en).toContain("Your financial-hardship credential has been issued");
+  });
+
   it("does not count a $0 flag (No Surprises Act notice) as a billing error", () => {
     const s = buildSummary(realCase({ flags: [...realCase().flags, { kind: "no_surprises_act", message: "self-pay notice", amountAtStake: 0 }] }));
     expect(s.numbers.errorsFound).toBe(2);

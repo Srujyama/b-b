@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { opt } from "../env.js";
 import { requireCase } from "../store.js";
+import { fplPercent } from "../research/charity.js";
 import type { AuditFlagKind, CasePacket, Receipt } from "../types.js";
 
 // Mandarin outcome summary (see docs/API.md):
@@ -53,6 +54,19 @@ export function isPreviewCase(p: CasePacket): boolean {
     p.facts.some((f) => /^PREVIEW/.test(String(f))) ||
     p.receipts.some((r) => /PREVIEW/.test(String(r.txHash)) || /PREVIEW/.test(String(r.detail?.note ?? "")))
   );
+}
+
+/** true when her stated household income is at or above every tier of the hospital's financial-assistance policy. */
+export function aboveFapThreshold(p: CasePacket): boolean {
+  const c = p.charity;
+  const pt = p.patient;
+  const cut = Math.max(c?.freeCareBelowPctFpl ?? 0, c?.discountBelowPctFpl ?? 0);
+  if (!c?.hasFap || !cut || pt?.annualIncome === undefined || !pt.householdSize) return false;
+  try {
+    return fplPercent(pt.annualIncome, pt.householdSize) >= cut;
+  } catch {
+    return false;
+  }
 }
 
 const has = (rs: Receipt[], kind: string) => rs.some((r) => r.chain === "xrpl" && r.kind === kind);
@@ -112,8 +126,14 @@ export function buildSummary(p: CasePacket): OutcomeSummary {
   }
 
   if (credential === "done") {
-    zh.push("您的经济困难证明已经在 XRPL 测试网上签发。");
-    en.push("Your financial-hardship credential has been issued on the XRPL test network.");
+    if (aboveFapThreshold(p)) {
+      // She does NOT qualify for the hospital's financial assistance; the clinic's credential only opens the 0% plan.
+      zh.push("诊所还在 XRPL 测试网上给您签发了一份证明，需要时可以用社区基金的零利息分期。这不是医院的经济援助。");
+      en.push("Your clinic also issued a credential on the XRPL test network, so you can use the 0% community payment plan if you need it. This is not the hospital's financial assistance.");
+    } else {
+      zh.push("您的经济困难证明已经在 XRPL 测试网上签发。");
+      en.push("Your financial-hardship credential has been issued on the XRPL test network.");
+    }
   }
   if (writeOff) {
     if (p.status === "settled") {
