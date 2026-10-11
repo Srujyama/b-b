@@ -458,7 +458,7 @@ describe("outbound voice worker", () => {
       ELEVENLABS_API_KEY: "eleven-test", ANTHROPIC_API_KEY: "anthropic-test", ELEVENLABS_OUTBOUND_AGENT_ID: "outbound-agent",
       ELEVENLABS_PHONE_NUMBER_ID: "phone-1", VOICE_ORCHESTRATOR_TOKEN: "orchestrator-test", VOICE_LLM_TOKEN: "gateway-test",
       VOICE_JOB_DIR: directory, PUBLIC_URL: "https://voice.example", VOICE_CALLS_ENABLED: "true",
-      VOICE_ALLOWED_NUMBERS: "", ELEVENLABS_WEBHOOK_SECRET: "webhook-test",
+      VOICE_ALLOWED_NUMBERS: "+14155550123", ELEVENLABS_WEBHOOK_SECRET: "webhook-test",
     };
     for (const [key, value] of Object.entries(config)) vi.stubEnv(key, value);
     providerFetch = vi.fn(async () => new Response(JSON.stringify({ success: true, conversation_id: "conv-1", callSid: "CA-test" })));
@@ -495,7 +495,9 @@ describe("outbound voice worker", () => {
     expect((await submit(app)).statusCode).toBe(503);
     vi.stubEnv("VOICE_CALLS_ENABLED", "true"); vi.stubEnv("VOICE_ALLOWED_NUMBERS", "+14155550999");
     expect((await submit(app)).statusCode).toBe(403);
-    vi.stubEnv("VOICE_ALLOWED_NUMBERS", ""); vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("VOICE_ALLOWED_NUMBERS", ""); // fail closed: live calls with no allowlist never dial
+    expect((await submit(app)).statusCode).toBe(403);
+    vi.stubEnv("VOICE_ALLOWED_NUMBERS", "+14155550123"); vi.stubEnv("ANTHROPIC_API_KEY", "");
     expect((await submit(app)).statusCode).toBe(503);
     expect(providerFetch).not.toHaveBeenCalled();
   });
