@@ -9,7 +9,7 @@ import type { VoiceMemory } from "./shared-context.js";
 export function browserAgentConfig(baseUrl: string, secretId: string, toolIds: string[]) {
   const phone = outboundAgentConfig(baseUrl, secretId);
   return {
-    name: "BangBang Haiku Browser Rehearsal", tags: ["bangbang", "browser-rehearsal"],
+    name: "Vellum Haiku Browser Rehearsal", tags: ["bangbang", "browser-rehearsal"],
     conversation_config: {
       ...phone.conversation_config,
       agent: { ...phone.conversation_config.agent, dynamic_variables: { dynamic_variable_placeholders: { case_id: "" } },
@@ -33,7 +33,7 @@ export function browserDemoInit(packet: CasePacket): ConversationInit {
   const speech = resolveSpeechProfile();
   init.custom_llm_extra_body = { browser_case_id: packet.id };
   init.conversation_config_override.tts = speechOverride(speech);
-  init.conversation_config_override.agent.first_message = "Hello, I'm BangBang, an AI advocate in this simulated billing call. Have I reached patient billing?";
+  init.conversation_config_override.agent.first_message = "Hello, I'm Vellum, an AI advocate in this simulated billing call. Have I reached patient billing?";
   init.conversation_config_override.agent.prompt.prompt += `\n\nBROWSER REHEARSAL: The billing representative is a teammate and the account is a demonstration. No hospital has been called. Any tool-recorded agreement is simulated, not a binding settlement or payment authorization. Do not claim any real-world payment or provider confirmation occurred.\n${speechInstructions(speech)}`;
   return init;
 }

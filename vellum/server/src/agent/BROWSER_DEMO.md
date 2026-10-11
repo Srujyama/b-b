@@ -26,17 +26,11 @@ retains conversation history at ElevenLabs. One shared Anthropic key is sufficie
 make separate models share prompt caches or hidden reasoning. The real-phone `VoiceContextSource`
 plan adapter remains a separate future integration.
 
-## Required product-owner change (D)
+## Product-owner change (D): applied
 
-WORKPLAN assigns `web/**` to D. This branch includes a ready-to-apply patch without editing that file:
+D applied this change to `web/app.js` when merging (the handoff patch file is no longer needed).
 
-```sh
-# From the repository root; D applies and commits this with the product changes.
-git apply --check bangbang/server/src/agent/browser-client-handoff.patch
-git apply bangbang/server/src/agent/browser-client-handoff.patch
-```
-
-The patch updates `web/app.js:initToSessionOptions` to forward `customLlmExtraBody` and the supported
+The change updates `web/app.js:initToSessionOptions` to forward `customLlmExtraBody` and the supported
 voice overrides. Without it, the custom Haiku endpoint rejects the missing case ID; this must be
 completed before a live demo. Forwarded client tools already exist in the product.
 
@@ -54,7 +48,7 @@ existing demo pipeline.
 
 ## Start or recover the setup
 
-All commands below run from `bangbang/server`. Keep secrets only in the ignored `.env`; see
+All commands below run from `vellum/server`. Keep secrets only in the ignored `.env`; see
 [voice.env.example](./voice.env.example). Needed for a complete conversation:
 
 - `ELEVENLABS_API_KEY`, with the previously approved TTS/voices/agents scopes.
@@ -84,7 +78,7 @@ All commands below run from `bangbang/server`. Keep secrets only in the ignored 
    ```sh
    ssh -T -o BatchMode=yes -o IdentityAgent=none -o IdentitiesOnly=yes \
      -o IdentityFile=/dev/null -o StrictHostKeyChecking=accept-new \
-     -o UserKnownHostsFile="${TMPDIR:-/tmp}/bangbang-tunnel-known-hosts" \
+     -o UserKnownHostsFile="${TMPDIR:-/tmp}/vellum-tunnel-known-hosts" \
      -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
      -R 80:127.0.0.1:8788 nokey@localhost.run -- --output json
    ```

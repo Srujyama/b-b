@@ -491,7 +491,10 @@ export function initToSessionOptions(init, caseId) {
     if (agent.language) overrides.agent.language = agent.language;
   }
   const opts = { dynamicVariables: { ...(init?.dynamic_variables ?? {}), case_id: caseId } };
-  if (overrides.agent) opts.overrides = overrides;
+  if (init?.custom_llm_extra_body) opts.customLlmExtraBody = init.custom_llm_extra_body;
+  const tts = init?.conversation_config_override?.tts;
+  if (tts) overrides.tts = { voiceId: tts.voice_id, stability: tts.stability, speed: tts.speed };
+  if (overrides.agent || overrides.tts) opts.overrides = overrides;
   return opts;
 }
 

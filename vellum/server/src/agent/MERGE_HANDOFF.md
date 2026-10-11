@@ -1,6 +1,6 @@
 # Branch A merge handoff: voice execution under the orchestrator
 
-Prepared 2026-10-11 for the session merging `codex/browser-voice-demo` into the combined BangBang application.
+Prepared 2026-10-11 for the session merging `codex/browser-voice-demo` into the combined Vellum application.
 Read this file before connecting the real phone worker to the product pipeline. The complete request
 example, environment setup, route table, and provider references are in [README.md](./README.md).
 
@@ -16,7 +16,7 @@ below are for later production work, not prerequisites for this rehearsal.
 
 Implemented and provisioned locally on October 11:
 
-- Separate **BangBang Haiku Browser Rehearsal** ElevenLabs agent, Haiku custom gateway, v4 Turbo/Bella,
+- Separate **Vellum Haiku Browser Rehearsal** ElevenLabs agent, Haiku custom gateway, v4 Turbo/Bella,
   three client tools, signed-session authentication, four-minute limit, and voice recording disabled.
 - Public HTTPS tunnel to a loopback-only gateway; only browser completions are forwarded. The product
   server, case routes, tools and money routes remain local. The free temporary domain and provider IDs
@@ -31,9 +31,8 @@ Implemented and provisioned locally on October 11:
 - [Medical-bill playbook](./MEDICAL_BILL_PLAYBOOK.md) with CMS/CFPB/IRS/HHS sources, and a revised
   demo narrative distinguishing simulated agreements from real provider confirmation.
 
-**Two partner prerequisites remain:** supply the shared `ANTHROPIC_API_KEY`, and apply
-[the browser adapter patch](./browser-client-handoff.patch). D owns `web/**` under WORKPLAN, so the
-patch is prepared and `git apply --check` verified without editing the product file. It forwards case
+**One partner prerequisite remains:** supply the shared `ANTHROPIC_API_KEY`. The browser adapter change
+was applied to `web/app.js` by D when this merged. It forwards case
 metadata plus voice overrides to SDK 1.25.0. That serializer cannot set the model per browser session;
 choose the model at agent provisioning, rerun `--browser` and restart between rehearsals.
 
