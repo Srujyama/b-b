@@ -20,11 +20,18 @@ function record(id: string, receipts: Receipt[]) {
   return receipts;
 }
 
-function agreedAmount(id: string): number {
+/** A case whose deal is $0: the hospital wrote the balance off, so there is nothing to escrow or finance. */
+export const isWriteOff = (c: { agreedAmount?: number }) => c.agreedAmount === 0;
+
+function agreedAmount(id: string, what: string): number {
   const c = requireCase(id);
-  if (!c.agreedAmount || c.agreedAmount <= 0) {
+  if (c.agreedAmount == null) {
     throw Object.assign(new Error("case has no agreedAmount yet — finish the negotiation first"), { statusCode: 409 });
   }
+  if (isWriteOff(c)) {
+    throw Object.assign(new Error(`the agreed amount is $0 (a write-off): there is nothing to ${what} — the hospital just confirms the zero balance`), { statusCode: 409 });
+  }
+  if (!(c.agreedAmount > 0)) throw Object.assign(new Error(`agreedAmount ${c.agreedAmount} is not a payable amount`), { statusCode: 409 });
   return c.agreedAmount;
 }
 
@@ -46,7 +53,7 @@ export default async function xrplRoutes(app: FastifyInstance) {
   app.post<IdParams>("/api/cases/:id/settle", async (req, reply) => {
     try {
       const { id } = req.params;
-      const amount = agreedAmount(id);
+      const amount = agreedAmount(id, "lock in escrow");
       emit(id, { type: "log", message: `Locking ${amount} USD in XRPL escrow for the hospital`, messageZh: `正在把 ${amount} 美元锁入 XRPL 托管` });
       const { receipt } = await createSettlementEscrow(id, amount);
       return record(id, [receipt]);
@@ -59,7 +66,15 @@ export default async function xrplRoutes(app: FastifyInstance) {
   app.post<IdParams>("/api/cases/:id/confirm-zero-balance", async (req, reply) => {
     try {
       const { id } = req.params;
-      requireCase(id);
+      const c = requireCase(id);
+      if (!escrowFor(id) && isWriteOff(c)) {
+        // $0 deal: no money moves, so there is no escrow to release. The confirmation itself settles the case.
+        if (c.status !== "settled") {
+          emit(id, { type: "log", message: "Hospital confirmed a $0 balance: the bill was written off, no payment needed", messageZh: "医院已确认您的余额为零：账单全额减免，不用付钱" });
+          updateCase(id, { status: "settled" });
+        }
+        return [];
+      }
       if (!escrowFor(id)) return reply.code(409).send({ error: "no open escrow for this case — POST /settle first" });
       const receipts = record(id, await releaseOnZeroBalance(id));
       emit(id, { type: "log", message: "Hospital confirmed $0 balance; escrow released", messageZh: "医院已确认余额为零，托管款已放行" });
@@ -77,7 +92,7 @@ export default async function xrplRoutes(app: FastifyInstance) {
       const { id } = req.params;
       const months = Number(req.body?.months ?? 12);
       if (!Number.isInteger(months) || months < 1 || months > 60) return reply.code(400).send({ error: "months must be an integer 1-60" });
-      const principal = agreedAmount(id);
+      const principal = agreedAmount(id, "finance");
       const ids = fundIdsFromEnv();
       const ctx = await defaultCtx();
       const loan = await openZeroInterestLoan(id, principal, months, ctx, ids);

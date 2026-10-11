@@ -60,7 +60,9 @@ const has = (rs: Receipt[], kind: string) => rs.some((r) => r.chain === "xrpl" &
 export function buildSummary(p: CasePacket): OutcomeSummary {
   const preview = isPreviewCase(p);
   const balance = p.bill?.patientBalance;
-  const errors = p.flags.filter((f) => ERROR_KINDS.includes(f.kind));
+  // Only flags with dollars attached are billing errors: a $0 flag (e.g. the No Surprises Act notice for a
+  // self-pay patient) is a right to tell her about, not a mistake to count.
+  const errors = p.flags.filter((f) => ERROR_KINDS.includes(f.kind) && Number(f.amountAtStake) > 0);
   const errorAmount = errors.reduce((s, f) => s + (Number(f.amountAtStake) || 0), 0);
   const kinds = [...new Set(errors.map((f) => f.kind))];
   const agreed = typeof p.agreedAmount === "number" && p.agreedAmount >= 0 ? p.agreedAmount : undefined;
@@ -89,7 +91,15 @@ export function buildSummary(p: CasePacket): OutcomeSummary {
     en.push("No clear billing errors were found.");
   }
 
-  if (agreed != null) {
+  const writeOff = agreed === 0;
+  if (writeOff) {
+    zh.push("医院同意把这笔账全部免掉，您不用付钱。");
+    en.push("The hospital agreed to write off the whole balance: you owe nothing.");
+    if (saved != null) {
+      zh.push(`比原来少付 ${zhUsd(saved)}，省了 ${savedPct}%。`);
+      en.push(`That is ${enUsd(saved)} less than the original bill, a ${savedPct}% saving.`);
+    }
+  } else if (agreed != null) {
     zh.push(`最后和医院谈妥的价格是 ${zhUsd(agreed)}。`);
     en.push(`The price agreed with the hospital is ${enUsd(agreed)}.`);
     if (saved != null) {
@@ -105,7 +115,15 @@ export function buildSummary(p: CasePacket): OutcomeSummary {
     zh.push("您的经济困难证明已经在 XRPL 测试网上签发。");
     en.push("Your financial-hardship credential has been issued on the XRPL test network.");
   }
-  if (agreed != null) {
+  if (writeOff) {
+    if (p.status === "settled") {
+      zh.push("医院已经确认您欠款为零。没有钱需要付，所以没有用托管，这笔账结清了。");
+      en.push("The hospital confirmed a zero balance. No money had to move, so no escrow was used. This bill is settled.");
+    } else {
+      zh.push("下一步：等医院确认您的欠款为零。没有钱需要付，所以不用托管。");
+      en.push("Next step: the hospital confirms the zero balance. No money has to move, so no escrow is needed.");
+    }
+  } else if (agreed != null) {
     if (escrow === "released") {
       zh.push("医院已经确认您欠款为零，托管里的钱已经付给医院，这笔账结清了。");
       en.push("The hospital confirmed a zero balance and the escrowed money was released to it. This bill is settled.");

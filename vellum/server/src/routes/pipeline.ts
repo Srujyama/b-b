@@ -20,7 +20,7 @@ import type { CaseEvent, CasePacket, FairPrice, FinancingAdvice, Receipt } from 
 import { researchCase } from "./research.js";
 import { paidFetch, type FetchLike } from "../chain/x402.js";
 import { appendLog, recordDeal, type LedgerEntryBody } from "../chain/bnb.js";
-import { escrowFor } from "../chain/xrpl.js";
+import { defaultCtx, escrowFor, usdBalance } from "../chain/xrpl.js";
 import { activeBridge, startAgentBridge } from "../agent/bridge.js";
 import { FAIR_PRICE_AUSD } from "./x402.js";
 import { orderFactsByLeverage, rankLeverage } from "../engine/leverage.js";
@@ -75,6 +75,8 @@ export type PipelineDeps = {
   appendLog(id: string, body: LogBody): Promise<unknown>;
   bnbConfigured(): boolean;
   fundConfigured(): boolean;
+  /** The patient wallet's spendable USD (XRPL). Optional: when absent or failing, only the advice decides the loan. */
+  patientWalletUsd?(id: string): Promise<number>;
 };
 
 const STEP_ZH: Record<StepName, string> = {
@@ -295,6 +297,8 @@ export async function runPipeline(caseId: string, deps: PipelineDeps, opts: RunO
   // ---------------- BNB mandate ----------------
   let mandateOk = hasReceipt("openMandate");
   if (mandateOk) skip("mandate", "mandate already on-chain", "授权已经在链上");
+  else if (!deps.bnbConfigured())
+    skip("mandate", "BNB Chain is built but not live here (set BSC_PRIVATE_KEY + ADVOCATE_LEDGER_ADDRESS); the off-chain mandate guard still refuses any amount above her cap", "BNB 链还没上线；Vellum 仍然不会同意超过您上限的金额");
   else {
     const r = await exec("mandate", () => deps.mandate(caseId));
     mandateOk = r.ok;
@@ -321,22 +325,46 @@ export async function runPipeline(caseId: string, deps: PipelineDeps, opts: RunO
     if (!r.ok || agreed == null) {
       const why = r.ok ? "the call ended without a deal" : r.error;
       if (r.ok) Object.assign(step("negotiate"), { status: "failed", message: why });
-      if (requireCase(caseId).status !== "failed") updateCase(caseId, { status: "failed" });
+      // Never leave the case parked in "negotiating": nothing was agreed or paid and the research still holds,
+      // so put it back to "researched" and say how to retry.
+      const now = requireCase(caseId);
+      updateCase(caseId, { status: now.target != null && now.facts.length ? "researched" : "failed" });
+      log(
+        `No deal on this call (${why}). Nothing was agreed and nothing was paid; the case is back to researched — run it again to retry the call`,
+        "这次通话没有谈成。没有达成协议，也没有付钱。可以再试一次。",
+      );
       return finish("failed", why);
     }
     log(`Deal agreed at $${agreed}`, `谈好了：${agreed} 美元`);
   }
   const amount = requireCase(caseId).agreedAmount!;
+  const writeOff = amount === 0;
 
-  // ---------------- optional 0% loan (Gemini said payment plan) ----------------
-  if (advice?.recommendation !== "payment_plan") skip("loan", "Gemini odds favour paying the lump sum", "利率预测显示一次付清更划算");
+  // ---------------- optional 0% loan: Gemini said payment plan, or her wallet cannot cover the deal ----------------
+  const wantsPlan = advice?.recommendation === "payment_plan";
+  let short: { have: number } | undefined;
+  if (!writeOff && !wantsPlan && deps.patientWalletUsd && !deps.openEscrow(caseId) && !hasReceipt("LoanSet")) {
+    try {
+      const have = await deps.patientWalletUsd(caseId);
+      if (have < amount) short = { have };
+    } catch (e) {
+      emit(caseId, { type: "error", message: `could not read the patient wallet balance (the escrow step checks it again): ${errMsg(e)}` });
+    }
+  }
+  if (writeOff) skip("loan", "nothing to pay: the balance was written off", "不用付钱");
+  else if (hasReceipt("LoanSet")) skip("loan", "0% loan already open", "分期已经开好");
+  else if (!wantsPlan && !short) skip("loan", "her wallet covers the deal and the Gemini odds favour paying the lump sum", "钱包够用，一次付清更划算");
   else if (!deps.fundConfigured()) skip("loan", "XRPL community fund not configured — set XRPL_VAULT_ID and XRPL_LOAN_BROKER_ID (npm run setup:xrpl)", "互助基金还没设置");
-  else await exec("loan", () => deps.loan(caseId, opts.loanMonths ?? 12));
+  else {
+    if (short) log(`Her wallet holds $${short.have} but the deal is $${amount}: opening a 0% community-fund loan first`, "您的钱包不够付，先从互助基金开 0% 分期");
+    await exec("loan", () => deps.loan(caseId, opts.loanMonths ?? 12));
+  }
 
   // ---------------- XRPL escrow ----------------
   let escrowTx = deps.openEscrow(caseId);
   if (escrowTx) skip("settle", "escrow already open", "托管已经建立");
   else if (requireCase(caseId).status === "settled") skip("settle", "already settled", "已经结清");
+  else if (writeOff) skip("settle", "the deal is $0 (a write-off): no money moves, so there is nothing to escrow", "全额减免，不用托管");
   else {
     const r = await exec("settle", () => deps.settle(caseId));
     if (r.ok) escrowTx = r.value.find((x) => x.kind === "EscrowCreate")?.txHash ?? r.value[0]?.txHash;
@@ -351,11 +379,13 @@ export async function runPipeline(caseId: string, deps: PipelineDeps, opts: RunO
       if (!(await timeout(sink.drain(), opts.drainTimeoutMs ?? 120_000)))
         emit(caseId, { type: "error", message: `BNB log still has ${sink.stats().pending} entries in flight; recording the deal anyway` });
     }
-    await exec("recordDeal", () => deps.recordDeal(caseId, amount, escrowTx ?? "unsettled (XRPL escrow failed)"));
+    await exec("recordDeal", () => deps.recordDeal(caseId, amount, escrowTx ?? (writeOff ? "write-off (no escrow)" : "unsettled (XRPL escrow failed)")));
   }
 
-  // ---------------- hospital confirms $0 → Batch release ----------------
-  if (!deps.openEscrow(caseId)) skip("confirm", requireCase(caseId).status === "settled" ? "already settled" : "no open escrow to release", "没有可放行的托管");
+  // ---------------- hospital confirms $0 → Batch release (a write-off just confirms: no escrow) ----------------
+  const settledNow = () => requireCase(caseId).status === "settled";
+  if (settledNow()) skip("confirm", "already settled", "已经结清");
+  else if (!deps.openEscrow(caseId) && !writeOff) skip("confirm", "no open escrow to release", "没有可放行的托管");
   else if (opts.confirm === false) skip("confirm", "left for the hospital to confirm (POST /confirm-zero-balance)", "等医院确认");
   else if (opts.confirm === "portal") {
     const waitMs = opts.hospitalTimeoutMs ?? 30 * 60_000;
@@ -367,10 +397,10 @@ export async function runPipeline(caseId: string, deps: PipelineDeps, opts: RunO
         "正在等医院在医院端确认：医院工作人员核对您的账户余额为零后，托管款才会放行",
       );
       try {
-        const released = await waitFor(() => !deps.openEscrow(caseId) || requireCase(caseId).status === "settled", waitMs);
+        const released = await waitFor(() => (writeOff ? settledNow() : !deps.openEscrow(caseId) || settledNow()), waitMs);
         if (!released)
           throw new Error(
-            `the hospital did not confirm in the hospital portal within ${Math.max(1, Math.round(waitMs / 60_000))} min — the money stays locked in escrow and the hospital can still confirm at /hospital.html`,
+            `the hospital did not confirm in the hospital portal within ${Math.max(1, Math.round(waitMs / 60_000))} min — ${writeOff ? "nothing was paid" : "the money stays locked in escrow"} and the hospital can still confirm at /hospital.html`,
           );
       } finally {
         delete run.awaiting;
@@ -471,6 +501,10 @@ export function liveDeps(app: FastifyInstance): PipelineDeps {
     recordDeal: (id, amount, ref) => recordDeal(id, amount, ref),
     confirm: (id) => call(app, `/api/cases/${id}/confirm-zero-balance`),
     openEscrow: (id) => escrowFor(id)?.txHash,
+    async patientWalletUsd() {
+      const ctx = await defaultCtx();
+      return usdBalance(ctx, ctx.actors.patient.address);
+    },
     appendLog: (id, body) => appendLog(id, body),
     bnbConfigured: () => has("BSC_PRIVATE_KEY") && has("ADVOCATE_LEDGER_ADDRESS"),
     fundConfigured: () => has("XRPL_VAULT_ID") && has("XRPL_LOAN_BROKER_ID"),

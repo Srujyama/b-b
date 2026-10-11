@@ -51,6 +51,23 @@ describe("outcome summary template", () => {
     expect(s.zh).toContain("下一步：把谈妥的 2,500 美元 放进托管账户");
   });
 
+  it("does not count a $0 flag (No Surprises Act notice) as a billing error", () => {
+    const s = buildSummary(realCase({ flags: [...realCase().flags, { kind: "no_surprises_act", message: "self-pay notice", amountAtStake: 0 }] }));
+    expect(s.numbers.errorsFound).toBe(2);
+    expect(s.en).not.toMatch(/surprise-billing/);
+  });
+
+  it("a $0 deal reads as a write-off: no escrow step, no loan pitch, settled once the hospital confirms", () => {
+    const pending = buildSummary(realCase({ agreedAmount: 0 }));
+    expect(pending.numbers).toMatchObject({ agreedAmount: 0, saved: 10000, savedPct: 100 });
+    expect(pending.en).toContain("write off the whole balance");
+    expect(pending.en).toContain("No money has to move");
+    expect(pending.en).not.toMatch(/put the agreed|payment plan/);
+    const done = buildSummary(realCase({ agreedAmount: 0, status: "settled" }));
+    expect(done.en).toContain("This bill is settled");
+    expect(done.zh).toContain("没有用托管");
+  });
+
   it("reports escrow / credential / loan status from the receipts", () => {
     const locked = buildSummary(realCase({ receipts: [rc("CredentialCreate"), rc("CredentialAccept"), rc("EscrowCreate"), rc("LoanSet", { principal: 2500, payments: 12 })] }));
     expect(locked.steps).toEqual({ credential: "done", escrow: "locked", loan: "done" });

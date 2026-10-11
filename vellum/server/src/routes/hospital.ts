@@ -56,6 +56,7 @@ function releaseReceipts(c: CasePacket): Receipt[] {
 function stageOf(c: CasePacket): HospitalStage {
   if (escrowFor(c.id)) return "awaiting_confirmation";
   if (c.status === "settled" || releaseReceipts(c).some((r) => r.kind === "Batch")) return "released";
+  if (c.agreedAmount === 0) return "awaiting_confirmation"; // write-off: nothing to escrow, staff just confirm $0
   return "awaiting_escrow";
 }
 
@@ -222,15 +223,18 @@ export default async function hospitalRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: "attest must be true: billing staff confirm the patient's account balance is $0 before the escrow is released" });
       const staffName = typeof req.body.staffName === "string" ? req.body.staffName.replace(/\s+/g, " ").trim().slice(0, 80) : "";
       if (stageOf(c) === "released") return reply.code(409).send({ error: "this case is already settled — the escrow was released" });
-      if (!escrowFor(id)) return reply.code(409).send({ error: "no open escrow for this case yet — the patient's side has not locked the agreed amount (POST /settle)" });
+      const writeOff = c.agreedAmount === 0 && !escrowFor(id);
+      if (!escrowFor(id) && !writeOff) return reply.code(409).send({ error: "no open escrow for this case yet — the patient's side has not locked the agreed amount (POST /settle)" });
       if (inFlight.has(id)) return reply.code(409).send({ error: "a release for this case is already being submitted" });
       inFlight.add(id);
       try {
         const who = staffName ? ` by ${staffName}` : "";
         emit(id, {
           type: "log",
-          message: `Hospital billing confirmed the account is at $0 in the hospital portal${who}; releasing the XRPL escrow`,
-          messageZh: "医院工作人员已在医院端确认您的账户余额为零，正在放行托管款",
+          message: writeOff
+            ? `Hospital billing confirmed the account is at $0 in the hospital portal${who}; the balance was written off, so no escrow is needed`
+            : `Hospital billing confirmed the account is at $0 in the hospital portal${who}; releasing the XRPL escrow`,
+          messageZh: writeOff ? "医院工作人员已在医院端确认您的账户余额为零（全额减免，无需托管）" : "医院工作人员已在医院端确认您的账户余额为零，正在放行托管款",
         });
         // Same code path as the public route (and the pipeline's simulated confirmation).
         const res = await app.inject({ method: "POST", url: `/api/cases/${encodeURIComponent(id)}/confirm-zero-balance`, payload: {} });

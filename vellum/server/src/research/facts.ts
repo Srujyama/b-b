@@ -7,6 +7,8 @@ import { fplPercent, FPL_2026_SOURCE } from "./charity.js";
 export const MEDICARE_BENCHMARK_MULTIPLE = 2.5;
 /** Opening ask as a fraction of target when no Medicare anchor exists. */
 export const OPENING_FRACTION = 0.6;
+/** When the research ceiling reaches the patient's limit, the target is this fraction of the limit. */
+export const TARGET_HEADROOM = 0.8;
 
 // Flags whose dollars are direct billing errors (removable). above_fair_price / charity_eligible are handled by
 // the benchmark and charity logic instead, so counting them here would double-count.
@@ -125,6 +127,9 @@ export function buildNegotiation(packet: Pick<CasePacket, "bill" | "flags" | "fa
     target = r0(balance);
     basis = "balance";
   }
+  // When every defensible ceiling is at or above what the patient can pay, the goal is NOT her whole limit:
+  // aim TARGET_HEADROOM under it so the advocate has room to concede and still close inside the mandate.
+  if (target > 0 && target >= walkaway) target = r0(walkaway * TARGET_HEADROOM);
   target = Math.min(target, walkaway, r0(balance));
 
   let opening: number;

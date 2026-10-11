@@ -386,9 +386,13 @@ describe("buildNegotiation", () => {
     expect(n.walkaway).toBe(3000);
     expect(n.facts.some((f) => f.includes("Medicare pays $400") && f.includes("15.0x") && f.includes("https://cms.example/74177"))).toBe(true);
     expect(n.facts.some((f) => f.includes("billed twice") && f.includes("$4,000 in dispute"))).toBe(true);
+    // ceiling (2500) above her limit (2000): aim 20% under the limit, never at it
     const low = buildNegotiation({ bill, flags, fairPrices: fps, patient: patient({ maxPay: 2000 }) });
-    expect(low.target).toBe(2000);
+    expect(low.target).toBe(1600);
+    expect(low.walkaway).toBe(2000);
     expect(low.opening).toBeLessThanOrEqual(low.target);
+    // exactly at the limit also gets headroom; a $0 charity target is never raised
+    expect(buildNegotiation({ bill, flags, fairPrices: fps, patient: patient({ maxPay: 2500 }) }).target).toBe(2000);
   });
 
   it("errors-only and no-research fallbacks", () => {

@@ -482,6 +482,15 @@ describe("network boundary + routes (fetch mocked)", () => {
     const none = createCase({ mode: "patient" });
     const r2 = await app.inject({ method: "POST", url: `/api/cases/${none.id}/financing`, payload: {} });
     expect(r2.statusCode).toBe(409);
+
+    // a $0 target (full write-off) is an answer, not a missing balance: no market call, no plan
+    const calls = (mockFetch as any).mock?.calls?.length;
+    const zero = createCase({ mode: "patient", target: 0, bill: { provider: { name: "H" }, lineItems: [], totalCharges: 900, patientBalance: 900 } });
+    const r3 = await app.inject({ method: "POST", url: `/api/cases/${zero.id}/financing`, payload: {} });
+    expect(r3.statusCode).toBe(200);
+    expect(r3.json()).toMatchObject({ recommendation: "lump_sum", reason: expect.stringMatching(/Nothing to finance/) });
+    expect(zero.financing?.recommendation).toBe("lump_sum");
+    if (calls !== undefined) expect((mockFetch as any).mock.calls.length).toBe(calls);
   });
 
   it("hedge route 503s without Gemini keys", async () => {
