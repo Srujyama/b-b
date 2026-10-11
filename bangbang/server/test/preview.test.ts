@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/index.js";
 import { seedPreview } from "../src/dev/preview.js";
@@ -33,5 +34,25 @@ describe("dev preview harness", () => {
     expect(done.agreedAmount!).toBeLessThanOrEqual(done.walkaway!);
     // every preview receipt is visibly labeled so it can never pass as a real transaction
     expect(done.receipts.every((r) => r.txHash.startsWith("PREVIEW"))).toBe(true);
+  });
+
+  it("labels seeded cases at EVERY stage, and dashboard.js isPreview() detects them (incl. stage=bill)", async () => {
+    // pull isPreview out of the browser module (it touches the DOM at import time) and evaluate it alone
+    const src = await readFile(new URL("../../web/dashboard.js", import.meta.url), "utf8");
+    const m = src.match(/const isPreview = \(p\) =>([\s\S]*?);\n/);
+    expect(m, "isPreview in dashboard.js").toBeTruthy();
+    const isPreview = new Function("p", `return (${m![1]});`) as (p: unknown) => boolean;
+
+    for (const stage of ["bill", "research", "room", "receipts"] as const) {
+      const c = await seedPreview(stage, 0);
+      expect(c.facts.some((f) => f.startsWith("PREVIEW")), stage).toBe(true);
+      expect(isPreview(c), stage).toBe(true);
+    }
+    // stage=bill has no receipts, research or charity: the fact is the only marker, and it must suffice
+    const bill = await seedPreview("bill", 0);
+    expect(bill.receipts).toHaveLength(0);
+    expect(bill.charity).toBeUndefined();
+    // a real case (no markers) is not flagged
+    expect(isPreview({ facts: [], receipts: [], fairPrices: [] })).toBe(false);
   });
 });
