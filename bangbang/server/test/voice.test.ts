@@ -21,7 +21,8 @@ import {
 } from "../src/agent/elevenlabs.js";
 import voiceRoutes from "../src/routes/voice.js";
 import Fastify from "fastify";
-import { checkElevenLabsConnection, smokeTestElevenLabs, VOICE_SMOKE_TEXT } from "../src/agent/connection.js";
+import { checkElevenLabsConnection, smokeTestElevenLabs } from "../src/agent/connection.js";
+import { resolveSpeechProfile, speechInstructions, speechSmokeText } from "../src/agent/speech.js";
 
 describe("ElevenLabs connection setup", () => {
   beforeEach(() => {
@@ -31,6 +32,8 @@ describe("ElevenLabs connection setup", () => {
     vi.stubEnv("ELEVENLABS_OUTBOUND_AGENT_ID", "");
     vi.stubEnv("ELEVENLABS_PHONE_NUMBER_ID", "");
     vi.stubEnv("ELEVENLABS_ADVOCATE_VOICE_ID", "");
+    vi.stubEnv("VOICE_TTS_MODEL", "");
+    vi.stubEnv("VOICE_VOICE_PRESET", "");
   });
   afterEach(() => vi.unstubAllEnvs());
 
@@ -62,10 +65,10 @@ describe("ElevenLabs connection setup", () => {
     expect(JSON.stringify(result)).not.toContain("secret-test-key");
   });
 
-  it("collects streamed Flash audio using only the synthetic representative greeting", async () => {
+  it("collects streamed v4 Turbo audio with a synthetic greeting and a purposeful pause", async () => {
     const f = vi.fn(async (_url: string, init: RequestInit) => {
       expect(init.method).toBe("POST");
-      expect(JSON.parse(init.body as string)).toEqual({ text: VOICE_SMOKE_TEXT, model_id: "eleven_flash_v2_5" });
+      expect(JSON.parse(init.body as string)).toEqual({ text: speechSmokeText(resolveSpeechProfile()), model_id: "eleven_v4_turbo", voice_settings: { stability: 0.5, speed: 1 } });
       return new Response(new ReadableStream({ start(controller) {
         controller.enqueue(new Uint8Array());
         controller.enqueue(new Uint8Array([1, 2]));
@@ -79,6 +82,30 @@ describe("ElevenLabs connection setup", () => {
     expect(result.bytes).toBe(3);
     expect(result.firstAudioByteMs).toBeGreaterThanOrEqual(0);
     expect(result.totalMs).toBeGreaterThanOrEqual(result.firstAudioByteMs!);
+  });
+
+  it("uses the chosen voice/model in smoke tests and omits tags for Flash", async () => {
+    vi.stubEnv("VOICE_TTS_MODEL", "eleven_flash_v2_5");
+    vi.stubEnv("VOICE_VOICE_PRESET", "river");
+    const f = vi.fn(async (url: string, init: RequestInit) => {
+      expect(url).toContain("SAz9YHcvj6GT2YYXdXww");
+      const request = JSON.parse(init.body as string);
+      expect(request.model_id).toBe("eleven_flash_v2_5");
+      expect(request.text).not.toMatch(/\[.*\]/);
+      return new Response(new Uint8Array([1]), { headers: { "content-type": "audio/mpeg" } });
+    });
+    expect((await smokeTestElevenLabs(f as unknown as typeof fetch)).voiceName).toBe("River");
+  });
+
+  it("rejects unknown configuration and gives an explicit task choice precedence over custom voice IDs", () => {
+    vi.stubEnv("ELEVENLABS_ADVOCATE_VOICE_ID", "custom-voice");
+    expect(resolveSpeechProfile().voiceId).toBe("custom-voice");
+    expect(resolveSpeechProfile({ voice: "eric" }).voiceId).toBe("cjVigY5qzO86Huf0OWal");
+    vi.stubEnv("VOICE_TTS_MODEL", "invented-model");
+    expect(() => resolveSpeechProfile()).toThrow("Unsupported VOICE_TTS_MODEL");
+    expect(resolveSpeechProfile({ model: "eleven_v4" }).model).toBe("eleven_v4");
+    vi.stubEnv("VOICE_VOICE_PRESET", "invented-voice");
+    expect(() => resolveSpeechProfile({ model: "eleven_v4" })).toThrow("Unsupported VOICE_VOICE_PRESET");
   });
 
   it.each([
@@ -437,7 +464,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHmac } from "node:crypto";
 import { anthropicRequest, completionChunks } from "../src/agent/haiku.js";
-import { outboundAgentConfig, type VoicePlan } from "../src/agent/call-plan.js";
+import { outboundAgentConfig, validateVoicePlan, type VoicePlan } from "../src/agent/call-plan.js";
 import { CallJobStore, runVoiceTask, syncVoiceTask, verifyWebhook } from "../src/agent/calls.js";
 import { configureVoiceContext } from "../src/agent/shared-context.js";
 
@@ -471,6 +498,25 @@ const conversation = (extra: Record<string, unknown> = {}) => ({
 });
 
 describe("native Haiku voice stream", () => {
+  beforeEach(() => { vi.stubEnv("VOICE_TTS_MODEL", ""); vi.stubEnv("VOICE_VOICE_PRESET", ""); });
+  afterEach(() => vi.unstubAllEnvs());
+  it("gives Haiku bounded v4 delivery instructions matched to the selected model", () => {
+    const input = { stream: true, messages: [{ role: "user", content: "Confirm the amount." }] };
+    for (const model of ["eleven_v4_turbo", "eleven_v4"] as const) {
+      const payload = anthropicRequest(input, resolveSpeechProfile({ model }));
+      const instructions = payload.system![0].text;
+      expect(instructions).toContain(`active speech engine: ${model}`);
+      expect(instructions).toContain("at most one [pause]");
+      expect(instructions).toContain("Never start or end with a pause");
+      expect(instructions).toContain("Use at most one [slow]");
+      expect(instructions).toContain("under 35 spoken words");
+      expect(payload.max_tokens).toBe(512);
+    }
+    const flash = speechInstructions(resolveSpeechProfile({ model: "eleven_flash_v2_5" }));
+    expect(flash).toContain("plain spoken text");
+    expect(flash).not.toContain("[pause]");
+    expect(flash).not.toContain("[slow]");
+  });
   it("maps greeting, function calls and results to native Messages with caching and no sampling fields", () => {
     const payload = anthropicRequest({ stream: true, messages: [
       { role: "system", content: "You represent a client." }, { role: "assistant", content: "Hello" },
@@ -493,6 +539,24 @@ describe("native Haiku voice stream", () => {
     expect(chunks.join("")).toContain("Hello 您好");
     expect(chunks.at(-1)).toBe("data: [DONE]\n\n");
     expect(first).toHaveBeenCalledOnce();
+  });
+  it("emits useful words before later speech tags arrive and preserves fragmented tags", async () => {
+    let controller!: ReadableStreamDefaultController<Uint8Array>;
+    const body = new ReadableStream<Uint8Array>({ start(c) { controller = c; } });
+    const send = (event: unknown) => controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`));
+    const iterator = completionChunks(body);
+    send(spokenEvents[0]);
+    await iterator.next();
+    send({ type: "content_block_delta", delta: { type: "text_delta", text: "Thank you. " } });
+    expect((await iterator.next()).value).toContain("Thank you.");
+    for (const text of ["[pa", "use] Could you send that in writing?"])
+      send({ type: "content_block_delta", delta: { type: "text_delta", text } });
+    send(spokenEvents[2]); send(spokenEvents[3]); controller.close();
+    let delivered = "";
+    for await (const chunk of iterator) {
+      if (!chunk.includes("[DONE]")) delivered += JSON.parse(chunk.slice(6)).choices[0].delta.content ?? "";
+    }
+    expect(delivered).toBe("[pause] Could you send that in writing?");
   });
   it("maps native tool-use blocks to OpenAI tool-call deltas", async () => {
     const events = [
@@ -530,6 +594,7 @@ describe("outbound voice worker", () => {
       ELEVENLABS_PHONE_NUMBER_ID: "phone-1", VOICE_ORCHESTRATOR_TOKEN: "orchestrator-test", VOICE_LLM_TOKEN: "gateway-test",
       VOICE_JOB_DIR: directory, PUBLIC_URL: "https://voice.example", VOICE_CALLS_ENABLED: "true",
       VOICE_ALLOWED_NUMBERS: "+14155550123", ELEVENLABS_WEBHOOK_SECRET: "webhook-test",
+      VOICE_TTS_MODEL: "", VOICE_VOICE_PRESET: "", ELEVENLABS_ADVOCATE_VOICE_ID: "",
     };
     for (const [key, value] of Object.entries(config)) vi.stubEnv(key, value);
     providerFetch = vi.fn(async () => new Response(JSON.stringify({ success: true, conversation_id: "conv-1", callSid: "CA-test" })));
@@ -560,6 +625,53 @@ describe("outbound voice worker", () => {
     expect(r.body).toContain("NO authority to accept a binding settlement");
     expect(r.body).toContain("maxOfferUsd");
     expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("offers authenticated choices and previews a selected voice/model without dialing", async () => {
+    expect((await app.inject({ url: "/api/voice/options" })).statusCode).toBe(401);
+    const choices = (await app.inject({ url: "/api/voice/options", headers: auth })).json();
+    expect(choices.default.model).toBe("eleven_v4_turbo");
+    expect(choices.voices.map((voice: { id: string }) => voice.id)).toEqual(["bella", "river", "eric"]);
+    const plan = { ...voicePlan(), speech: { model: "eleven_v4", voice: "river" } };
+    const preview = (await app.inject({ method: "POST", url: "/api/voice/jobs/preview", headers: auth, payload: plan })).json();
+    expect(preview.speech).toMatchObject({ model: "eleven_v4", voiceName: "River" });
+    expect(preview.initiation.conversation_config_override.tts).toMatchObject({ model_id: "eleven_v4", voice_id: "SAz9YHcvj6GT2YYXdXww" });
+    expect(preview.deliveryInstructions).toContain("at most one [pause]");
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("rejects invalid speech selections at HTTP and direct-function boundaries", async () => {
+    for (const speech of [{ model: "eleven_v9" }, { voice: "unknown" }, { speed: 10 }, null]) {
+      const plan = { ...voicePlan(), speech } as unknown as VoicePlan;
+      expect((await submit(app, plan)).statusCode).toBe(400);
+      expect(() => validateVoicePlan(plan)).toThrow();
+    }
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("persists speech selection, rejects changes on retry, and keeps gateway instructions stable after env changes", async () => {
+    const plan: VoicePlan = { ...voicePlan(), speech: { model: "eleven_v4", voice: "eric" } };
+    const job = (await submit(app, plan)).json();
+    expect(job.speech).toMatchObject({ model: "eleven_v4", voiceName: "Eric" });
+    const dial = JSON.parse(providerFetch.mock.calls[0][1].body);
+    expect(dial.conversation_initiation_client_data.conversation_config_override.tts).toMatchObject({ model_id: "eleven_v4", voice_id: job.speech.voiceId });
+    expect((await submit(app, { ...plan, speech: { voice: "river" } })).statusCode).toBe(409);
+    vi.stubEnv("VOICE_TTS_MODEL", "invalid-new-default");
+    providerFetch.mockResolvedValueOnce(new Response(eventStream(spokenEvents)));
+    const r = await app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions", headers: { authorization: "Bearer gateway-test" },
+      payload: { stream: true, voice_job_id: job.jobId, messages: [{ role: "user", content: "Hello" }] } });
+    expect(r.statusCode).toBe(200);
+    const llm = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(llm.system[0].text).toContain("active speech engine: eleven_v4.");
+    expect(new CallJobStore(directory).get(job.jobId)?.speech).toEqual(job.speech);
+  });
+  it("keeps legacy journal calls tag-free because they were dispatched with Flash", async () => {
+    await submit(app);
+    const store = new CallJobStore(directory), job = store.get("job-1")!;
+    delete job.speech; store.save(job);
+    providerFetch.mockResolvedValueOnce(new Response(eventStream(spokenEvents)));
+    await app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions", headers: { authorization: "Bearer gateway-test" },
+      payload: { stream: true, voice_job_id: job.jobId, messages: [{ role: "user", content: "Hello" }] } });
+    const llm = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(llm.system[0].text).toContain("plain spoken text");
+    expect(llm.system[0].text).not.toContain("[pause]");
   });
   it("blocks calls until config, live switch and destination allowlist permit them", async () => {
     vi.stubEnv("VOICE_CALLS_ENABLED", "false");
@@ -669,10 +781,12 @@ describe("outbound voice worker", () => {
     expect(r.statusCode).toBe(502);
     expect(r.body).not.toContain("sensitive");
   });
-  it("configures Flash, a protected Haiku gateway, IVR tools and no settlement tools", () => {
+  it("configures v4 Turbo, voice/model overrides, a protected Haiku gateway, IVR tools and no settlement tools", () => {
     const config = outboundAgentConfig("https://voice.example", "secret-1");
     expect(config.conversation_config.agent.prompt.custom_llm.model_id).toBe("claude-haiku-5-5");
-    expect(config.conversation_config.tts.model_id).toBe("eleven_flash_v2_5");
+    expect(config.conversation_config.tts.model_id).toBe("eleven_v4_turbo");
+    expect(config.conversation_config.tts.expressive_mode).toBe(true);
+    expect(config.platform_settings.overrides.conversation_config_override.tts).toMatchObject({ model_id: true, voice_id: true });
     expect(config.conversation_config.agent.prompt.tool_ids).toEqual([]);
     expect(config.conversation_config.agent.prompt.built_in_tools).toHaveProperty("play_keypad_touch_tone");
     expect(JSON.stringify(config)).not.toContain("anthropic-test");

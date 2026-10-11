@@ -1,6 +1,7 @@
 // Explicit setup checks. No call dispatch, Claude requests, or account changes.
 import { need, opt } from "../env.js";
-import { apiBase, voiceFor, type FetchLike } from "./elevenlabs.js";
+import { apiBase, type FetchLike } from "./elevenlabs.js";
+import { resolveSpeechProfile, speechSmokeText } from "./speech.js";
 
 type Check = { ok: boolean; status?: number; detail: string };
 class SetupCheckError extends Error {}
@@ -25,7 +26,8 @@ function failure(status: number): string {
 /** Read-only probes work before Claude, a public URL, or a phone number is configured. */
 export async function checkElevenLabsConnection(f: FetchLike = fetch) {
   need("ELEVENLABS_API_KEY");
-  const voiceId = voiceFor("advocate");
+  const speech = resolveSpeechProfile();
+  const voiceId = speech.voiceId;
   const agentId = opt("ELEVENLABS_OUTBOUND_AGENT_ID");
   const probes = {
     voice: {
@@ -66,25 +68,25 @@ export async function checkElevenLabsConnection(f: FetchLike = fetch) {
   return {
     checkedAt: new Date().toISOString(),
     connected: Object.values(checks).every((check) => check.ok),
+    speech,
     checks,
     callsReady: false,
-    note: "API access only. Phone routing, Claude, shared memory, and full call latency are not verified by this check.",
+    note: "API access only. Selected model synthesis, phone routing, Claude, shared memory, and full call latency are not verified by this check. Run --smoke-test to test the selected model and voice.",
   };
 }
-
-export const VOICE_SMOKE_TEXT = "Hello, I'm BangBang, an AI representative calling on behalf of a client. This is a voice connection test.";
 
 /** One short, synthetic TTS request. Explicitly invoked; uses credits but never places a call. */
 export async function smokeTestElevenLabs(f: FetchLike = fetch) {
   need("ELEVENLABS_API_KEY");
+  const speech = resolveSpeechProfile();
   const started = performance.now();
   let firstAudioByteMs: number | undefined;
   const chunks: Uint8Array[] = [];
   let bytes = 0;
   try {
-    const response = await request(`/v1/text-to-speech/${encodeURIComponent(voiceFor("advocate"))}/stream?output_format=mp3_44100_128`, {
+    const response = await request(`/v1/text-to-speech/${encodeURIComponent(speech.voiceId)}/stream?output_format=mp3_44100_128`, {
       method: "POST",
-      body: JSON.stringify({ text: VOICE_SMOKE_TEXT, model_id: "eleven_flash_v2_5" }),
+      body: JSON.stringify({ text: speechSmokeText(speech), model_id: speech.model, voice_settings: { stability: 0.5, speed: 1 } }),
     }, f);
     if (!response.ok) {
       await response.body?.cancel();
@@ -114,6 +116,6 @@ export async function smokeTestElevenLabs(f: FetchLike = fetch) {
     // Only our fixed diagnostics leave this boundary; provider error payloads may echo credentials.
     throw new Error(error instanceof SetupCheckError ? error.message : "ElevenLabs speech request timed out or failed.");
   }
-  return { audio: Buffer.concat(chunks), voiceId: voiceFor("advocate"), modelId: "eleven_flash_v2_5", firstAudioByteMs,
+  return { audio: Buffer.concat(chunks), voiceId: speech.voiceId, voiceName: speech.voiceName, modelId: speech.model, firstAudioByteMs,
     totalMs: Math.round(performance.now() - started), bytes };
 }

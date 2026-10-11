@@ -1,14 +1,20 @@
 # Branch A merge handoff: voice execution under the orchestrator
 
-Prepared 2026-10-11 for the session merging `feat/voice` into the combined BangBang application.
+Prepared 2026-10-11 for the session merging `codex/eleven-v4-voice` into the combined BangBang application.
 Read this file before connecting the real phone worker to the product pipeline. The complete request
 example, environment setup, route table, and provider references are in [README.md](./README.md).
+
+This branch starts from integrated `origin/main` at `48577df`, including the partner's frontend merge,
+the shared Claude helper, and the required call-destination allowlist. The original voice worker (#3)
+was already merged. The independent ElevenLabs connection work from open PR #8 was carried forward;
+this branch includes that work plus the v4 upgrade. Keep these source changes together when merging.
 
 ## Agreed product and architecture decisions
 
 The user owns Branch A (Voice & Story). Their partner is building the orchestrator in the **same
 Node/TypeScript/Fastify server**. The requested voice stack is Claude Haiku 5.5 for conversation,
-ElevenLabs for speech, and a phone API for real outbound calls. The caller represents the client;
+Eleven v4 Turbo for speech, and a phone API for real outbound calls. Standard Eleven v4 and Flash v2.5
+are explicit alternatives. The caller represents the client;
 it must identify itself as an AI representative and must not impersonate the client or a human.
 
 The voice worker is a subordinate execution tool of the orchestrator. The orchestrator owns the plan,
@@ -35,14 +41,15 @@ been provisioned, and no phone calls have been placed. Real dialing remains disa
 
 | File relative to `bangbang/server/` | Responsibility |
 | --- | --- |
-| `src/agent/call-plan.ts` | Versioned `VoicePlan`, HTTP schema, direct-call validation, representative prompt, per-call IDs, outbound agent configuration |
+| `src/agent/call-plan.ts` | Versioned `VoicePlan` with optional speech choices, HTTP/direct validation, representative prompt, per-call IDs, outbound agent configuration |
+| `src/agent/speech.ts` | V4 Turbo default, model/voice catalog, validated selection, provider overrides, concise model-aware Haiku delivery rules |
 | `src/agent/shared-context.ts` | Orchestrator storage hooks, bounded task/memory/result operations, shared-context registration |
 | `src/agent/calls.ts` | `runVoiceTask`, `syncVoiceTask`, real Twilio-through-ElevenLabs dispatch, persistent job journal, polling, reconciliation, authenticated routes, signed callbacks |
 | `src/agent/haiku.ts` | Protected ElevenLabs-compatible SSE endpoint backed by native Anthropic Messages, text/tool conversion, prompt caching, memory injection, cancellation and latency logging |
 | `src/agent/elevenlabs.ts` | Adds creation of the ElevenLabs workspace secret that holds the gateway token; updates advocate default to included Bella voice |
-| `src/agent/connection.ts` | Read-only API probes and an explicit synthetic Flash audio smoke test, independent of Claude |
+| `src/agent/connection.ts` | Read-only API probes and an explicit synthetic audio smoke test using the selected model/voice, independent of Claude |
 | `src/routes/voice.ts` | Registers the new gateway and phone routes within the existing voice plugin |
-| `scripts/setup-elevenlabs.ts` | Adds `--outbound`, `--dry-run`, `--check`, and `--smoke-test`; normal demo setup remains available |
+| `scripts/setup-elevenlabs.ts` | Adds `--outbound`, `--dry-run`, `--options`, `--check`, and `--smoke-test`; normal demo setup remains available |
 | `src/agent/voice.env.example` | Empty credentials and documented settings for the new worker |
 | `test/voice.test.ts` | Adds mocked coverage for the new worker, streaming, shared context, callbacks and failures |
 
@@ -63,6 +70,28 @@ WORKPLAN. The new routes are reachable because the existing `index.ts` already r
 5. Integrate the environment template into the deployment configuration. D can consolidate it into
    the shared `.env.example` when merging. Keep live calling disabled until provider setup is complete.
 6. Rerun typecheck/tests after all branches merge, then complete the live verification below.
+
+### New v4 speech selection
+
+- Default: `VOICE_TTS_MODEL=eleven_v4_turbo`, `VOICE_VOICE_PRESET=bella`. Alternatives are `eleven_v4`
+  (higher fidelity) and `eleven_flash_v2_5` (speed comparison), with Bella, River, and Eric voice presets.
+  D should consolidate the two new default settings from `voice.env.example` into deployment config.
+- The orchestrator may include `speech: { model: "eleven_v4_turbo", voice: "river" }` in its VoicePlan.
+  This is optional and old plans remain valid. Invalid choices are rejected before provider dispatch.
+- Read the authenticated `GET /api/voice/options` catalog or run setup `--options` without a key.
+  A future UI picker must use its server layer; never send the orchestrator bearer token to the browser.
+- The job saves the resolved speech model and voice ID. Dialing sends the same TTS override to ElevenLabs;
+  Haiku receives instructions derived from that journal snapshot on every turn. Changing environment
+  defaults does not change active jobs. Changing a submitted job's speech selection is a conflict.
+- Rerun outbound provisioning before using this code with an existing provider agent, because this
+  release enables model/voice overrides. Do not manually change active provider call settings without
+  matching the saved job. Legacy jobs without snapshots retain Flash/plain-text prompt behavior.
+- Haiku is told to start speaking useful words immediately, target one or two short sentences, use
+  ordinary punctuation, and apply `[pause]` or `[slow]` only for important information. There is no
+  full-response buffering or second model pass. Long silences use `skip_turn`; no SSML break markup.
+  This is delivery guidance, not a deterministic guarantee of tag counts or exact pause duration.
+- No real client call or live Haiku turn has been tested yet. The samples below verify ElevenLabs
+  synthesis only. The existing browser/demo agent configs remain separate from this outbound worker.
 
 ### Required shared-context hooks
 
@@ -173,7 +202,7 @@ endpoint as a successful end-to-end health check.
 
 ## Verified locally and still pending
 
-At the latest checkpoint, the baseline plus new tests total **204 passing tests across 13 files**.
+At the latest checkpoint, the baseline plus new tests total **218 passing tests across 14 files**.
 TypeScript typecheck and whitespace checks pass. Outbound setup config generation has been exercised
 without keys using a dry run. Provider network requests in tests are mocked.
 
@@ -184,6 +213,15 @@ voice (including the existing demo unless overridden). A 104,534-byte MP3 arrive
 325 ms and complete response at 477 ms. These are one synthetic TTS request's timings, not phone or
 Claude latency. `PUBLIC_URL`, outbound agent/secret/phone IDs, Anthropic credentials, persistent
 `VOICE_JOB_DIR`, webhook configuration, and partner-side shared-context registration remain pending.
+
+Subsequent live v4 checks all returned nonempty streamed MP3 audio. V4 Turbo first-byte/complete-response
+times were Bella 389/1,455 ms, River 367/1,429 ms, and Eric 352/1,520 ms. Standard v4 with Bella was
+631/1,810 ms. These were individual synthetic requests containing `[pause]`, not a controlled benchmark,
+subjective listening review, or an end-to-end call test. Keep v4 Turbo as the responsive default.
+
+Tests also cover per-call selection, persisted settings across environment changes/restarts, legacy
+Flash jobs, invalid HTTP/direct selections, model-aware Haiku prompts, and immediate streaming when
+audio tags are split across chunks. Typecheck and the setup dry run validate against the merged code.
 
 From `bangbang/server`, the normal verification commands are:
 
@@ -205,5 +243,5 @@ the correct plan/step and cannot trigger settlement without the orchestrator's r
 Measure several end-of-speech to first-audio delays on real calls. `voiceFirstTokenMs` measures only
 the model's first text token; no real end-to-end latency measurements exist for this implementation.
 The voice model has thinking disabled, a 512-token reply limit, streamed deltas and an upstream
-20-second deadline. The outbound agent uses Flash v2.5, normal turn eagerness, digit-spelling patience,
+20-second deadline. The outbound agent defaults to v4 Turbo, normal turn eagerness, digit-spelling patience,
 and a 600-second call limit. Tune these only after observing actual call behavior.

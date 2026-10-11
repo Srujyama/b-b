@@ -13,16 +13,19 @@ import { need, opt } from "../src/env.js";
 import { AGENTS, agentConfig, createVoiceGatewaySecret, listTools, toolConfig, toolMode, toolNamesForSpec, upsertAgent, upsertTool } from "../src/agent/elevenlabs.js";
 import { outboundAgentConfig, publicVoiceUrl } from "../src/agent/call-plan.js";
 import { checkElevenLabsConnection, smokeTestElevenLabs } from "../src/agent/connection.js";
+import { speechOptions } from "../src/agent/speech.js";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(`setup-elevenlabs: creates/updates 3 ElevenLabs agents (advocate en, hospital billing en, intake zh)
 and their tools (log_offer, accept_offer, report_outcome, submit_intake), enables prompt/first_message/
 language/voice overrides, and prints the agent ids to paste into bangbang/server/.env.
 Tool mode: ELEVENLABS_TOOL_MODE=client (default; no public URL needed) or webhook (needs PUBLIC_URL).
---outbound: configure a separate Haiku 5.5 + ElevenLabs Flash phone representative.
+--outbound: configure a separate Haiku 5.5 + Eleven v4 Turbo phone representative.
 --dry-run: print configs without credentials, network access, or placing a call.
 --check: read-only ElevenLabs credential, voice, agent, and phone inventory checks.
---smoke-test: generate one short Flash v2.5 audio sample (uses TTS credits; no phone call).
+--options: list supported speech models and voice choices without network access.
+--smoke-test: generate one short sample using VOICE_TTS_MODEL and VOICE_VOICE_PRESET (uses TTS credits; no phone call).
+Default speech: eleven_v4_turbo with Bella. Options also include eleven_v4 and eleven_flash_v2_5.
 Outbound setup: PUBLIC_URL and VOICE_LLM_TOKEN required; see src/agent/voice.env.example.
 Claude credentials are needed to run calls, not to check or configure ElevenLabs.
 This script never places calls.`);
@@ -32,8 +35,13 @@ This script never places calls.`);
 const dryRun = process.argv.includes("--dry-run");
 const check = process.argv.includes("--check");
 const smoke = process.argv.includes("--smoke-test");
-if ((check || smoke) && (dryRun || process.argv.includes("--outbound") || (check && smoke))) {
-  throw new Error("Use --check or --smoke-test on its own; neither can be combined with setup or --dry-run.");
+const options = process.argv.includes("--options");
+if ((check || smoke || options) && (dryRun || process.argv.includes("--outbound") || [check, smoke, options].filter(Boolean).length > 1)) {
+  throw new Error("Use --check, --smoke-test, or --options on its own; none can be combined with setup or --dry-run.");
+}
+if (options) {
+  console.log(JSON.stringify(speechOptions(), null, 2));
+  process.exit(0);
 }
 if (check) {
   const result = await checkElevenLabsConnection();

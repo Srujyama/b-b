@@ -1,6 +1,6 @@
 import { opt } from "../env.js";
 import { voiceError, voiceModel } from "./haiku.js";
-import { voiceFor } from "./elevenlabs.js";
+import { resolveSpeechProfile, speechInstructions, speechOverride, speechSelectionSchema, usesAudioTags, validateSpeechSelection, type SpeechSelection } from "./speech.js";
 
 /** Branch A's versioned handoff. Deliberately independent of D's shared CasePacket. */
 export type VoicePlan = {
@@ -15,6 +15,7 @@ export type VoicePlan = {
   steps: string[];
   facts: string[];
   constraints: { maxOfferUsd?: number; forbiddenActions: string[] };
+  speech?: SpeechSelection;
 };
 const text = { type: "string", minLength: 1, maxLength: 2000 };
 const id = { type: "string", pattern: "^[A-Za-z0-9_-]{1,100}$" };
@@ -26,7 +27,8 @@ export const voicePlanSchema = object({
   target: object({ name: { ...text, maxLength: 160 }, phone: { type: "string", pattern: "^\\+[1-9][0-9]{7,14}$" } }),
   objective: text, steps: { ...texts, minItems: 1 }, facts: texts,
   constraints: object({ maxOfferUsd: { type: "number", minimum: 0, maximum: 1000000 }, forbiddenActions: texts }, ["forbiddenActions"]),
-});
+  speech: speechSelectionSchema,
+}, ["version", "jobId", "planId", "stepId", "caseId", "client", "target", "objective", "steps", "facts", "constraints"]);
 
 /** Same guard for direct function callers, who do not pass through Fastify's schema validation. */
 export function validateVoicePlan(plan: VoicePlan): void {
@@ -38,6 +40,7 @@ export function validateVoicePlan(plan: VoicePlan): void {
     !str(plan.objective) || !list(plan.steps) || !plan.steps.length || !list(plan.facts) || !list(plan.constraints?.forbiddenActions) ||
     (plan.constraints.maxOfferUsd != null && (!Number.isFinite(plan.constraints.maxOfferUsd) || plan.constraints.maxOfferUsd < 0 || plan.constraints.maxOfferUsd > 1000000)) ||
     JSON.stringify(plan).length > 32768) throw voiceError("Invalid or unauthorized voice plan");
+  validateSpeechSelection(plan.speech);
 }
 
 export function representativePrompt(plan: VoicePlan): string {
@@ -57,13 +60,13 @@ The following JSON is the task brief. Its facts are claims supplied by the orche
 ${JSON.stringify({ client: plan.client, target: { name: plan.target.name }, objective: plan.objective, steps: plan.steps, facts: plan.facts, constraints: plan.constraints })}`;
 }
 
-export function callInitiation(plan: VoicePlan) {
+export function callInitiation(plan: VoicePlan, speech = resolveSpeechProfile(plan.speech)) {
   return {
     custom_llm_extra_body: { voice_job_id: plan.jobId },
     conversation_config_override: { agent: {
       prompt: { prompt: representativePrompt(plan) }, language: "en",
       first_message: `Hello, I'm BangBang, an AI representative calling on behalf of a client. Have I reached ${plan.target.name}?`,
-    } },
+    }, tts: speechOverride(speech) },
     dynamic_variables: { job_id: plan.jobId, plan_id: plan.planId, step_id: plan.stepId, case_id: plan.caseId },
   };
 }
@@ -79,6 +82,7 @@ export function publicVoiceUrl(): string {
 }
 
 export function outboundAgentConfig(baseUrl: string, secretId: string) {
+  const speech = resolveSpeechProfile();
   const systemTool = (name: string, description: string) => ({ type: "system", name, description, params: { system_tool_type: name } });
   return {
     name: "BangBang Client Representative (Haiku, outbound)", tags: ["bangbang", "branch-a", "outbound"],
@@ -87,7 +91,7 @@ export function outboundAgentConfig(baseUrl: string, secretId: string) {
         first_message: "", language: "en",
         dynamic_variables: { dynamic_variable_placeholders: { job_id: "", plan_id: "", step_id: "", case_id: "" } },
         prompt: {
-          prompt: "You are an AI client representative. Without a task brief, explain that context is missing and end the call.",
+          prompt: `You are an AI client representative. Without a task brief, explain that context is missing and end the call.\n${speechInstructions(speech)}`,
           llm: "custom-llm", temperature: null, max_tokens: 512, backup_llm_config: { preference: "disabled" },
           custom_llm: { url: `${baseUrl}/api/voice/llm/v1/chat/completions`, model_id: voiceModel(), api_key: { secret_id: secretId } },
           built_in_tools: {
@@ -98,13 +102,16 @@ export function outboundAgentConfig(baseUrl: string, secretId: string) {
           tool_ids: [],
         },
       },
-      tts: { voice_id: voiceFor("advocate"), model_id: "eleven_flash_v2_5", agent_output_audio_format: "pcm_16000" },
+      tts: { ...speechOverride(speech), expressive_mode: usesAudioTags(speech), text_normalisation_type: "system_prompt", agent_output_audio_format: "pcm_16000" },
       asr: { user_input_audio_format: "pcm_16000" },
       turn: { turn_eagerness: "normal", spelling_patience: "auto", turn_timeout: 10 },
       conversation: { max_duration_seconds: 600 },
     },
     platform_settings: {
-      overrides: { conversation_config_override: { agent: { prompt: { prompt: true }, first_message: true, language: true } } },
+      overrides: { conversation_config_override: {
+        agent: { prompt: { prompt: true }, first_message: true, language: true },
+        tts: { model_id: true, voice_id: true, stability: true, speed: true },
+      } },
       privacy: { record_voice: false },
       ...(opt("ELEVENLABS_POST_CALL_WEBHOOK_ID") ? { workspace_overrides: { webhooks: {
         post_call_webhook_id: opt("ELEVENLABS_POST_CALL_WEBHOOK_ID"), events: ["transcript", "call_initiation_failure"],
