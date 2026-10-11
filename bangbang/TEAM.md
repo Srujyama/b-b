@@ -27,7 +27,7 @@ That's expected, not a bug.
 
 ## Map: who owns what (claim a row in the team chat before you touch it)
 
-All modules are merged on `main`. `npx vitest run` passes 203 tests in 14 files with no keys. "Mock-tested" means
+All modules are merged on `main`. `npx vitest run` passes 210 tests in 14 files with no keys. "Mock-tested" means
 the unit tests stub the outside service; it has not yet run against the real one.
 
 | Area | Track | Files | Status | Still needed to go live |
@@ -37,7 +37,7 @@ the unit tests stub the outside service; it has not yet run against the real one
 | Fair-price + charity research | Context.dev | `src/research/*`, `src/routes/research.ts` | ✅ merged, mock-tested only | `CONTEXT_DEV_API_KEY` + `ANTHROPIC_API_KEY`, then `npm run live:research` |
 | Negotiation prompts + tools | ElevenLabs | `src/agent/prompts.ts`, `tools.ts`, `translate.ts` | ✅ merged, mock-tested only | ElevenLabs + Anthropic keys |
 | Voice runtime + agent-vs-agent bridge | ElevenLabs | `src/agent/elevenlabs.ts`, `bridge.ts`, `src/routes/voice.ts` | ✅ merged, mock-tested only (agents' LLM is ElevenLabs-hosted, default `gpt-4o`) | `ELEVENLABS_API_KEY`, `npm run setup:agents`, a live turn-taking test |
-| Outbound phone agent (stream A) | ElevenLabs | `src/agent/calls.ts`, `haiku.ts`, `call-plan.ts`, `shared-context.ts`, `voice.env.example` | ✅ merged, mock-tested only. Claude Haiku + ElevenLabs Flash + Twilio. Off by default; fails closed without `VOICE_ALLOWED_NUMBERS`. Not wired into `/run` | keys, `npm run setup:agents -- --outbound`, Twilio number imported into ElevenLabs, `VOICE_*` tokens, then a call to an allowlisted test phone |
+| Outbound phone agent (stream A) | ElevenLabs | `src/agent/calls.ts`, `haiku.ts`, `call-plan.ts`, `shared-context.ts`, `voice.env.example` | ✅ merged, mock-tested only; ElevenLabs API access and one Flash TTS sample checked live (`npm run setup:agents -- --check` / `--smoke-test`), no call placed. Claude Haiku + ElevenLabs Flash + Twilio. Off by default; fails closed without `VOICE_ALLOWED_NUMBERS`. Not wired into `/run` | keys, `npm run setup:agents -- --outbound`, Twilio number imported into ElevenLabs, `VOICE_*` tokens, then a call to an allowlisted test phone |
 | XRPL credentials, escrow, batch | Ripple | `src/chain/xrpl.ts`, `src/routes/xrpl.ts` | ✅ merged, **LIVE-verified on devnet** (`npm run live:xrpl`) | nothing; hospital $0 confirm is simulated in the demo by design |
 | XRPL Permissioned Domain + private vault + 0% loan | Ripple | `src/chain/xrplFund.ts` | ✅ merged, **LIVE-verified**: non-credentialed deposit rejected `tecNO_AUTH` | nothing |
 | BNB mandate + tamper-evident log | YZi | `contracts/AdvocateLedger.sol`, `src/chain/bnb.ts`, `src/routes/bnb.ts` | ✅ merged, mock-tested only, **not deployed** | tBNB in `BSC_PRIVATE_KEY`, then `npm run deploy:ledger` → `ADVOCATE_LEDGER_ADDRESS` |

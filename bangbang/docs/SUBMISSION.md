@@ -67,7 +67,7 @@ policy, checks the criteria against the chart, and drafts the appeal letter.
   the negotiation, the optional loan, the escrow, the on-chain deal record and the release. Each step logs in English
   and Chinese. A failed step is reported, never skipped silently.
 - Missing configuration returns a 503 that names the missing variable. Real routes never fall back to made-up data.
-- 203 unit tests across 14 files run with no API keys.
+- 210 unit tests across 14 files run with no API keys.
 
 ## Ripple (XRPL)
 
@@ -115,12 +115,12 @@ We use three ElevenLabs Conversational AI agents: a Mandarin intake interviewer,
 billing persona. In clinic mode the hospital agent runs with an insurer prompt override (or a dedicated insurer
 agent, if one is configured). A bridge connects two agents over WebSockets, resampling and
 pacing each one's audio into the other's input in real time, streaming both voices to the browser and translating
-each turn to Chinese. The agents' tools (`log_offer`, `accept_offer`, `end_call` (exposed to ElevenLabs as `report_outcome`),
-`submit_intake`) enforce the mandate in code: an accept above the patient's cap is refused.
-Separately, an outbound phone agent can place a real call through Twilio, using an ElevenLabs Flash voice with
+each turn to Chinese. The agents' tools (`log_offer`, `accept_offer`, `end_call` (exposed to ElevenLabs as
+`report_outcome`), `submit_intake`) enforce the mandate in code: an accept above the patient's cap is refused.
+Separately, an outbound phone agent is built to place calls through Twilio, using an ElevenLabs Flash voice with
 Claude Haiku as its language model. It is off by default and only dials numbers on an explicit allowlist. Status:
-all voice code is unit-tested with mocks. We have not run it against ElevenLabs yet because we don't have the API
-key.
+all voice code is unit-tested with mocks. Against the real ElevenLabs API we have only run read-only access probes
+and one Flash v2.5 text-to-speech sample; no agent conversation, negotiation or phone call has run yet.
 
 ## Context.dev
 

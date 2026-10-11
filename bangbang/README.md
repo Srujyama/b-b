@@ -109,12 +109,12 @@ Checked against testnets and real services, as of this commit:
 | BNB `AdvocateLedger` contract | Not deployed: the BSC wallet holds 0 and `ADVOCATE_LEDGER_ADDRESS` is unset | unit tests (`test/bnb.test.ts`) |
 | Gemini sandbox hedge | Not live: no sandbox key | unit tests |
 | Claude (bill parse, Chinese, translation, research extraction, appeals) | Not run live: no `ANTHROPIC_API_KEY` set yet | unit tests with mocks |
-| ElevenLabs voice (intake, agent-vs-agent call, phone agent) | Not run live: no key | unit tests with mocks |
+| ElevenLabs voice (intake, agent-vs-agent call, phone agent) | Not run live end to end. A teammate's key passed read-only API probes and one Flash v2.5 TTS sample (`npm run setup:agents -- --check` / `--smoke-test`); no agent conversation, negotiation or phone call has run | unit tests with mocks; [`server/src/agent/README.md`](server/src/agent/README.md) |
 | Context.dev research, clinic appeals | Not run live: no key | unit tests with mocks |
 | Hospital "$0 balance" confirmation | **Simulated** by default in the one-button run, and logged as simulated | `pipeline.ts` |
 
 The deterministic bill audit (the $2,230.60 of flagged errors) needs no keys and runs for real on the seed bill.
-`cd server && npx vitest run` passes 203 tests in 14 files with no keys.
+`cd server && npx vitest run` passes 210 tests in 14 files with no keys.
 
 ## How we use each sponsor
 
@@ -179,7 +179,7 @@ Authorization the agent can't exceed, and a negotiation record nobody can quietl
 - Not deployed yet: the BSC testnet wallet holds 0 tBNB. Deploy with `npm run deploy:ledger` once funded. Tests:
   `server/test/bnb.test.ts`.
 
-### ElevenLabs: voice. Built, mock-tested (no key yet)
+### ElevenLabs: voice. Built, mock-tested; API access and TTS checked, no conversation run yet
 There are two separate voice systems.
 1. **Intake and agent-vs-agent negotiation (used by the pipeline).**
    - Three Conversational AI agents (Mandarin intake, English advocate, hospital-billing persona), created
