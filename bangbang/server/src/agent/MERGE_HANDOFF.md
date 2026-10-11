@@ -4,10 +4,11 @@ Prepared 2026-10-11 for the session merging `codex/eleven-v4-voice` into the com
 Read this file before connecting the real phone worker to the product pipeline. The complete request
 example, environment setup, route table, and provider references are in [README.md](./README.md).
 
-This branch starts from integrated `origin/main` at `48577df`, including the partner's frontend merge,
-the shared Claude helper, and the required call-destination allowlist. The original voice worker (#3)
-was already merged. The independent ElevenLabs connection work from open PR #8 was carried forward;
-this branch includes that work plus the v4 upgrade. Keep these source changes together when merging.
+This branch started from integrated `origin/main` at `48577df`, including the partner's frontend merge,
+the shared Claude helper, and the required call-destination allowlist. It now includes main through
+`c7909bc`: both the original voice worker (#3) and independent ElevenLabs connection setup (#8) are
+merged upstream. PR #8 merged while this work was in progress; its tree exactly matched the connection
+checkpoint already carried here. The remaining PR diff is the v4 upgrade and its integration notes.
 
 ## Agreed product and architecture decisions
 
