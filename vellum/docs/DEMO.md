@@ -1,8 +1,10 @@
 # Vellum 2-minute demo: shot list
 
-One story, Mrs. Lin's $14,296 ER bill, told in six beats. Everything on screen is a live call except the labeled
-seed data (the bill and the hospital persona). Record at 1080p, browser full-screen, UI language **中文** (toggle
-to EN only where noted).
+One story, Mrs. Lin's synthetic $14,296 ER bill, told in six beats. The selected voice demo is a
+**simulated browser call with a teammate playing billing**, using Haiku + ElevenLabs. No hospital is
+called. Clearly label the case, conversation, agreements and testnet payments as demonstrations.
+See [browser setup and product handoff](../server/src/agent/BROWSER_DEMO.md) before recording.
+Record at 1080p, browser full-screen, UI language **中文** (toggle to EN only where noted).
 
 ## Before you hit record (T-10 min)
 
@@ -12,19 +14,19 @@ to EN only where noted).
 - [ ] Dry run once: demo case → Run everything → finishes `settled`. Then **restart the server** (fresh state).
 - [ ] Printed `server/fixtures/lin-er-bill.html` on the table for the photo shot. Phone on a stand.
 - [ ] Second tab open on testnet.bscscan.com, devnet.xrpl.org and sepolia.basescan.org for the receipt cut-aways.
-- [ ] If a teammate plays the billing rep (human mode), they are on headphones in a second browser.
-- [ ] Mute notifications. Speakers on: the two agent voices are the moment.
+- [ ] Select Human mode. The teammate uses the conversation browser microphone and headphones. Confirm the browser adapter patch and shared Claude key are present.
+- [ ] Mute notifications. Record both sides of the rehearsal and keep the simulation label visible.
 
 ## Shot list
 
 | Time | Shot | On screen | Voice-over (EN; subtitles zh) |
 |---|---|---|---|
 | 0:00–0:12 | **Cold open.** Hands holding the printed bill; phone camera frames it. | Close on "$14,296.00 BALANCE DUE". | "Mrs. Lin speaks Mandarin. This is her emergency-room bill. She can't read it, and nobody at the hospital speaks her language." |
-| 0:12–0:30 | **Photo → explained.** Tap 拍照或选择账单文件 → 读账单 (or 用示范账单试试 for the demo seed). | Bill screen: every line in plain Chinese; red flags for the duplicate IV push, level-5 ER visit, unbundled labs, ~$2,230. | "Vellum reads every line, explains it in Chinese, and finds about two thousand dollars of billing errors." |
+| 0:12–0:30 | **Photo → explained.** Tap 拍照或选择账单文件 → 读账单 (or 用示范账单试试 for the demo seed). | Bill screen: every line in plain Chinese; red flags for the duplicate IV push, level-5 ER visit, unbundled labs, ~$2,230. | "Vellum reads every line, explains it in Chinese, and flags about two thousand dollars in charges for review; billing must verify any errors." |
 | 0:30–0:45 | **Mandarin intake.** Tap the mic, she speaks. | Intake agent answers in Mandarin; form fills: household 3, income $41,000, max $2,500, consent ✓. | "She tells it, in Mandarin, what she can afford, and gives it permission to act for her." |
 | 0:45–1:00 | **Run everything.** Research screen → 一键全部办理. | Feed streams in Chinese: Medicare and hospital prices with sources, "paid 0.05 AUSD over x402" lines, Stanford's financial-assistance policy, the ladder (open / target / walk-away), "mandate recorded on BNB". | "It researches fair prices and the hospital's charity policy, paying for its own data in AUSD, and writes her spending limit onto BNB Chain." |
-| 1:00–1:35 | **The call (the moment).** Auto-switches to the negotiation room. | Two voices talking in English; live Chinese transcript under each line; ticker: asked $14,296 → current → saved %. Deal stamp lands. | Let the audio play for ~25 s, no VO. Then: "It argues in English with the hospital's billing agent, citing the errors and the charity policy. She follows every word in Chinese." |
-| 1:35–1:50 | **Settlement.** Auto-switches to receipts. | Receipt timeline: XRPL Credential, EscrowCreate, Batch (EscrowFinish + fee), BNB recordDeal, x402 payments; Gemini card: lump sum vs plan with Fed odds bars. Cut-away: click the Batch receipt → devnet.xrpl.org showing tesSUCCESS. | "The money waits in an XRPL escrow and is released only when the hospital confirms a zero balance. Gemini's Fed odds tell her whether to pay now or take a 0% plan from a community fund." |
+| 1:00–1:35 | **The call (the moment).** Auto-switches to the negotiation room. | Two voices talking in English; live Chinese transcript under each line; ticker: asked $14,296 → current → saved %. Deal stamp lands. | Let the audio play for ~25 s, no VO. Then: "In this simulated call, our AI advocate speaks with a teammate playing billing, asks about flagged charges and assistance, and gathers next steps. She follows along in Chinese." |
+| 1:35–1:50 | **Settlement.** Auto-switches to receipts. | Receipt timeline: XRPL Credential, EscrowCreate, Batch (EscrowFinish + fee), BNB recordDeal, x402 payments; Gemini card: lump sum vs plan with Fed odds bars. Cut-away: click the Batch receipt → devnet.xrpl.org showing tesSUCCESS. | "The money waits in an XRPL escrow and is released after a simulated confirmation in this testnet demonstration. Gemini's Fed odds tell her whether to pay now or take a 0% plan from a community fund." |
 | 1:50–2:00 | **Close + clinic flash.** Two-second cut to `/clinic.html` with an appeal letter, then the logo. | "Same agent, for doctors' offices: insurance denials." End card: Vellum · repo URL. | "Vellum. Help, in your language." |
 
 ## If something breaks live
@@ -39,8 +41,8 @@ to EN only where noted).
 
 ## Talking points for judges (Q&A)
 
-- Nothing core is hard-coded: prices, the charity policy, Fed odds and every on-chain record come from live calls;
-  the receipts link to explorers.
+- Distinguish live provider requests and explorer receipts from seeded facts and simulated billing outcomes.
+  Show source links; do not claim a real provider approved a discount or confirmed a zero balance.
 - The mandate is enforced twice: in the tool handler (accept above her cap is refused) and in the contract
   (`OverMandate`).
 - The negotiation log is tamper-evident: `GET /api/cases/:id/ledger` recomputes the hash chain from our copy of

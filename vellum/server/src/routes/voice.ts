@@ -6,6 +6,7 @@ import { advocateInitForHuman, agentIdFor, conversationInit, getSignedUrl, inter
 import { handleTool } from "../agent/tools.js";
 import { haikuRoutes } from "../agent/haiku.js";
 import { callRoutes } from "../agent/calls.js";
+import { browserDemoInit } from "../agent/browser-demo.js";
 
 // Voice routes (see docs/API.md):
 //   GET  /api/intake/signed-url[?case=]   → {signedUrl, init}  browser opens the Mandarin intake agent
@@ -39,9 +40,13 @@ export default async function voiceRoutes(app: FastifyInstance) {
 
     if (mode === "human") {
       // A teammate plays the billing office in the browser, talking to our advocate agent.
-      const advocateSignedUrl = await getSignedUrl(agentIdFor("advocate"));
+      const browserAgent = opt("ELEVENLABS_BROWSER_AGENT_ID");
+      if (browserAgent && packet.mode === "patient" && packet.patient?.consent !== true)
+        return reply.code(409).send({ error: "the demo patient must consent before the rehearsal" });
+      const advocateSignedUrl = await getSignedUrl(browserAgent ?? agentIdFor("advocate"));
       if (packet.status !== "negotiating" && packet.agreedAmount == null) updateCase(packet.id, { status: "negotiating" });
-      return { mode, advocateSignedUrl, advocateInit: advocateInitForHuman(packet) };
+      return { mode, simulated: true, advocateSignedUrl,
+        advocateInit: browserAgent ? browserDemoInit(packet) : advocateInitForHuman(packet) };
     }
 
     if (activeBridge(packet.id)) return reply.code(409).send({ error: "a negotiation call is already running for this case" });
