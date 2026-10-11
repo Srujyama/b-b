@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>帮帮 核验记录</title>
+  <meta name="description" content="在您自己的浏览器里重新计算帮帮的谈判记录哈希链，看它有没有被改过，是否和 BNB 链上的记录一致。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/verify.css" />
+</head>
+<!-- Verify page (YZi Labs "trusted agent infra"): fetches GET /api/cases/:id/proof (or a downloaded bundle file)
+     and recomputes every entry hash and the hash chain IN THE BROWSER, with the same algorithm as
+     server/src/chain/bnb.ts and contracts/AdvocateLedger.sol. Nothing on this page trusts the server's verdict. -->
+<body>
+<div id="verify-app" class="shell wide vf">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="帮帮 BangBang">
+      <span class="seal" aria-hidden="true">帮</span>
+      <span class="brand-name">帮帮 <small data-i18n="vfBrand">核验记录</small></span>
+    </a>
+    <a id="dash-link" class="toplink" href="/dashboard.html" data-i18n="dashLink">个案总览</a>
+    <button id="lang-toggle" class="lang" type="button" aria-label="Switch language">EN</button>
+  </header>
+
+  <div id="error" class="error" role="alert" hidden>
+    <p id="error-text"></p>
+    <button id="error-close" type="button" data-i18n="dismiss">知道了</button>
+  </div>
+
+  <main>
+    <section id="vf-intro" class="vf-intro">
+      <p class="eyebrow" data-i18n="vfEyebrow">防篡改记录</p>
+      <h1 data-i18n="vfTitle">这份谈判记录有没有被改过？</h1>
+      <p class="lede" data-i18n="vfLede">帮帮把每一次出价和每一句对话做成哈希，串成一条链。这个页面在您自己的浏览器里重新计算，不需要相信我们的服务器。</p>
+    </section>
+
+    <!-- no #case: pick one, or load a file -->
+    <section id="vf-picker" class="vf-card" hidden>
+      <h2 data-i18n="vfPick">选一个个案</h2>
+      <ul id="vf-cases" class="case-list"></ul>
+    </section>
+
+    <section id="vf-loader" class="vf-card vf-loader">
+      <h2 data-i18n="vfLoadTitle">核验下载的文件</h2>
+      <p class="fine" data-i18n="vfLoadLede">别人发给您的核验文件（.json）也可以在这里检查。文件只在您的浏览器里读取，不会上传。</p>
+      <label class="vf-file">
+        <input id="vf-file" type="file" accept="application/json,.json" />
+        <span data-i18n="vfLoadBtn">选择核验文件</span>
+      </label>
+    </section>
+
+    <section id="vf-result" hidden>
+      <p id="vf-preview" class="preview-banner" hidden data-i18n="vfPreview">这是界面预览数据（开发用）：病人、通话和交易都不是真的，这条记录也从来没有上链。</p>
+      <p id="vf-from-file" class="vf-filenote" hidden></p>
+
+      <!-- verdict -->
+      <div id="vf-verdict" class="vf-verdict" aria-live="polite">
+        <span id="vf-stamp" class="vf-stamp" aria-hidden="true"></span>
+        <div class="vf-verdict-body">
+          <p class="eyebrow" id="vf-case"></p>
+          <h2 id="vf-verdict-title"></h2>
+          <p id="vf-verdict-text"></p>
+        </div>
+      </div>
+
+      <dl id="vf-heads" class="vf-heads"></dl>
+
+      <!-- tamper test -->
+      <div id="vf-tamper" class="vf-card vf-tamper">
+        <label class="vf-switch">
+          <input id="vf-tamper-on" type="checkbox" role="switch" />
+          <span class="vf-track" aria-hidden="true"></span>
+          <span class="vf-switch-label" data-i18n="vfTamper">篡改测试</span>
+        </label>
+        <label class="vf-which" for="vf-tamper-at"><span data-i18n="vfTamperWhich">改哪一条</span>
+          <select id="vf-tamper-at"></select>
+        </label>
+        <p class="fine" id="vf-tamper-note" data-i18n="vfTamperNote">把其中一条记录改动一个字节（只改您浏览器里的副本），看看哈希链从哪里断开。</p>
+      </div>
+
+      <!-- entries -->
+      <section class="vf-card">
+        <div class="card-title">
+          <h2 data-i18n="vfEntries">每一条记录</h2>
+          <span id="vf-count" class="pill review"></span>
+        </div>
+        <p class="fine" id="vf-source"></p>
+        <ol id="vf-entries" class="vf-entries"></ol>
+      </section>
+
+      <div class="vf-cols">
+        <section class="vf-card">
+          <h2 data-i18n="vfMandate">您的授权</h2>
+          <div id="vf-mandate"></div>
+        </section>
+        <section class="vf-card">
+          <h2 data-i18n="vfReceipts">结算凭证</h2>
+          <ol id="vf-receipts" class="timeline compact"></ol>
+        </section>
+      </div>
+
+      <section class="vf-card">
+        <h2 data-i18n="vfHow">怎么算的</h2>
+        <ol id="vf-how" class="vf-how"></ol>
+        <div class="vf-actions">
+          <a id="vf-download" class="secondary as-link" href="#" download data-i18n="vfDownload">下载核验文件</a>
+          <a id="vf-dash" class="text" href="/dashboard.html" data-i18n="vfToDash">回到个案总览</a>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>
+<script type="module" src="/verify.js"></script>
+</body>
+</html>
