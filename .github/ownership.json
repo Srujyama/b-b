@@ -1,0 +1,59 @@
+{
+  "_doc": "Who may edit what. Source of truth for the CI ownership check (.github/scripts/check-ownership.mjs) and bangbang/WORKPLAN.md. Branch prefix -> stream. D owns everything not listed and may edit anything (D covers for A/B/C). Paths are globs relative to the repo root (** = any depth, * = one segment).",
+  "branches": {
+    "feat/voice": "A",
+    "feat/rails": "B",
+    "feat/research": "C",
+    "feat/product": "D",
+    "chore/": "D",
+    "fix/": "D"
+  },
+  "streams": {
+    "A": {
+      "name": "Voice & Story",
+      "paths": [
+        "bangbang/server/src/agent/**",
+        "bangbang/server/src/routes/voice.ts",
+        "bangbang/server/scripts/setup-elevenlabs.ts",
+        "bangbang/server/test/agent.test.ts",
+        "bangbang/server/test/voice.test.ts",
+        "bangbang/docs/DEMO.md"
+      ]
+    },
+    "B": {
+      "name": "Money Rails",
+      "paths": [
+        "bangbang/contracts/**",
+        "bangbang/server/src/chain/**",
+        "bangbang/server/src/routes/xrpl.ts",
+        "bangbang/server/src/routes/bnb.ts",
+        "bangbang/server/src/routes/x402.ts",
+        "bangbang/server/scripts/setup-xrpl.ts",
+        "bangbang/server/scripts/deploy-ledger.ts",
+        "bangbang/server/scripts/gen-wallets.ts",
+        "bangbang/server/scripts/live-xrpl.ts",
+        "bangbang/server/scripts/live-ausd.ts",
+        "bangbang/server/test/xrpl.test.ts",
+        "bangbang/server/test/bnb.test.ts",
+        "bangbang/server/test/ausd.test.ts"
+      ]
+    },
+    "C": {
+      "name": "Research & Intelligence",
+      "paths": [
+        "bangbang/server/src/research/**",
+        "bangbang/server/src/markets/**",
+        "bangbang/server/src/bill/**",
+        "bangbang/server/src/routes/research.ts",
+        "bangbang/server/src/routes/markets.ts",
+        "bangbang/server/src/routes/bill.ts",
+        "bangbang/server/fixtures/lin-er-bill.*",
+        "bangbang/server/scripts/live-research.ts",
+        "bangbang/server/scripts/live-gemini.ts",
+        "bangbang/server/test/research.test.ts",
+        "bangbang/server/test/gemini.test.ts",
+        "bangbang/server/test/bill.test.ts"
+      ]
+    }
+  }
+}
