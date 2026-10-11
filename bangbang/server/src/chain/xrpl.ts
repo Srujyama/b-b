@@ -18,6 +18,7 @@ import {
   convertStringToHex,
   hashes,
   isoTimeToRippleTime,
+  rippleTimeToISOTime,
   signMultiBatch,
   type AccountSet,
   type Batch,
@@ -335,11 +336,12 @@ type EscrowRecord = {
 };
 // Persisted to DATA_DIR/escrows.json (mode 0600, contents never logged) so a restart between
 // /settle and /confirm-zero-balance can still release the escrow.
-const escrowStore = persistedMap<EscrowRecord>("escrows", { secret: true, debounceMs: 0 });
+const escrowStore = persistedMap<EscrowRecord>("escrows", { secret: true, strict: true, debounceMs: 0 });
 const escrows = escrowStore.map;
 /** Test/ops hook: re-read escrow records from DATA_DIR (restart simulation). */
 export const _reloadEscrows = () => escrowStore.load();
-/** Escrow changes are written synchronously, not debounced: losing a fulfillment strands funds. */
+/** Escrow changes are written synchronously, not debounced: losing a fulfillment strands funds.
+ *  Throws if escrows.json could not be written (strict store). */
 function writeEscrows() {
   escrowStore.save();
   escrowStore.flush();
@@ -370,26 +372,41 @@ export async function createSettlementEscrow(
       statusCode: 409,
     });
   }
+  // Fail before anything is locked on-chain if the release key could not be saved here
+  // (e.g. another server process owns DATA_DIR).
+  escrowStore.claim();
   const { condition, fulfillment } = preimageCondition();
   const cancelAfter = rippleTimeIn(opts.cancelAfterSec ?? Number(opt("XRPL_ESCROW_CANCEL_DAYS", "14")) * 86400);
   const tx = buildEscrowCreate({ patient: patient.address, hospital: hospital.address, issuer: issuer.address, amount, condition, cancelAfter });
   const res = await submitTx(ctx, tx, patient);
   const offerSequence = Number((res.result.tx_json as { Sequence?: number }).Sequence);
   escrows.set(caseId, { owner: patient.address, destination: hospital.address, offerSequence, condition, fulfillment, amount, cancelAfter, txHash: res.result.hash });
-  writeEscrows(); // the release key is on disk before we acknowledge the lock
-  return {
-    condition,
+  const receipt = receiptFor(ctx.network, "EscrowCreate", res.result.hash, {
+    amount,
+    currency: USD,
+    owner: patient.address,
+    destination: hospital.address,
     offerSequence,
-    receipt: receiptFor(ctx.network, "EscrowCreate", res.result.hash, {
-      amount,
-      currency: USD,
-      owner: patient.address,
-      destination: hospital.address,
-      offerSequence,
-      condition,
-      cancelAfter,
-    }),
-  };
+    condition,
+    cancelAfter,
+  });
+  // The release key must be on disk before we acknowledge the lock. If it is not, say so loudly:
+  // the funds ARE locked on-chain, and the key now exists only in this process's memory.
+  try {
+    writeEscrows();
+  } catch (err) {
+    const cancelAt = rippleTimeToISOTime(cancelAfter);
+    throw Object.assign(
+      new Error(
+        `${amount} USD IS LOCKED on-chain in XRPL escrow ${res.result.hash} (${receipt.explorerUrl}, offerSequence ${offerSequence}), ` +
+          `but its release key could not be saved to ${escrowStore.file()}: ${(err as Error).message}. ` +
+          `The key is held in memory only — fix DATA_DIR and release with POST /confirm-zero-balance before this server restarts; ` +
+          `otherwise the escrow can only be cancelled after ${cancelAt}.`,
+      ),
+      { statusCode: 500 },
+    );
+  }
+  return { condition, offerSequence, receipt };
 }
 
 /** Hospital confirms a $0 balance -> one atomic Batch: EscrowFinish (reveals fulfillment) + advocate fee. */
@@ -418,7 +435,13 @@ export async function releaseOnZeroBalance(caseId: string, ctx?: XrplCtx): Promi
   const still = await ledgerEntry(ctx, { escrow: { owner: e.owner, seq: e.offerSequence } });
   if (still) throw new Error(`XRPL Batch ${res.result.hash} validated but the escrow is still open — inner EscrowFinish did not apply`);
   escrows.delete(caseId);
-  writeEscrows();
+  try {
+    writeEscrows();
+  } catch (err) {
+    // The escrow is already released on-chain; don't hide the receipts. A stale record on disk only
+    // means a restarted server will refuse a second /settle for this case (409), never lose funds.
+    console.error(`[xrpl] escrow for case ${caseId} released, but escrows.json could not be updated: ${(err as Error).message}`);
+  }
   const inner = prepared.RawTransactions.map((r) => hashes.hashSignedTx(r.RawTransaction));
   return [
     receiptFor(ctx.network, "Batch", res.result.hash, { mode: "AllOrNothing", inner, confirmedBy: hospital.address }),

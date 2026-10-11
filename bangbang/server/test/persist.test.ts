@@ -1,10 +1,11 @@
 // Durable store: atomic JSON files under DATA_DIR (set to a per-file temp dir by test/setup-data-dir.ts).
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zeroHash, type Hex } from "viem";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { dataDir, persistedMap, writeJsonAtomic } from "../src/persist.js";
+import { Wallet } from "xrpl";
+import { claimDataDir, dataDir, persistedMap, writeJsonAtomic } from "../src/persist.js";
 
 const mode = (f: string) => statSync(f).mode & 0o777;
 
@@ -88,7 +89,7 @@ describe("persist", () => {
     s.close();
   });
 
-  it("secret stores are written 0600 (and loosened files are tightened on load)", () => {
+  it("every store is written 0600 (cases hold patient data), and loosened files are tightened on load", () => {
     const s = persistedMap<string>("secretstore", { secret: true });
     s.map.set("c", "fulfillment");
     s.save();
@@ -96,11 +97,57 @@ describe("persist", () => {
     expect(mode(s.file())).toBe(0o600);
     s.close();
     const plain = persistedMap<string>("plainstore");
-    plain.map.set("c", "x");
+    plain.map.set("c", "Mrs. Lin");
     plain.save();
     plain.flush();
-    expect(mode(plain.file()) & 0o077).not.toBe(0); // non-secret files are not forced private
+    expect(mode(plain.file())).toBe(0o600);
     plain.close();
+    chmodSync(plain.file(), 0o644);
+    const again = persistedMap<string>("plainstore");
+    expect(again.map.get("c")).toBe("Mrs. Lin");
+    expect(mode(again.file())).toBe(0o600);
+    again.close();
+  });
+
+  it("strict stores re-throw write errors from flush(); non-strict ones only log", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    writeFileSync(join(dir, "notadir"), "x"); // a file where the data dir should be -> ENOTDIR/EEXIST
+    process.env.DATA_DIR = join(dir, "notadir");
+    const strict = persistedMap<string>("strictstore", { strict: true });
+    strict.map.set("k", "v");
+    strict.save();
+    expect(() => strict.flush()).toThrow();
+    const loose = persistedMap<string>("loosestore");
+    loose.map.set("k", "v");
+    loose.save();
+    expect(() => loose.flush()).not.toThrow();
+    // still dirty: once the directory is writable, the next flush lands the data
+    process.env.DATA_DIR = dir;
+    strict.flush();
+    expect(JSON.parse(readFileSync(strict.file(), "utf8"))).toEqual({ k: "v" });
+    strict.close();
+    loose.close();
+  });
+
+  it("one server per DATA_DIR: a lock held by another live process blocks writes loudly", () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    writeFileSync(join(dir, ".lock"), String(process.ppid)); // the parent process is alive
+    expect(() => claimDataDir(dir)).toThrow(/in use by another BangBang process \(pid \d+\)/);
+    const s = persistedMap<string>("locked", { strict: true });
+    s.map.set("k", "v");
+    s.save();
+    expect(() => s.flush()).toThrow(/one server per DATA_DIR/i);
+    expect(existsSync(s.file())).toBe(false); // nothing clobbered
+    expect(String(err.mock.calls[0][0])).toContain("locked.json");
+    expect(() => s.close()).toThrow(/in use/); // strict even on close — but it is untracked afterwards
+  });
+
+  it("a lock left by a dead process is taken over; ours is idempotent", () => {
+    writeFileSync(join(dir, ".lock"), "2147483646"); // no such pid
+    claimDataDir(dir);
+    expect(readFileSync(join(dir, ".lock"), "utf8")).toBe(String(process.pid));
+    expect(mode(join(dir, ".lock"))).toBe(0o600);
+    claimDataDir(dir);
   });
 
   it("restart: cases written by one module instance are loaded by a fresh one", async () => {
@@ -133,7 +180,7 @@ describe("persist", () => {
     expect(mode(file)).toBe(0o600);
     // what createSettlementEscrow would have written before the restart
     const rec = { owner: "rOwner", destination: "rDest", offerSequence: 7, condition: "A025", fulfillment: "A022SECRET", amount: 1200, cancelAfter: 1, txHash: "TX" };
-    writeJsonAtomic(file, { case1: rec }, true);
+    writeJsonAtomic(file, { case1: rec });
     xrpl._reloadEscrows();
     const pub = xrpl.escrowFor("case1")!;
     expect(pub.offerSequence).toBe(7);
@@ -142,6 +189,36 @@ describe("persist", () => {
     xrpl._resetEscrows();
     expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({});
     expect(mode(file)).toBe(0o600);
+    vi.resetModules();
+  });
+
+  it("settle: if the release key cannot be saved, /settle fails loudly and says the funds are locked", async () => {
+    vi.resetModules();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const xrpl = await import("../src/chain/xrpl.js");
+    const [patient, hospital, issuer, advocate] = [0, 1, 2, 3].map(() => Wallet.generate());
+    const ctx = {
+      network: "devnet",
+      actors: { patient, hospital, issuer, advocate },
+      client: {
+        request: async () => ({ result: { lines: [{ currency: xrpl.USD, balance: "5000" }] } }),
+        autofill: async (tx: object) => ({ ...tx, Sequence: 42, Fee: "12", LastLedgerSequence: 1000 }),
+        submitAndWait: async () => {
+          // the funds are locked on-chain now; make escrows.json unwritable before the key is saved
+          rmSync(dir, { recursive: true, force: true });
+          writeFileSync(dir, "not a directory");
+          return { result: { hash: "ESCROWTXHASH", tx_json: { Sequence: 42 }, meta: { TransactionResult: "tesSUCCESS" } } };
+        },
+      },
+    } as never;
+    const err = await xrpl.createSettlementEscrow("caseZ", 1200, ctx).catch((e) => e);
+    expect(err.statusCode).toBe(500);
+    expect(err.message).toMatch(/1200 USD IS LOCKED on-chain in XRPL escrow ESCROWTXHASH/);
+    expect(err.message).toMatch(/could not be saved to .*escrows\.json/);
+    // still releasable from this process's memory
+    expect(xrpl.escrowFor("caseZ")?.offerSequence).toBe(42);
+    rmSync(dir, { force: true });
+    mkdirSync(dir);
     vi.resetModules();
   });
 
