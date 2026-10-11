@@ -87,13 +87,52 @@ async function medicareGovDoc(code: string): Promise<Doc | undefined> {
   }
 }
 
+// ACEP (American College of Emergency Physicians) reprints CMS's current OPPS payment rates for the codes an ER bills most.
+const ACEP_APC_FAQ = "https://www.acep.org/administration/reimbursement/reimbursement-faqs/apc-ambulatory-payment-classifications-faq";
+let acepPage: Promise<{ url: string; markdown: string; source: Source }> | undefined;
+
+/** The table rows that mention `code`, each with the nearest heading above it that names the payment year,
+ *  plus any sentence stating the year's conversion factor (payment = relative weight x conversion factor). */
+export function rateRowsFor(markdown: string, code: string): string {
+  const lines = markdown.split("\n");
+  const codeRe = new RegExp(`(^|[^A-Z0-9])${code.replace(/[^A-Z0-9]/gi, "\\$&")}([^A-Z0-9]|$)`, "i");
+  const out = new Set<number>();
+  lines.forEach((line, i) => {
+    if (!codeRe.test(line)) return;
+    for (let j = i; j >= Math.max(0, i - 40); j--) {
+      // a year, not part of a price or decimal ("$2026.10", "2.2023")
+      if (/(?<![\d.,$])20\d\d(?![\d.,])/.test(lines[j]) && j !== i) {
+        out.add(j).add(j + 1); // the dated title and the column header under it
+        break;
+      }
+    }
+    out.add(i);
+  });
+  if (out.size) lines.forEach((line, i) => /conversion factor/i.test(line) && /\$\d/.test(line) && out.size < 12 && out.add(i));
+  return [...out].sort((a, b) => a - b).map((i) => lines[i]).join("\n").slice(0, MAX_DOC_CHARS);
+}
+
+/** ACEP's rate table, scraped once per process and cut down to the rows for this code. */
+async function acepDoc(code: string): Promise<Doc | undefined> {
+  try {
+    acepPage ??= scrape(ACEP_APC_FAQ, { markdown: true }).then((p) => ({ url: p.url, markdown: p.markdown ?? "", source: p.source }));
+    const page = await acepPage;
+    const text = rateRowsFor(page.markdown, code);
+    if (!PRINTS_DOLLARS.test(text)) return undefined;
+    return { url: page.url, title: "ACEP: OPPS APC payment rates", text, source: page.source, trust: trustOf(page.url) };
+  } catch {
+    acepPage = undefined; // don't cache a failed scrape
+    return undefined;
+  }
+}
+
 async function medicareFrom(code: string, description: string, docs: Doc[]) {
   if (!docs.length) return undefined;
   const out = await llmJson<MedicareExtract>(
     SYSTEM,
     `Code: ${code} (${description}). Find the Medicare payment amount for this exact code.
 This is for a HOSPITAL bill, so prefer the hospital outpatient FACILITY payment: the OPPS/APC national payment rate, or on medicare.gov the "Facility Fee" under "Hospital outpatient departments" (kind "facility"). Only if no facility payment is printed, use the Physician Fee Schedule national payment (kind "professional").
-Medicare rates change every year, so the payment year matters most: take the figure for the most recent year printed, even from an institutional source, over an older figure from an official one. Each SOURCE has a TRUST line; only when two sources print figures for the same year, use the official one. Use the national (not locality) amount. year = the payment year the figure applies to, or null if the source does not say.
+Medicare rates change every year, so the payment year matters most: take the figure for the most recent year printed, even from an institutional source, over an older figure from an official one. Each SOURCE has a TRUST line; only when two sources print figures for the same year, use the official one. Use the national (not locality) amount. year = the payment year the figure applies to, or null if the source does not say. If a table's year label disagrees with the source's own stated conversion factor for a year (payment = relative weight x conversion factor), go by the year whose conversion factor reproduces the printed payment.
 Then, as a sanity check from your own knowledge of Medicare payment levels: plausible = false if the printed amount is far outside what Medicare pays for this code and rate kind (for example it is a hospital charge, a different code, or a copay rather than the payment). Never replace the printed number with your own.
 Return {"medicareRate":{"amount":number|null,"sourceUrl":string|null,"quote":string|null,"kind":"facility"|"professional"|null,"year":number|null,"plausible":boolean}}.
 
@@ -112,15 +151,21 @@ export async function lookupFairPrice(code: string, description: string, hospita
   const sources: Source[] = [];
   const result: FairPrice = { code, description, sources };
 
-  // 1) Medicare: the official medicare.gov price page, plus a Context.dev search restricted to trusted domains.
-  const [official, medicareHits] = await Promise.all([
-    medicareGovDoc(code),
-    search(`CPT ${code} ${description} Medicare payment rate OPPS APC facility physician fee schedule`, { includeDomains: MEDICARE_SOURCE_DOMAINS, highlights: { maxCharacters: 3000 } }),
-  ]);
-  const medicareDocs = [...(official ? [official] : []), ...trustedDocs(medicareHits, code)].slice(0, 6);
-  let medicare = await medicareFrom(code, description, medicareDocs);
+  // 1) Medicare, from pages known to print current rates: ACEP's ER rate table (cached), else the official medicare.gov price page.
+  let medicare: Awaited<ReturnType<typeof medicareFrom>>;
+  for (const knownPage of [acepDoc, medicareGovDoc]) {
+    const doc = await knownPage(code);
+    if (doc && (medicare = await medicareFrom(code, description, [doc]))) break;
+  }
 
-  // 2) Fallback: Context.dev Answers finds the page; we accept it only from a trusted site, scrape it ourselves and extract only from that text.
+  // 2) Otherwise a Context.dev search restricted to trusted domains. The query is built from the code, not the
+  //    hospital's own abbreviations ("HC ED VISIT LEVEL 5"), which pull in the wrong pages.
+  if (!medicare) {
+    const hits = await search(`CPT HCPCS ${code} Medicare national payment rate ${new Date().getFullYear()} OPPS APC hospital outpatient fee schedule`, { includeDomains: MEDICARE_SOURCE_DOMAINS, highlights: { maxCharacters: 3000 } });
+    medicare = await medicareFrom(code, description, trustedDocs(hits, code));
+  }
+
+  // 3) Last resort: Context.dev Answers finds the page; we accept it only from a trusted site, scrape it ourselves and extract only from that text.
   if (!medicare) {
     const a = await answer(
       `Find a page on cms.gov, medicare.gov or acep.org that states the Medicare national payment amount for CPT/HCPCS code ${code} (${description}). Return that page URL and the amount as printed.`,
@@ -139,7 +184,7 @@ export async function lookupFairPrice(code: string, description: string, hospita
     sources.push(citeSource(medicare, `${label}${medicare.year ? ` (${medicare.year})` : ""} for ${code}`));
   }
 
-  // 3) Hospital's own price-transparency numbers (cash price / payer-negotiated rates), read only from the hospital's own site.
+  // 4) Hospital's own price-transparency numbers (cash price / payer-negotiated rates), read only from the hospital's own site.
   const domain = hospital ? await brandByName(hospital).then((b) => b.domain, () => undefined) : undefined;
   if (hospital && domain) {
     const hits = await search(`${hospital} ${code} ${description} standard charges price transparency discounted cash price`, { includeDomains: [domain], highlights: { maxCharacters: 3000 } });
@@ -168,4 +213,9 @@ ${docsPrompt(docs)}`,
     }
   }
   return result;
+}
+
+/** Forget the cached rate table (tests). */
+export function resetRateCache() {
+  acepPage = undefined;
 }

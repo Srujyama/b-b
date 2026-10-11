@@ -47,6 +47,13 @@ function installLlm() {
 describe("audit (pure)", () => {
   const bill = parseStatementText(statement);
 
+  it("does not flag repeated nominal reporting lines (G1004 at $0.01, once per scan) as duplicates", () => {
+    const line = (code: string, charge: number) => ({ code, description: "x", qty: 1, charge, date: "2024-01-17" });
+    const b: Bill = { provider: { name: "H" }, lineItems: [line("G1004", 0.01), line("G1004", 0.01), line("70450", 2111), line("70450", 2111)], totalCharges: 4222.02, patientBalance: 4222.02 };
+    const dups = auditBill(b).filter((f) => f.kind === "duplicate");
+    expect(dups.map((f) => [f.lineIndex, f.amountAtStake])).toEqual([[3, 2111]]);
+  });
+
   it("fixture parses deterministically into a ~$14k self-pay bill", () => {
     expect(bill.lineItems).toHaveLength(17);
     expect(bill.totalCharges).toBe(14296);
