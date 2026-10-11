@@ -19,6 +19,7 @@ import fundRoutes from "./routes/fund.js";
 import summaryRoutes from "./routes/summary.js";
 import proofRoutes from "./routes/proof.js";
 import hospitalRoutes from "./routes/hospital.js";
+import engineRoutes from "./routes/engine.js";
 import previewRoutes from "./dev/preview.js"; // UI design harness, mounted only when DEV_PREVIEW=1
 
 const WEB_DIR = fileURLToPath(new URL("../../web", import.meta.url));
@@ -57,7 +58,7 @@ export async function buildApp() {
     });
   });
 
-  for (const r of [billRoutes, researchRoutes, voiceRoutes, xrplRoutes, bnbRoutes, x402Routes, marketRoutes, clinicRoutes, pipelineRoutes, fundRoutes, summaryRoutes, proofRoutes, hospitalRoutes, previewRoutes]) {
+  for (const r of [billRoutes, researchRoutes, voiceRoutes, xrplRoutes, bnbRoutes, x402Routes, marketRoutes, clinicRoutes, pipelineRoutes, fundRoutes, summaryRoutes, proofRoutes, hospitalRoutes, engineRoutes, previewRoutes]) {
     await app.register(r);
   }
   return app;

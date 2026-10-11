@@ -23,6 +23,7 @@ import { appendLog, recordDeal, type LedgerEntryBody } from "../chain/bnb.js";
 import { escrowFor } from "../chain/xrpl.js";
 import { activeBridge, startAgentBridge } from "../agent/bridge.js";
 import { FAIR_PRICE_AUSD } from "./x402.js";
+import { orderFactsByLeverage, rankLeverage } from "../engine/leverage.js";
 
 export type Counterparty = "agent" | "human";
 export type StepName = "research" | "financing" | "mandate" | "credential" | "negotiate" | "loan" | "settle" | "recordDeal" | "confirm";
@@ -272,6 +273,19 @@ export async function runPipeline(caseId: string, deps: PipelineDeps, opts: RunO
       updateCase(caseId, { status: "failed" });
       return finish("failed", `research failed: ${r.error}`);
     }
+  }
+
+  // ---------------- lead with the strongest leverage (engine/leverage.ts: reorders, never drops a fact) ----------------
+  try {
+    const researched = requireCase(caseId);
+    const ordered = orderFactsByLeverage(researched);
+    if (ordered.length === researched.facts.length && ordered.some((f, i) => f !== researched.facts[i])) {
+      updateCase(caseId, { facts: ordered });
+      const top = rankLeverage(researched)[0];
+      if (top) emit(caseId, { type: "log", message: `Facts ordered by leverage: leading with ${top.kind.replace(/_/g, " ")} ($${Math.round(top.amountAtStake).toLocaleString("en-US")} at stake)` });
+    }
+  } catch (e) {
+    emit(caseId, { type: "error", message: `leverage ranking failed (facts left in research order): ${errMsg(e)}` });
   }
 
   // ---------------- financing (Gemini) ----------------

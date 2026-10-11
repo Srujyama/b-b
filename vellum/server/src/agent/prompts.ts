@@ -1,5 +1,5 @@
 // Negotiation brains. PURE builders: CasePacket in, system prompt out. No I/O, no env.
-// Ported from lowball-main/server/src/assistant.ts (car-dealer negotiator: concession ladder,
+// Ported from Lowball's server/src/assistant.ts (our earlier car-dealer negotiator, since removed: concession ladder,
 // snap-accept, NEVER-INVENT fact block, log_offer/accept_offer/end_call tools, spoken-number rules)
 // and adapted to US medical billing (patient mode) and insurer denials (clinic mode).
 import type { AuditFlag, CasePacket } from "../types.js";
