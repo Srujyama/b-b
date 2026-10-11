@@ -16,7 +16,8 @@
     "live:ausd": "tsx scripts/live-ausd.ts",
     "live:research": "tsx scripts/live-research.ts",
     "live:clinic": "tsx scripts/live-clinic.ts",
-    "live:gemini": "tsx scripts/live-gemini.ts"
+    "live:gemini": "tsx scripts/live-gemini.ts",
+    "eval:negotiation": "tsx scripts/eval-negotiation.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

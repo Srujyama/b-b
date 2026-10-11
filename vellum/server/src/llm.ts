@@ -39,11 +39,16 @@ export function extractJson<T>(text: string): T {
 }
 
 async function ask(system: string, content: Block[], effort: Effort): Promise<string> {
+  return (await send(system, [{ role: "user", content }], effort)).text;
+}
+
+type Usage = { inputTokens: number; outputTokens: number };
+async function send(system: string, messages: Anthropic.Beta.Messages.BetaMessageParam[], effort: Effort): Promise<{ text: string; usage: Usage }> {
   const res = await anthropic().beta.messages.create({
     model: model(),
     max_tokens: 16000,
     system,
-    messages: [{ role: "user", content }],
+    messages,
     output_config: { effort },
     // On a safety decline the API re-runs the request on a fallback model it picks by category.
     betas: ["server-side-fallback-2026-07-01"],
@@ -52,7 +57,10 @@ async function ask(system: string, content: Block[], effort: Effort): Promise<st
   if (res.stop_reason === "refusal") {
     throw new Error(`Claude declined this request${res.stop_details?.category ? ` (${res.stop_details.category})` : ""}`);
   }
-  return res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+  return {
+    text: res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""),
+    usage: { inputTokens: res.usage?.input_tokens ?? 0, outputTokens: res.usage?.output_tokens ?? 0 },
+  };
 }
 
 /** Completion that must return JSON. `image` is a data: URL (photo or PDF) or an https image URL.
@@ -68,4 +76,31 @@ export async function llmJson<T>(system: string, user: string, opts: { image?: s
 /** Plain-text completion (used for live line-by-line translation, so it runs at low effort). */
 export async function llmText(system: string, user: string, _temperature?: number): Promise<string> {
   return (await ask(system, [{ type: "text", text: user }], "low")).trim();
+}
+
+/** One turn of a multi-turn conversation, from the caller's point of view. */
+export type ChatTurn = { role: "user" | "assistant"; content: string };
+
+/**
+ * Multi-turn completion that must return JSON (the negotiation eval plays both sides of a call with Claude).
+ * Consecutive same-role turns are merged, a leading assistant turn gets a "(the call connects)" user turn in
+ * front, and a trailing assistant turn gets a "your turn" nudge, so any transcript slice is a valid history
+ * (no assistant prefill). Returns the parsed JSON, the raw text and the token usage the API reported.
+ */
+export async function llmChatJson<T>(
+  system: string,
+  turns: ChatTurn[],
+  opts: { effort?: Effort } = {},
+): Promise<{ value: T; text: string; usage: Usage }> {
+  const merged: ChatTurn[] = [];
+  for (const t of turns) {
+    const last = merged[merged.length - 1];
+    if (last && last.role === t.role) last.content += `\n\n${t.content}`;
+    else merged.push({ ...t });
+  }
+  if (!merged.length || merged[0].role !== "user") merged.unshift({ role: "user", content: "(the call connects)" });
+  if (merged[merged.length - 1].role !== "user") merged.push({ role: "user", content: "(silence on the line; it is your turn)" });
+  const sys = `${system}\n\nRespond with a single JSON object only: no prose, no code fences.`;
+  const { text, usage } = await send(sys, merged, opts.effort ?? "medium");
+  return { value: extractJson<T>(text), text, usage };
 }

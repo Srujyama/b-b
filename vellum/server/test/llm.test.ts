@@ -68,3 +68,34 @@ describe("llm (Claude)", () => {
     await expect(fresh.llmText("s", "u")).rejects.toThrow(/ANTHROPIC_API_KEY is not configured/);
   });
 });
+
+describe("llmChatJson (multi-turn, used by the negotiation eval)", () => {
+  beforeEach(() => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    create.mockReset();
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("sends a valid alternating history (merged, user-first, user-last) with no sampling params, and reports usage", async () => {
+    const { llmChatJson } = await import("../src/llm.js");
+    create.mockResolvedValue({ ...reply('{"say":"hi"}'), usage: { input_tokens: 120, output_tokens: 7 } });
+    const out = await llmChatJson<{ say: string }>(
+      "sys",
+      [
+        { role: "assistant", content: "Billing, this is Dana." },
+        { role: "user", content: "Hi" },
+        { role: "user", content: "about an account" },
+        { role: "assistant", content: "Sure." },
+      ],
+      { effort: "low" },
+    );
+    expect(out.value).toEqual({ say: "hi" });
+    expect(out.usage).toEqual({ inputTokens: 120, outputTokens: 7 });
+    const req = create.mock.calls[0][0];
+    expect(req.messages.map((m: { role: string }) => m.role)).toEqual(["user", "assistant", "user", "assistant", "user"]);
+    expect(req.messages[2].content).toBe("Hi\n\nabout an account");
+    expect(req).not.toHaveProperty("temperature");
+    expect(req.output_config).toEqual({ effort: "low" });
+    expect(req.system).toMatch(/single JSON object/);
+  });
+});
