@@ -27,32 +27,35 @@ That's expected, not a bug.
 
 ## Map: who owns what (claim a row in the team chat before you touch it)
 
-| Area | Track | Files | Status |
-|---|---|---|---|
-| Shared contracts | — | `server/src/types.ts`, `store.ts`, `index.ts`, `docs/API.md` | ✅ **Change only after asking the team.** Everything depends on them |
-| Bill parse + audit | core | `src/bill/*`, `src/routes/bill.ts`, `fixtures/lin-er-bill.*` | ✅ done |
-| Fair-price + charity research | Context.dev | `src/research/*`, `src/routes/research.ts` | ✅ done, needs a live run with the key |
-| Negotiation prompts + tools | ElevenLabs | `src/agent/prompts.ts`, `tools.ts`, `translate.ts` | ✅ done |
-| Voice runtime + agent-vs-agent bridge | ElevenLabs | `src/agent/elevenlabs.ts`, `bridge.ts`, `src/routes/voice.ts` | ✅ done, needs key + `npm run setup:agents` + live turn-taking test |
-| XRPL credentials, escrow, batch, vault, loan | Ripple | `src/chain/xrpl*.ts`, `src/routes/xrpl.ts` | ✅ done, LIVE-verified on devnet (`npm run live:xrpl`) |
-| BNB mandate + tamper-evident log | YZi | `contracts/AdvocateLedger.sol`, `src/chain/bnb.ts`, `src/routes/bnb.ts` | ✅ done, needs tBNB + deploy |
-| x402 paid APIs in AUSD | Agora | `src/chain/ausd.ts`, `x402.ts`, `src/routes/x402.ts` | ✅ done, needs faucet funds |
-| Fed odds → financing advice | Gemini | `src/markets/gemini.ts`, `src/routes/markets.ts` | ✅ done (live-verified); sandbox hedge needs keys |
-| Clinic denial appeals | core | `src/claims/*`, `src/routes/clinic.ts` | ✅ done |
-| Web UI (Mandarin-first) | all | `web/*` | ✅ done (patient `/`, clinic `/clinic.html`) |
-| One-button pipeline + README + demo | all | `src/routes/pipeline.ts`, `README.md`, `docs/DEMO.md` | ✅ done (`POST /api/cases/:id/run`, "Run everything" button); needs a full live run with all keys |
+All modules are merged on `main`. `npx vitest run` passes 210 tests in 14 files with no keys. "Mock-tested" means
+the unit tests stub the outside service; it has not yet run against the real one.
 
-🚧 = a Claude agent is editing these files **right now**. Don't edit them until the row turns ✅ (pull first).
+| Area | Track | Files | Status | Still needed to go live |
+|---|---|---|---|---|
+| Shared contracts | — | `server/src/types.ts`, `store.ts`, `index.ts`, `env.ts`, `llm.ts`, `docs/API.md` | ✅ merged. **Change only after asking D.** Everything depends on them. `llm.ts` = Claude (`claude-opus-5-5`, images + PDF) | `ANTHROPIC_API_KEY` |
+| Bill parse + audit | core | `src/bill/*`, `src/routes/bill.ts`, `fixtures/lin-er-bill.*` | ✅ merged. Audit is deterministic and runs with no keys; parse is mock-tested | `ANTHROPIC_API_KEY` for the Claude vision parse |
+| Fair-price + charity research | Context.dev | `src/research/*`, `src/routes/research.ts` | ✅ merged, mock-tested only | `CONTEXT_DEV_API_KEY` + `ANTHROPIC_API_KEY`, then `npm run live:research` |
+| Negotiation prompts + tools | ElevenLabs | `src/agent/prompts.ts`, `tools.ts`, `translate.ts` | ✅ merged, mock-tested only | ElevenLabs + Anthropic keys |
+| Voice runtime + agent-vs-agent bridge | ElevenLabs | `src/agent/elevenlabs.ts`, `bridge.ts`, `src/routes/voice.ts` | ✅ merged, mock-tested only (agents' LLM is ElevenLabs-hosted, default `gpt-4o`) | `ELEVENLABS_API_KEY`, `npm run setup:agents`, a live turn-taking test |
+| Outbound phone agent (stream A) | ElevenLabs | `src/agent/calls.ts`, `haiku.ts`, `call-plan.ts`, `shared-context.ts`, `voice.env.example` | ✅ merged, mock-tested only; ElevenLabs API access and one Flash TTS sample checked live (`npm run setup:agents -- --check` / `--smoke-test`), no call placed. Claude Haiku + ElevenLabs Flash + Twilio. Off by default; fails closed without `VOICE_ALLOWED_NUMBERS`. Not wired into `/run` | keys, `npm run setup:agents -- --outbound`, Twilio number imported into ElevenLabs, `VOICE_*` tokens, then a call to an allowlisted test phone |
+| XRPL credentials, escrow, batch | Ripple | `src/chain/xrpl.ts`, `src/routes/xrpl.ts` | ✅ merged, **LIVE-verified on devnet** (`npm run live:xrpl`) | nothing; hospital $0 confirm is simulated in the demo by design |
+| XRPL Permissioned Domain + private vault + 0% loan | Ripple | `src/chain/xrplFund.ts` | ✅ merged, **LIVE-verified**: non-credentialed deposit rejected `tecNO_AUTH` | nothing |
+| BNB mandate + tamper-evident log | YZi | `contracts/AdvocateLedger.sol`, `src/chain/bnb.ts`, `src/routes/bnb.ts` | ✅ merged, mock-tested only, **not deployed** | tBNB in `BSC_PRIVATE_KEY`, then `npm run deploy:ledger` → `ADVOCATE_LEDGER_ADDRESS` |
+| x402 paid APIs in AUSD | Agora | `src/chain/ausd.ts`, `x402.ts`, `src/routes/x402.ts` | ✅ merged. The EIP-712 domain was checked by hand once against the on-chain `DOMAIN_SEPARATOR` (comment in `ausd.ts`); `npm run live:ausd` has not passed. **No real payment yet** (wallets hold 0) | AUSD for the agent wallet, Base Sepolia ETH for the payee, then `npm run live:ausd` |
+| Fed odds → financing advice | Gemini | `src/markets/gemini.ts`, `src/routes/markets.ts` | ✅ merged, odds **LIVE-verified** (`npm run live:gemini`); sandbox hedge mock-tested only | `GEMINI_API_KEY`/`GEMINI_API_SECRET` for the sandbox hedge |
+| Clinic denial appeals | core | `src/claims/*`, `src/routes/clinic.ts`, `fixtures/denial-*.json` | ✅ merged, mock-tested only | Anthropic + Context.dev keys, then `npm run live:clinic` |
+| Web UI (Mandarin-first) | all | `web/*` | ✅ merged (patient `/`, clinic `/clinic.html`); every screen renders via `/dev/preview` | a full run with keys |
+| One-button pipeline + README + demo | all | `src/routes/pipeline.ts`, `README.md`, `docs/DEMO.md`, `docs/SUBMISSION.md` | ✅ merged, mock-tested only (`POST /api/cases/:id/run`, "Run everything" button) | all keys + funded wallets for one full live run |
 
 ## Unblocked work for humans right now
 
-1. **Keys** → paste into the shared `.env` (send it privately, not in git): OpenAI, ElevenLabs (Discord coupon),
+1. **Keys** → paste into the shared `.env` (send it privately, not in git): Anthropic (`ANTHROPIC_API_KEY`), ElevenLabs (Discord coupon),
    Context.dev, Gemini sandbox key/secret.
 2. **Fund testnet wallets** (addresses: run `npm run setup:wallets` with the shared .env, which prints them):
    tBNB (BSC faucet) → `npm run deploy:ledger`; Base Sepolia ETH for the payee; AUSD faucet for the agent wallet.
    XRPL devnet funds itself: `npm run setup:xrpl`.
-3. **Live-check a module** with keys: `npm run live:research`, `live:clinic`, `live:ausd`, `live:xrpl`, `live:gemini`.
-   Report anything that breaks.
+3. **Live-check a module** with keys: `npm run live:research`, `live:clinic`, `live:ausd` (only `live:xrpl` and
+   `live:gemini` have passed so far; the AUSD EIP-712 domain was checked once by hand, but `live:ausd` has not passed). Report anything that breaks.
 4. **Demo assets:** print `server/fixtures/lin-er-bill.html` and photograph it (the "Mom takes a photo" shot);
    write the 2-min video script; find a teammate to voice or play the hospital billing rep.
 5. **Social proof:** the judges weigh traction. Post progress clips.
