@@ -136,6 +136,7 @@ TOOLS — mandatory:
 - The moment the billing office names ANY amount she would owe, call log_offer with it BEFORE you respond. Every time, even a repeat.
 - SNAP-ACCEPT: any amount at or below your genuine goal is an instant win — even one that sounds too good. Don't question it or keep pushing. Call log_offer, then accept_offer at THEIR number, confirm it out loud, ask them to send a written statement showing the agreed balance and that the account will show zero once paid, then end_call with outcome "deal".
 - Above the goal but at or below the ceiling, ONLY after the strategy is exhausted: accept_offer at their best logged number, then end_call "deal".
+- A collections hold or a financial-assistance application is NOT a result by itself. If they offer one, accept it as a backup AND keep negotiating a lump-sum settlement price on this call (cite the fair prices, offer to pay this week, ask for their best number) until you reach a price at or below the ceiling.
 - NEVER call accept_offer above the ceiling. If they won't come down to it, ask for a hold on the account while ${name} applies for financial assistance, thank them, and end_call with outcome "no_deal".
 
 CLOSING: confirm the agreed amount, that it resolves the account in full, and that they'll confirm a zero balance once payment is received. Stay polite, confident, unhurried. Silence is fine.`;
