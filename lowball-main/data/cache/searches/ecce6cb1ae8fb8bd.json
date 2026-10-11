@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=tesla",
+  "cached_at": 1784398835.897047,
+  "cards": [
+    {
+      "id": "22827322-3a20-4300-a41d-3f44ca82b86d",
+      "url": "https://www.cars.com/vehicledetail/22827322-3a20-4300-a41d-3f44ca82b86d/",
+      "price": 25994,
+      "title": "2018 Tesla Model 3 Performance",
+      "year": 2018,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "3628e575-f82c-45b0-8e0a-a11f5cf04087",
+      "url": "https://www.cars.com/vehicledetail/3628e575-f82c-45b0-8e0a-a11f5cf04087/",
+      "price": 40267,
+      "title": "2024 Tesla Model Y Long Range",
+      "year": 2024,
+      "dealer": "Hyundai of Turnersville"
+    },
+    {
+      "id": "bcf05106-707d-4ddb-8948-21d1ebf84272",
+      "url": "https://www.cars.com/vehicledetail/bcf05106-707d-4ddb-8948-21d1ebf84272/",
+      "price": 39297,
+      "title": "2025 Tesla Model Y Long Range Dual Motor All-Wheel Drive",
+      "year": 2025,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "4ae57acc-76a7-43a3-bc40-a040cb06691a",
+      "url": "https://www.cars.com/vehicledetail/4ae57acc-76a7-43a3-bc40-a040cb06691a/",
+      "price": 30294,
+      "title": "2023 Tesla Model 3 Long Range",
+      "year": 2023,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "37238476-c1db-421a-88d5-014bebe0cc5d",
+      "url": "https://www.cars.com/vehicledetail/37238476-c1db-421a-88d5-014bebe0cc5d/",
+      "price": 39199,
+      "title": "2025 Tesla Model 3 Long Range",
+      "year": 2025,
+      "dealer": "Freehold Subaru Dodge"
+    },
+    {
+      "id": "0e254f2c-eeb3-47f9-af41-8b1b3964b8c6",
+      "url": "https://www.cars.com/vehicledetail/0e254f2c-eeb3-47f9-af41-8b1b3964b8c6/",
+      "price": 47485,
+      "title": "2026 Tesla Model Y Long Range",
+      "year": 2026,
+      "dealer": "Faulkner Toyota Trevose"
+    },
+    {
+      "id": "c0f44ba1-961c-432d-9c07-d8a47ee7a88f",
+      "url": "https://www.cars.com/vehicledetail/c0f44ba1-961c-432d-9c07-d8a47ee7a88f/",
+      "price": 31994,
+      "title": "2021 Tesla Model Y Long Range Dual Motor All-Wheel Drive",
+      "year": 2021,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "7d3151b6-28f2-4cd1-bb81-f42e49b77e9c",
+      "url": "https://www.cars.com/vehicledetail/7d3151b6-28f2-4cd1-bb81-f42e49b77e9c/",
+      "price": 54294,
+      "title": "2023 Tesla Model X AWD w/ White & Black Premium Interiorl",
+      "year": 2023,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "e3b0a5e3-4633-4978-83cf-145664a34806",
+      "url": "https://www.cars.com/vehicledetail/e3b0a5e3-4633-4978-83cf-145664a34806/",
+      "price": 25648,
+      "title": "2023 Tesla Model 3 Base",
+      "year": 2023,
+      "dealer": "Hyundai of Trenton"
+    },
+    {
+      "id": "39d026d2-05b1-42f6-a501-4b9ebdaac3cf",
+      "url": "https://www.cars.com/vehicledetail/39d026d2-05b1-42f6-a501-4b9ebdaac3cf/",
+      "price": 34995,
+      "title": "2022 Tesla Model Y Performance Dual Motor All-Wheel Drive",
+      "year": 2022,
+      "dealer": "Sound Auto Wholesalers"
+    },
+    {
+      "id": "187ba5b4-9904-4062-b776-7058c33e67f6",
+      "url": "https://www.cars.com/vehicledetail/187ba5b4-9904-4062-b776-7058c33e67f6/",
+      "price": 31294,
+      "title": "2023 Tesla Model 3 Performance",
+      "year": 2023,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "40204d1c-45ab-4f1b-a0ac-63b1c3cb46e5",
+      "url": "https://www.cars.com/vehicledetail/40204d1c-45ab-4f1b-a0ac-63b1c3cb46e5/",
+      "price": 36998,
+      "title": "2024 Tesla Model 3 Long Range",
+      "year": 2024,
+      "dealer": "CarMax Wayne"
+    },
+    {
+      "id": "286cfa60-c4c2-4e8b-ae8d-23cb4ebb7df3",
+      "url": "https://www.cars.com/vehicledetail/286cfa60-c4c2-4e8b-ae8d-23cb4ebb7df3/",
+      "price": 33484,
+      "title": "2023 Tesla Model Y Long Range Dual Motor All-Wheel Drive",
+      "year": 2023,
+      "dealer": "Grace Auto Group"
+    },
+    {
+      "id": "1d3244b5-4d2d-4178-8cd3-77b7486e1bdd",
+      "url": "https://www.cars.com/vehicledetail/1d3244b5-4d2d-4178-8cd3-77b7486e1bdd/",
+      "price": 71794,
+      "title": "2024 Tesla Model X Long Range",
+      "year": 2024,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "4fff6680-ab23-4676-96d5-d77e058bf334",
+      "url": "https://www.cars.com/vehicledetail/4fff6680-ab23-4676-96d5-d77e058bf334/",
+      "price": 27130,
+      "title": "2021 Tesla Model Y Performance",
+      "year": 2021,
+      "dealer": "Patriot Chevrolet Limerick"
+    },
+    {
+      "id": "41248c50-9885-41d3-9dde-96956bd24f3e",
+      "url": "https://www.cars.com/vehicledetail/41248c50-9885-41d3-9dde-96956bd24f3e/",
+      "price": 34489,
+      "title": "2023 Tesla Model Y Long Range Dual Motor All-Wheel Drive",
+      "year": 2023,
+      "dealer": "CarShop Hatfield"
+    },
+    {
+      "id": "92d3db38-c192-4314-a01d-da12fc3ada19",
+      "url": "https://www.cars.com/vehicledetail/92d3db38-c192-4314-a01d-da12fc3ada19/",
+      "price": 27494,
+      "title": "2022 Tesla Model 3 Long Range",
+      "year": 2022,
+      "dealer": "J&S Autohaus Six"
+    },
+    {
+      "id": "1c7dce49-fb8e-40bd-a4ca-4ffdfa68e615",
+      "url": "https://www.cars.com/vehicledetail/1c7dce49-fb8e-40bd-a4ca-4ffdfa68e615/",
+      "price": 36998,
+      "title": "2023 Tesla Model Y Performance",
+      "year": 2023,
+      "dealer": "CarMax Smithtown"
+    },
+    {
+      "id": "7e24e43b-ad7b-407a-8892-263acf9cae8b",
+      "url": "https://www.cars.com/vehicledetail/7e24e43b-ad7b-407a-8892-263acf9cae8b/",
+      "price": 52998,
+      "title": "2026 Tesla Model Y Long Range",
+      "year": 2026,
+      "dealer": "CarMax Turnersville"
+    },
+    {
+      "id": "0cfe4b25-94e0-4fac-b5fa-dbf548bef14f",
+      "url": "https://www.cars.com/vehicledetail/0cfe4b25-94e0-4fac-b5fa-dbf548bef14f/",
+      "price": 30686,
+      "title": "2022 Tesla Model 3 Performance",
+      "year": 2022,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "c64861a1-9977-4076-8264-ca1a00daab48",
+      "url": "https://www.cars.com/vehicledetail/c64861a1-9977-4076-8264-ca1a00daab48/",
+      "price": 26995,
+      "title": "2022 Tesla Model 3 Long Range",
+      "year": 2022,
+      "dealer": "Sound Auto Wholesalers"
+    },
+    {
+      "id": "3e45eeb2-6878-40cb-9ee5-fede8d106334",
+      "url": "https://www.cars.com/vehicledetail/3e45eeb2-6878-40cb-9ee5-fede8d106334/",
+      "price": 37294,
+      "title": "2024 Tesla Model Y Long Range Dual Motor All-Wheel Drive",
+      "year": 2024,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "996a8136-846d-4c44-9efd-15d21944ed83",
+      "url": "https://www.cars.com/vehicledetail/996a8136-846d-4c44-9efd-15d21944ed83/",
+      "price": 53629,
+      "title": "2023 Tesla Model S",
+      "year": 2023,
+      "dealer": "Recharged"
+    },
+    {
+      "id": "fee1d06d-7b60-4ddd-b275-278835d39da7",
+      "url": "https://www.cars.com/vehicledetail/fee1d06d-7b60-4ddd-b275-278835d39da7/",
+      "price": 91998,
+      "title": "2024 Tesla Cybertruck Cyberbeast",
+      "year": 2024,
+      "dealer": "CarMax Lancaster"
+    }
+  ]
+}

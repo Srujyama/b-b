@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Itemized Statement</title>
+<!-- DEMO SEED DATA: fictional patient and account, generated from fixtures/lin-er-bill.json (same lines). Print or photograph this for the demo. -->
+<style>
+body{background:#fff;color:#111;font:13px/1.35 "Helvetica Neue",Arial,sans-serif;margin:0;padding:24px}
+.sheet{max-width:780px;margin:0 auto;border:1px solid #bbb;padding:28px 32px}
+h1{font-size:20px;margin:0;letter-spacing:.04em}.sub{color:#444;margin:2px 0}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin:18px 0;padding:10px 0;border-top:2px solid #111;border-bottom:1px solid #999}
+.meta b{display:inline-block;min-width:120px;font-weight:600}
+h2{font-size:14px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.06em}
+table{width:100%;border-collapse:collapse;font-family:"Courier New",monospace;font-size:12px}
+th{text-align:left;border-bottom:1px solid #111;padding:4px 6px;font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px}
+td{padding:3px 6px;border-bottom:1px dotted #ccc}.n{text-align:right;white-space:nowrap}
+.tot{margin-left:auto;width:300px;margin-top:12px;font-family:"Courier New",monospace}
+.tot div{display:flex;justify-content:space-between;padding:2px 0}.tot .due{border-top:2px solid #111;font-weight:700;font-size:14px;margin-top:4px;padding-top:4px}
+.foot{margin-top:22px;color:#333;font-size:12px;border-top:1px solid #999;padding-top:8px}
+@media print{body{padding:0}.sheet{border:none}}
+</style></head><body><div class="sheet">
+<h1>STANFORD HEALTH CARE</h1><p class="sub">Stanford Hospital - Emergency Department</p><p class="sub">300 Pasteur Drive, Stanford, CA 94305</p><p class="sub">stanfordhealthcare.org</p>
+<div class="meta">
+<div><b>Statement</b>Itemized Statement of Account</div><div><b>Statement Date</b>09/02/2026</div>
+<div><b>Patient</b>LIN, MEI</div><div><b>Account No</b>4418-20931-07</div>
+<div><b>Guarantor</b>LIN, MEI</div><div><b>Financial Class</b>SELF PAY</div>
+<div><b>Admit</b>08/14/2026 14:05</div><div><b>Discharge</b>08/14/2026 17:22</div>
+<div><b>Patient Type</b>EMERGENCY OUTPATIENT</div><div><b>Primary Insurance</b>NONE ON FILE</div>
+</div>
+<h2>Detail of Charges</h2>
+<table><thead><tr><th>Date</th><th>Rev</th><th>Code</th><th>Description</th><th class=n>Qty</th><th class=n>Charges</th></tr></thead><tbody>
+<tr><td>08/14/2026</td><td>0450</td><td>99285</td><td>HC ED VISIT LEVEL 5</td><td class=n>1</td><td class=n>3,412.00</td></tr>
+<tr><td>08/14/2026</td><td>0350</td><td>74177</td><td>CT ABD &amp; PELVIS W/CONTRAST</td><td class=n>1</td><td class=n>6,245.00</td></tr>
+<tr><td>08/14/2026</td><td>0636</td><td>Q9967</td><td>LOCM 300-399MG/ML IODINE PER ML</td><td class=n>100</td><td class=n>780.00</td></tr>
+<tr><td>08/14/2026</td><td>0301</td><td>80053</td><td>COMPREHENSIVE METABOLIC PANEL</td><td class=n>1</td><td class=n>612.00</td></tr>
+<tr><td>08/14/2026</td><td>0301</td><td>82565</td><td>CREATININE BLOOD</td><td class=n>1</td><td class=n>148.00</td></tr>
+<tr><td>08/14/2026</td><td>0301</td><td>84520</td><td>UREA NITROGEN QUANTITATIVE</td><td class=n>1</td><td class=n>121.00</td></tr>
+<tr><td>08/14/2026</td><td>0301</td><td>82947</td><td>GLUCOSE QUANTITATIVE BLOOD</td><td class=n>1</td><td class=n>96.00</td></tr>
+<tr><td>08/14/2026</td><td>0305</td><td>85025</td><td>CBC W/AUTO DIFF WBC</td><td class=n>1</td><td class=n>289.00</td></tr>
+<tr><td>08/14/2026</td><td>0301</td><td>83690</td><td>LIPASE</td><td class=n>1</td><td class=n>214.00</td></tr>
+<tr><td>08/14/2026</td><td>0300</td><td>81003</td><td>URINALYSIS AUTO W/O SCOPE</td><td class=n>1</td><td class=n>95.00</td></tr>
+<tr><td>08/14/2026</td><td>0300</td><td>36415</td><td>ROUTINE VENIPUNCTURE</td><td class=n>1</td><td class=n>58.00</td></tr>
+<tr><td>08/14/2026</td><td>0260</td><td>96374</td><td>THER/PROPH/DIAG INJ IV PUSH INITIAL</td><td class=n>1</td><td class=n>842.00</td></tr>
+<tr><td>08/14/2026</td><td>0260</td><td>96374</td><td>THER/PROPH/DIAG INJ IV PUSH INITIAL</td><td class=n>1</td><td class=n>842.00</td></tr>
+<tr><td>08/14/2026</td><td>0258</td><td>J7030</td><td>NORMAL SALINE SOLUTION INFUS 1000CC</td><td class=n>1</td><td class=n>186.00</td></tr>
+<tr><td>08/14/2026</td><td>0636</td><td>J2405</td><td>ONDANSETRON HCL INJ PER 1 MG</td><td class=n>4</td><td class=n>96.00</td></tr>
+<tr><td>08/14/2026</td><td>0636</td><td>J1885</td><td>KETOROLAC TROMETHAMINE INJ PER 15 MG</td><td class=n>2</td><td class=n>118.00</td></tr>
+<tr><td>08/14/2026</td><td>0636</td><td>J2270</td><td>MORPHINE SULFATE INJ UP TO 10 MG</td><td class=n>1</td><td class=n>142.00</td></tr>
+</tbody></table>
+<div class="tot">
+<div><span>Total Charges</span><span>14,296.00</span></div>
+<div><span>Insurance Payments</span><span>0.00</span></div>
+<div><span>Adjustments</span><span>0.00</span></div>
+<div><span>Patient Payments</span><span>0.00</span></div>
+<div class="due"><span>BALANCE DUE</span><span>$14,296.00</span></div>
+</div>
+<div class="foot">Please pay the balance due within 30 days. Financial assistance may be available.<br>Questions about this bill? Contact Patient Financial Services (see stanfordhealthcare.org).</div>
+</div></body></html>

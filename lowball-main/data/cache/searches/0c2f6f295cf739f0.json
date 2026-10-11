@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=dodge",
+  "cached_at": 1784398851.710596,
+  "cards": [
+    {
+      "id": "c14388bb-49ba-4195-8722-fe2e5885b501",
+      "url": "https://www.cars.com/vehicledetail/c14388bb-49ba-4195-8722-fe2e5885b501/",
+      "price": 9379,
+      "title": "2006 Dodge Charger R/T",
+      "year": 2006,
+      "dealer": "Chapman of Horsham"
+    },
+    {
+      "id": "cc037d7f-c704-4124-9bc0-8946a40d4f9a",
+      "url": "https://www.cars.com/vehicledetail/cc037d7f-c704-4124-9bc0-8946a40d4f9a/",
+      "price": 9779,
+      "title": "2017 Dodge Journey GT",
+      "year": 2017,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "d11370c2-eec8-481d-af28-1a68ad588e54",
+      "url": "https://www.cars.com/vehicledetail/d11370c2-eec8-481d-af28-1a68ad588e54/",
+      "price": 24398,
+      "title": "2021 Dodge Challenger SXT",
+      "year": 2021,
+      "dealer": "Kia of Riverdale"
+    },
+    {
+      "id": "b5006099-dc33-46db-be12-a252e60701d0",
+      "url": "https://www.cars.com/vehicledetail/b5006099-dc33-46db-be12-a252e60701d0/",
+      "price": 62689,
+      "title": "2019 Dodge Challenger SRT Hellcat",
+      "year": 2019,
+      "dealer": "DCH Kay Honda"
+    },
+    {
+      "id": "239b454a-74a7-4dd7-8d1b-886d3a3c50f4",
+      "url": "https://www.cars.com/vehicledetail/239b454a-74a7-4dd7-8d1b-886d3a3c50f4/",
+      "price": 41165,
+      "title": "2022 Dodge Challenger R/T Scat Pack",
+      "year": 2022,
+      "dealer": "Northstar Kia"
+    },
+    {
+      "id": "1f4e4ca5-b2f8-40e0-ae86-b0e6f830c045",
+      "url": "https://www.cars.com/vehicledetail/1f4e4ca5-b2f8-40e0-ae86-b0e6f830c045/",
+      "price": 31986,
+      "title": "2023 Dodge Charger SXT",
+      "year": 2023,
+      "dealer": "Lester Glenn Chrysler Dodge Jeep RAM"
+    },
+    {
+      "id": "ff4716c7-d439-46ca-aad6-3d6b1df388e8",
+      "url": "https://www.cars.com/vehicledetail/ff4716c7-d439-46ca-aad6-3d6b1df388e8/",
+      "price": 48749,
+      "title": "2021 Dodge Charger Scat Pack",
+      "year": 2021,
+      "dealer": "Romeo Chevrolet Buick GMC"
+    },
+    {
+      "id": "90166598-71d4-4d70-b0c6-80feeb8ebdaa",
+      "url": "https://www.cars.com/vehicledetail/90166598-71d4-4d70-b0c6-80feeb8ebdaa/",
+      "price": 38596,
+      "title": "2023 Dodge Durango GT",
+      "year": 2023,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "e6288da1-6c3b-48e0-a1b9-84726ad6642a",
+      "url": "https://www.cars.com/vehicledetail/e6288da1-6c3b-48e0-a1b9-84726ad6642a/",
+      "price": 46615,
+      "title": "2021 Dodge Charger Scat Pack",
+      "year": 2021,
+      "dealer": "Auto Hub"
+    },
+    {
+      "id": "75750069-bcf0-48f0-ad29-4cb003cea5e2",
+      "url": "https://www.cars.com/vehicledetail/75750069-bcf0-48f0-ad29-4cb003cea5e2/",
+      "price": 39490,
+      "title": "2023 Dodge Challenger R/T Scat Pack",
+      "year": 2023,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "11a5c24d-a255-4df9-901c-e7565c999a80",
+      "url": "https://www.cars.com/vehicledetail/11a5c24d-a255-4df9-901c-e7565c999a80/",
+      "price": 29460,
+      "title": "2023 Dodge Charger GT",
+      "year": 2023,
+      "dealer": "Dickson City Hyundai"
+    },
+    {
+      "id": "d1b6f093-6515-44f2-853a-e035cd7f3c85",
+      "url": "https://www.cars.com/vehicledetail/d1b6f093-6515-44f2-853a-e035cd7f3c85/",
+      "price": 27785,
+      "title": "2023 Dodge Charger SXT",
+      "year": 2023,
+      "dealer": "Conicelli Autoplex"
+    },
+    {
+      "id": "8514d49e-df9f-4716-88a5-15b298463ce5",
+      "url": "https://www.cars.com/vehicledetail/8514d49e-df9f-4716-88a5-15b298463ce5/",
+      "price": 21889,
+      "title": "2022 Dodge Charger SXT",
+      "year": 2022,
+      "dealer": "Excel Auto Lounge"
+    },
+    {
+      "id": "046f3f3c-ff0e-442f-aa60-3c2e92d6ba2e",
+      "url": "https://www.cars.com/vehicledetail/046f3f3c-ff0e-442f-aa60-3c2e92d6ba2e/",
+      "price": 44594,
+      "title": "2025 Dodge Durango R/T Plus AWD",
+      "year": 2025,
+      "dealer": "Executive Dodge Jeep RAM"
+    },
+    {
+      "id": "dbd12559-a8eb-48c0-9e19-b81b088752ec",
+      "url": "https://www.cars.com/vehicledetail/dbd12559-a8eb-48c0-9e19-b81b088752ec/",
+      "price": 23998,
+      "title": "2020 Dodge Charger SXT",
+      "year": 2020,
+      "dealer": "CarMax East Haven"
+    },
+    {
+      "id": "84c027dd-8a54-4745-9ec4-eee8815dc64c",
+      "url": "https://www.cars.com/vehicledetail/84c027dd-8a54-4745-9ec4-eee8815dc64c/",
+      "price": 88688,
+      "title": "2022 Dodge Charger SRT Hellcat Widebody Jailbreak",
+      "year": 2022,
+      "dealer": "Matt Blatt Mitsubishi"
+    },
+    {
+      "id": "f52ad0e9-f5af-4bca-97cb-65486ac9f1d8",
+      "url": "https://www.cars.com/vehicledetail/f52ad0e9-f5af-4bca-97cb-65486ac9f1d8/",
+      "price": 18492,
+      "title": "2018 Dodge Charger GT",
+      "year": 2018,
+      "dealer": "AW Auto and Truck Wholesalers"
+    },
+    {
+      "id": "b0c6de44-d131-4b1a-828b-cfc9201f83b1",
+      "url": "https://www.cars.com/vehicledetail/b0c6de44-d131-4b1a-828b-cfc9201f83b1/",
+      "price": 40140,
+      "title": "2023 Dodge Challenger R/T",
+      "year": 2023,
+      "dealer": "AutoLenders Lakewood"
+    },
+    {
+      "id": "3df8b07d-93cb-4b20-8c53-a59bbf801b55",
+      "url": "https://www.cars.com/vehicledetail/3df8b07d-93cb-4b20-8c53-a59bbf801b55/",
+      "price": 63335,
+      "title": "2022 Dodge Challenger SRT Hellcat",
+      "year": 2022,
+      "dealer": "Belford Motor Company"
+    },
+    {
+      "id": "276defa9-b763-4c30-b5dc-a72262517042",
+      "url": "https://www.cars.com/vehicledetail/276defa9-b763-4c30-b5dc-a72262517042/",
+      "price": 21294,
+      "title": "2024 Dodge Hornet GT AWD",
+      "year": 2024,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "694d187b-a538-480d-87fa-040e87bd2b62",
+      "url": "https://www.cars.com/vehicledetail/694d187b-a538-480d-87fa-040e87bd2b62/",
+      "price": 25999,
+      "title": "2017 Dodge Challenger R/T Scat Pack",
+      "year": 2017,
+      "dealer": "Autopia Motorcars Inc"
+    },
+    {
+      "id": "49809c21-ac95-45c2-be7e-29853831ab98",
+      "url": "https://www.cars.com/vehicledetail/49809c21-ac95-45c2-be7e-29853831ab98/",
+      "price": 25000,
+      "title": "2021 Dodge Challenger SXT",
+      "year": 2021,
+      "dealer": "Schumacher Chevrolet"
+    },
+    {
+      "id": "2476f632-4dc4-4968-937b-a155c75f5fc8",
+      "url": "https://www.cars.com/vehicledetail/2476f632-4dc4-4968-937b-a155c75f5fc8/",
+      "price": 46998,
+      "title": "2020 Dodge Challenger R/T Scat Pack Widebody",
+      "year": 2020,
+      "dealer": "CarMax South Portland"
+    },
+    {
+      "id": "43dadd06-981d-4bf9-938d-791fde73cfdb",
+      "url": "https://www.cars.com/vehicledetail/43dadd06-981d-4bf9-938d-791fde73cfdb/",
+      "price": 12998,
+      "title": "2016 Dodge Dart SXT Sport Blacktop",
+      "year": 2016,
+      "dealer": "CarMax Raleigh"
+    }
+  ]
+}

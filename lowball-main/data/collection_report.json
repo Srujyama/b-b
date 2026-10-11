@@ -1,0 +1,46 @@
+{
+  "queries": [
+    {
+      "query": {
+        "make": "honda",
+        "model": "civic",
+        "max_price": 20000
+      },
+      "search_url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=honda&models%5B%5D=honda-civic&list_price_max=20000",
+      "cards_found": 24,
+      "median_price": 17021.5,
+      "search_seconds": 0.0,
+      "from_cache": true
+    }
+  ],
+  "listings": [
+    {
+      "id": "70cf9e1e-a0b7-4118-946c-3bd64d3ea59b",
+      "title": "2021 Honda Civic",
+      "price": "19379",
+      "phone": "(833) 305-8874"
+    },
+    {
+      "id": "50242690-c92f-47d6-890f-f01f734e12c9",
+      "title": "2019 Honda Civic",
+      "price": "17797",
+      "phone": "(609) 981-8327"
+    },
+    {
+      "id": "1e4767e6-768e-4dcf-b3dd-b77288e02633",
+      "title": "2016 Honda Civic",
+      "price": "12044",
+      "phone": "(201) 820-0042"
+    }
+  ],
+  "latency": {
+    "total_seconds": 4.0,
+    "detail_pages_scraped": 0,
+    "detail_seconds_mean": null,
+    "detail_seconds_median": null,
+    "detail_seconds_p95": null,
+    "concurrency": 2,
+    "listings_from_cache": 5,
+    "failures": []
+  }
+}

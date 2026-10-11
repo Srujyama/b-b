@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=subaru",
+  "cached_at": 1784398748.857301,
+  "cards": [
+    {
+      "id": "ff844302-d089-47d2-b734-4bd79598aa20",
+      "url": "https://www.cars.com/vehicledetail/ff844302-d089-47d2-b734-4bd79598aa20/",
+      "price": 26994,
+      "title": "2017 Subaru WRX STI Base",
+      "year": 2017,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "4fd20d48-d6e7-4eeb-b29c-03caea9387e5",
+      "url": "https://www.cars.com/vehicledetail/4fd20d48-d6e7-4eeb-b29c-03caea9387e5/",
+      "price": 35597,
+      "title": "2025 Subaru Forester Touring",
+      "year": 2025,
+      "dealer": "Executive Dodge Jeep RAM"
+    },
+    {
+      "id": "073f5fc2-bcfa-4edb-8b41-b7e17ef7f9cb",
+      "url": "https://www.cars.com/vehicledetail/073f5fc2-bcfa-4edb-8b41-b7e17ef7f9cb/",
+      "price": 36785,
+      "title": "2024 Subaru Outback Wilderness",
+      "year": 2024,
+      "dealer": "Premier Subaru Kia"
+    },
+    {
+      "id": "e7352949-3cfc-44ce-a6c1-840d53884a4e",
+      "url": "https://www.cars.com/vehicledetail/e7352949-3cfc-44ce-a6c1-840d53884a4e/",
+      "price": 31998,
+      "title": "2026 Subaru Forester Premium",
+      "year": 2026,
+      "dealer": "Liberty Subaru"
+    },
+    {
+      "id": "ac13912a-eefd-411e-80bd-45b315f965c3",
+      "url": "https://www.cars.com/vehicledetail/ac13912a-eefd-411e-80bd-45b315f965c3/",
+      "price": 6077,
+      "title": "2012 Subaru Forester 2.5X Premium",
+      "year": 2012,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "abed27b1-d972-40bd-a2ad-e1f01701802a",
+      "url": "https://www.cars.com/vehicledetail/abed27b1-d972-40bd-a2ad-e1f01701802a/",
+      "price": 10497,
+      "title": "2017 Subaru Forester 2.5i",
+      "year": 2017,
+      "dealer": "Shaker's Family Hyundai"
+    },
+    {
+      "id": "c3a36966-da73-4356-8072-b68f20acc373",
+      "url": "https://www.cars.com/vehicledetail/c3a36966-da73-4356-8072-b68f20acc373/",
+      "price": 27140,
+      "title": "2024 Subaru Forester",
+      "year": 2024,
+      "dealer": "Napoli Kia"
+    },
+    {
+      "id": "b3a32b12-8607-4aa4-a6f2-0f5c16479c44",
+      "url": "https://www.cars.com/vehicledetail/b3a32b12-8607-4aa4-a6f2-0f5c16479c44/",
+      "price": 34635,
+      "title": "2024 Subaru Outback Wilderness",
+      "year": 2024,
+      "dealer": "Executive Dodge Jeep RAM"
+    },
+    {
+      "id": "24384c83-fc6d-4bf6-9108-df5de5ef3087",
+      "url": "https://www.cars.com/vehicledetail/24384c83-fc6d-4bf6-9108-df5de5ef3087/",
+      "price": 28523,
+      "title": "2023 Subaru Forester Limited",
+      "year": 2023,
+      "dealer": "DCH Academy Honda"
+    },
+    {
+      "id": "3057cb18-102b-41bd-a366-dbc116bbd648",
+      "url": "https://www.cars.com/vehicledetail/3057cb18-102b-41bd-a366-dbc116bbd648/",
+      "price": 11691,
+      "title": "2018 Subaru Outback 2.5i Premium",
+      "year": 2018,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "b8cd5187-d0d4-412e-8f80-dedd998fbe47",
+      "url": "https://www.cars.com/vehicledetail/b8cd5187-d0d4-412e-8f80-dedd998fbe47/",
+      "price": 30897,
+      "title": "2024 Subaru Outback Touring XT",
+      "year": 2024,
+      "dealer": "Generation Kia"
+    },
+    {
+      "id": "9b214817-64c1-4de9-8b00-c7ff41a87cb5",
+      "url": "https://www.cars.com/vehicledetail/9b214817-64c1-4de9-8b00-c7ff41a87cb5/",
+      "price": 17997,
+      "title": "2016 Subaru Outback 3.6R Limited",
+      "year": 2016,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "0e2863ce-e6c0-45e3-bec8-f1834e5c2a3f",
+      "url": "https://www.cars.com/vehicledetail/0e2863ce-e6c0-45e3-bec8-f1834e5c2a3f/",
+      "price": 9086,
+      "title": "2017 Subaru Forester 2.5i",
+      "year": 2017,
+      "dealer": "Haldeman Subaru"
+    },
+    {
+      "id": "c0aa9f99-d6d6-42fc-a67c-1fe3d1f36d9b",
+      "url": "https://www.cars.com/vehicledetail/c0aa9f99-d6d6-42fc-a67c-1fe3d1f36d9b/",
+      "price": 30408,
+      "title": "2025 Subaru Outback Premium",
+      "year": 2025,
+      "dealer": "Liberty Honda"
+    },
+    {
+      "id": "869d7880-725d-4414-970d-df7c115788db",
+      "url": "https://www.cars.com/vehicledetail/869d7880-725d-4414-970d-df7c115788db/",
+      "price": 17990,
+      "title": "2018 Subaru Forester 2.5i",
+      "year": 2018,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "c747178d-ea6e-4a8f-af91-bd9f0e906dbe",
+      "url": "https://www.cars.com/vehicledetail/c747178d-ea6e-4a8f-af91-bd9f0e906dbe/",
+      "price": 16994,
+      "title": "2018 Subaru Outback 2.5i Premium",
+      "year": 2018,
+      "dealer": "DCH Paramus Honda"
+    },
+    {
+      "id": "fc1f1dd1-73ad-4e2c-8992-afb8b3689f9e",
+      "url": "https://www.cars.com/vehicledetail/fc1f1dd1-73ad-4e2c-8992-afb8b3689f9e/",
+      "price": 25555,
+      "title": "2023 Subaru Forester Limited",
+      "year": 2023,
+      "dealer": "Rye Subaru"
+    },
+    {
+      "id": "923402b0-0668-4e97-9c6e-a51683765031",
+      "url": "https://www.cars.com/vehicledetail/923402b0-0668-4e97-9c6e-a51683765031/",
+      "price": 38490,
+      "title": "2026 Subaru Forester Touring",
+      "year": 2026,
+      "dealer": "Glanzmann Subaru"
+    },
+    {
+      "id": "d0b02de1-5327-4330-9eb5-2ea2abf1fa5b",
+      "url": "https://www.cars.com/vehicledetail/d0b02de1-5327-4330-9eb5-2ea2abf1fa5b/",
+      "price": 19645,
+      "title": "2018 Subaru Forester 2.5i Premium",
+      "year": 2018,
+      "dealer": "Circle Subaru"
+    },
+    {
+      "id": "b853d170-e0f3-4292-ba24-24400b8f9681",
+      "url": "https://www.cars.com/vehicledetail/b853d170-e0f3-4292-ba24-24400b8f9681/",
+      "price": 29989,
+      "title": "2023 Subaru WRX Premium",
+      "year": 2023,
+      "dealer": "Honda of Turnersville"
+    },
+    {
+      "id": "89504dcf-7733-462f-8587-81219567d8c2",
+      "url": "https://www.cars.com/vehicledetail/89504dcf-7733-462f-8587-81219567d8c2/",
+      "price": 27995,
+      "title": "2023 Subaru Forester Premium",
+      "year": 2023,
+      "dealer": "Kia City"
+    },
+    {
+      "id": "e8069edc-fe12-486e-9708-41570f01732d",
+      "url": "https://www.cars.com/vehicledetail/e8069edc-fe12-486e-9708-41570f01732d/",
+      "price": 39792,
+      "title": "2026 Subaru Forester Touring",
+      "year": 2026,
+      "dealer": "Premier Subaru Kia"
+    },
+    {
+      "id": "46646c24-24a4-4ace-91d5-d207bb0153f1",
+      "url": "https://www.cars.com/vehicledetail/46646c24-24a4-4ace-91d5-d207bb0153f1/",
+      "price": 25998,
+      "title": "2024 Subaru Solterra Premium",
+      "year": 2024,
+      "dealer": "CarMax Westborough"
+    },
+    {
+      "id": "c651e5a8-1ca4-4da4-a175-726771cd69ee",
+      "url": "https://www.cars.com/vehicledetail/c651e5a8-1ca4-4da4-a175-726771cd69ee/",
+      "price": 24095,
+      "title": "2019 Subaru BRZ Limited",
+      "year": 2019,
+      "dealer": "Imperial Subaru"
+    }
+  ]
+}

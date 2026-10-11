@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=audi",
+  "cached_at": 1784398908.57021,
+  "cards": [
+    {
+      "id": "5ba6dbf6-83e7-445b-84a7-221b67f7517e",
+      "url": "https://www.cars.com/vehicledetail/5ba6dbf6-83e7-445b-84a7-221b67f7517e/",
+      "price": 31800,
+      "title": "2025 Audi Q5 45 S line quattro Premium",
+      "year": 2025,
+      "dealer": "Legend Nissan"
+    },
+    {
+      "id": "06c07944-2096-4612-a7c4-d5a338453eaf",
+      "url": "https://www.cars.com/vehicledetail/06c07944-2096-4612-a7c4-d5a338453eaf/",
+      "price": 67494,
+      "title": "2025 Audi RS 3 2.5T",
+      "year": 2025,
+      "dealer": "Hoffman Audi of East Hartford"
+    },
+    {
+      "id": "7f8bd41b-751a-4b4b-9962-dbf3a6b1bdcf",
+      "url": "https://www.cars.com/vehicledetail/7f8bd41b-751a-4b4b-9962-dbf3a6b1bdcf/",
+      "price": 43413,
+      "title": "2023 Audi Q7 45 Premium Plus",
+      "year": 2023,
+      "dealer": "Hoffman Audi of East Hartford"
+    },
+    {
+      "id": "ee4a9fd1-b7c5-44a8-95d1-7e73be425415",
+      "url": "https://www.cars.com/vehicledetail/ee4a9fd1-b7c5-44a8-95d1-7e73be425415/",
+      "price": 30990,
+      "title": "2023 Audi Q5 45 S line quattro Premium",
+      "year": 2023,
+      "dealer": "Paul Miller Inc DBA Paul Miller Audi"
+    },
+    {
+      "id": "1aeb8b21-0caf-4d2d-a25a-b0276069eb2a",
+      "url": "https://www.cars.com/vehicledetail/1aeb8b21-0caf-4d2d-a25a-b0276069eb2a/",
+      "price": 39990,
+      "title": "2023 Audi Q7 55 Prestige",
+      "year": 2023,
+      "dealer": "Unique Auto Mall"
+    },
+    {
+      "id": "78f18a27-547d-4848-85ae-2776d79bc4ae",
+      "url": "https://www.cars.com/vehicledetail/78f18a27-547d-4848-85ae-2776d79bc4ae/",
+      "price": 35990,
+      "title": "2024 Audi Q7 45 Premium Plus",
+      "year": 2024,
+      "dealer": "Power Motors East"
+    },
+    {
+      "id": "ab6efdf7-7cb2-4873-ac90-c0ece8fe2c1e",
+      "url": "https://www.cars.com/vehicledetail/ab6efdf7-7cb2-4873-ac90-c0ece8fe2c1e/",
+      "price": 40658,
+      "title": "2025 Audi Q7 55 Premium Plus",
+      "year": 2025,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "08cd3222-8806-4f58-9f46-c5fc11979a2d",
+      "url": "https://www.cars.com/vehicledetail/08cd3222-8806-4f58-9f46-c5fc11979a2d/",
+      "price": 53291,
+      "title": "2021 Audi SQ8 4.0T Prestige",
+      "year": 2021,
+      "dealer": "Hoffman Audi of East Hartford"
+    },
+    {
+      "id": "a62c898e-06b9-40f1-b6cf-e48b59112849",
+      "url": "https://www.cars.com/vehicledetail/a62c898e-06b9-40f1-b6cf-e48b59112849/",
+      "price": 7845,
+      "title": "2015 Audi Q7 3.0T Premium Plus",
+      "year": 2015,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "08ae2477-5499-4521-bc68-ca3e29517385",
+      "url": "https://www.cars.com/vehicledetail/08ae2477-5499-4521-bc68-ca3e29517385/",
+      "price": 47780,
+      "title": "2025 Audi Q7 55 Premium Plus",
+      "year": 2025,
+      "dealer": "Auto Hub"
+    },
+    {
+      "id": "6cd84016-25fb-4ffb-966f-81eebe052ae3",
+      "url": "https://www.cars.com/vehicledetail/6cd84016-25fb-4ffb-966f-81eebe052ae3/",
+      "price": 15550,
+      "title": "2017 Audi Q7 3.0T Premium Plus",
+      "year": 2017,
+      "dealer": "Audi Englewood"
+    },
+    {
+      "id": "00ecc194-382c-4678-a8f9-1fcdb1887c2f",
+      "url": "https://www.cars.com/vehicledetail/00ecc194-382c-4678-a8f9-1fcdb1887c2f/",
+      "price": 12745,
+      "title": "2014 Audi Q5 3.0T Premium Plus",
+      "year": 2014,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "4810135f-f017-4ec6-871b-7747faa24b4d",
+      "url": "https://www.cars.com/vehicledetail/4810135f-f017-4ec6-871b-7747faa24b4d/",
+      "price": 14044,
+      "title": "2018 Audi Q7 3.0T Prestige",
+      "year": 2018,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "60e400cb-beed-45a0-b401-45810cc5999a",
+      "url": "https://www.cars.com/vehicledetail/60e400cb-beed-45a0-b401-45810cc5999a/",
+      "price": 30789,
+      "title": "2025 Audi Q3 45 S line Premium",
+      "year": 2025,
+      "dealer": "Hoffman Audi of East Hartford"
+    },
+    {
+      "id": "a3da0a9c-4618-4d6c-9f7f-7f7ac2cebaa9",
+      "url": "https://www.cars.com/vehicledetail/a3da0a9c-4618-4d6c-9f7f-7f7ac2cebaa9/",
+      "price": 30099,
+      "title": "2023 Audi Q5 45 S line Premium Plus",
+      "year": 2023,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "329d10e3-7c79-42f8-a005-c19bce0ea1f6",
+      "url": "https://www.cars.com/vehicledetail/329d10e3-7c79-42f8-a005-c19bce0ea1f6/",
+      "price": 35990,
+      "title": "2023 Audi Q7 55 Premium",
+      "year": 2023,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "6192278e-d861-4803-8f09-3ddb583b5147",
+      "url": "https://www.cars.com/vehicledetail/6192278e-d861-4803-8f09-3ddb583b5147/",
+      "price": 46883,
+      "title": "2023 Audi Q7 55 Premium Plus",
+      "year": 2023,
+      "dealer": "Paul Miller Inc DBA Paul Miller Audi"
+    },
+    {
+      "id": "8a917b62-7497-46d5-8d29-32f922c46099",
+      "url": "https://www.cars.com/vehicledetail/8a917b62-7497-46d5-8d29-32f922c46099/",
+      "price": 35899,
+      "title": "2023 Audi Q7 45 Premium Plus",
+      "year": 2023,
+      "dealer": "BMW of Bloomfield"
+    },
+    {
+      "id": "db7a3e2c-24f5-4c79-a3e0-dbd0c5ae103b",
+      "url": "https://www.cars.com/vehicledetail/db7a3e2c-24f5-4c79-a3e0-dbd0c5ae103b/",
+      "price": 34999,
+      "title": "2023 Audi Q7 Premium",
+      "year": 2023,
+      "dealer": "Legend Porsche Audi VW"
+    },
+    {
+      "id": "e0b77637-b474-43ad-a594-3849fad16107",
+      "url": "https://www.cars.com/vehicledetail/e0b77637-b474-43ad-a594-3849fad16107/",
+      "price": 37359,
+      "title": "2024 Audi A5 Sportback 45 S Line Premium Plus",
+      "year": 2024,
+      "dealer": "Volkswagen of Springfield"
+    },
+    {
+      "id": "9fbef320-ea2e-41e5-a407-6d767d7a641b",
+      "url": "https://www.cars.com/vehicledetail/9fbef320-ea2e-41e5-a407-6d767d7a641b/",
+      "price": 35673,
+      "title": "2023 Audi Q7 45 Premium",
+      "year": 2023,
+      "dealer": "Audi Mohegan Lake"
+    },
+    {
+      "id": "67ca4d86-b08f-4bd8-884f-64e95c18153a",
+      "url": "https://www.cars.com/vehicledetail/67ca4d86-b08f-4bd8-884f-64e95c18153a/",
+      "price": 23977,
+      "title": "2021 Audi Q7 45 Premium",
+      "year": 2021,
+      "dealer": "Star Auto Mall"
+    },
+    {
+      "id": "4212a84e-bca5-48e2-9b6f-0bf14df03370",
+      "url": "https://www.cars.com/vehicledetail/4212a84e-bca5-48e2-9b6f-0bf14df03370/",
+      "price": 90998,
+      "title": "2023 Audi RS 7",
+      "year": 2023,
+      "dealer": "CarMax Dulles"
+    },
+    {
+      "id": "9a7a7d9d-03eb-4eab-a227-680297098d66",
+      "url": "https://www.cars.com/vehicledetail/9a7a7d9d-03eb-4eab-a227-680297098d66/",
+      "price": 33998,
+      "title": "2019 Audi A4 allroad Premium Plus",
+      "year": 2019,
+      "dealer": "CarMax Newark"
+    }
+  ]
+}

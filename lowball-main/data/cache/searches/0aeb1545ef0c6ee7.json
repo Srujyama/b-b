@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=ford&models%5B%5D=ford-f_150&list_price_max=35000",
+  "cached_at": 1784394916.4595351,
+  "cards": [
+    {
+      "id": "40c9d044-d776-4611-9787-2854490ef03e",
+      "url": "https://www.cars.com/vehicledetail/40c9d044-d776-4611-9787-2854490ef03e/",
+      "price": 28590,
+      "title": "2018 Ford F-150 Platinum",
+      "year": 2018,
+      "dealer": "Seabreeze Ford"
+    },
+    {
+      "id": "b9bb2aa1-9ebc-407c-904c-7c683587763f",
+      "url": "https://www.cars.com/vehicledetail/b9bb2aa1-9ebc-407c-904c-7c683587763f/",
+      "price": 26559,
+      "title": "2020 Ford F-150 XL",
+      "year": 2020,
+      "dealer": "Mt. Ephraim Chrysler Dodge RAM"
+    },
+    {
+      "id": "55cf8979-0a93-456b-b75b-9c944fcc7bb4",
+      "url": "https://www.cars.com/vehicledetail/55cf8979-0a93-456b-b75b-9c944fcc7bb4/",
+      "price": 30599,
+      "title": "2021 Ford F-150 XLT",
+      "year": 2021,
+      "dealer": "Burlington Chevrolet"
+    },
+    {
+      "id": "724f62f3-dd2f-4a7f-b9e4-6a5cf562236c",
+      "url": "https://www.cars.com/vehicledetail/724f62f3-dd2f-4a7f-b9e4-6a5cf562236c/",
+      "price": 25451,
+      "title": "2020 Ford F-150 XLT",
+      "year": 2020,
+      "dealer": "Planet Honda"
+    },
+    {
+      "id": "4d45cf06-21f7-4668-8d4a-559da805ab6d",
+      "url": "https://www.cars.com/vehicledetail/4d45cf06-21f7-4668-8d4a-559da805ab6d/",
+      "price": 22690,
+      "title": "2018 Ford F-150 XLT",
+      "year": 2018,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "a8e1245c-da5d-4d59-b1d5-e361ba95ad65",
+      "url": "https://www.cars.com/vehicledetail/a8e1245c-da5d-4d59-b1d5-e361ba95ad65/",
+      "price": 19311,
+      "title": "2018 Ford F-150 Lariat",
+      "year": 2018,
+      "dealer": "Sansone Rt 1 Auto Mall"
+    },
+    {
+      "id": "0f0e0701-8344-4854-9182-58d025ff76b1",
+      "url": "https://www.cars.com/vehicledetail/0f0e0701-8344-4854-9182-58d025ff76b1/",
+      "price": 19599,
+      "title": "2016 Ford F-150 XLT",
+      "year": 2016,
+      "dealer": "Freehold Subaru Dodge"
+    },
+    {
+      "id": "9bc02410-3eed-4d90-9cc7-327cb25e22e0",
+      "url": "https://www.cars.com/vehicledetail/9bc02410-3eed-4d90-9cc7-327cb25e22e0/",
+      "price": 23755,
+      "title": "2018 Ford F-150 XL",
+      "year": 2018,
+      "dealer": "Route 1 Chrysler Dodge Jeep Ram"
+    },
+    {
+      "id": "8c0094c5-1351-4886-88f8-fd7eebafc842",
+      "url": "https://www.cars.com/vehicledetail/8c0094c5-1351-4886-88f8-fd7eebafc842/",
+      "price": 26793,
+      "title": "2018 Ford F-150 XLT",
+      "year": 2018,
+      "dealer": "J & M Automotive"
+    },
+    {
+      "id": "9921eab7-18ae-431a-8b00-6aca193a7f09",
+      "url": "https://www.cars.com/vehicledetail/9921eab7-18ae-431a-8b00-6aca193a7f09/",
+      "price": 34489,
+      "title": "2018 Ford F-150 Raptor",
+      "year": 2018,
+      "dealer": "DCH Kay Honda"
+    },
+    {
+      "id": "a93d956a-eb23-4a62-a83d-2f917564046b",
+      "url": "https://www.cars.com/vehicledetail/a93d956a-eb23-4a62-a83d-2f917564046b/",
+      "price": 30744,
+      "title": "2021 Ford F-150 XLT",
+      "year": 2021,
+      "dealer": "Lester Glenn Chevrolet"
+    },
+    {
+      "id": "08217d18-d1bd-42b4-b040-de8f4d02e483",
+      "url": "https://www.cars.com/vehicledetail/08217d18-d1bd-42b4-b040-de8f4d02e483/",
+      "price": 26744,
+      "title": "2020 Ford F-150 XLT",
+      "year": 2020,
+      "dealer": "Lester Glenn Hyundai"
+    },
+    {
+      "id": "8e3b8781-fbe7-4859-8a34-c9f40e51079e",
+      "url": "https://www.cars.com/vehicledetail/8e3b8781-fbe7-4859-8a34-c9f40e51079e/",
+      "price": 26045,
+      "title": "2019 Ford F-150 XLT",
+      "year": 2019,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "2f8ddf17-61f2-42d1-92c8-9889a320bf0b",
+      "url": "https://www.cars.com/vehicledetail/2f8ddf17-61f2-42d1-92c8-9889a320bf0b/",
+      "price": 34270,
+      "title": "2023 Ford F-150 XL",
+      "year": 2023,
+      "dealer": "Tasca Ford Dickson City"
+    },
+    {
+      "id": "6db8b7c0-80ca-41b5-a3d1-e539cd8e6219",
+      "url": "https://www.cars.com/vehicledetail/6db8b7c0-80ca-41b5-a3d1-e539cd8e6219/",
+      "price": 35000,
+      "title": "2023 Ford F-150 XL",
+      "year": 2023,
+      "dealer": "Celebrity Ford of Toms River"
+    },
+    {
+      "id": "7e68a606-8e5b-472c-93cb-79c7b03a6954",
+      "url": "https://www.cars.com/vehicledetail/7e68a606-8e5b-472c-93cb-79c7b03a6954/",
+      "price": 22794,
+      "title": "2020 Ford F-150 XL",
+      "year": 2020,
+      "dealer": "Auto Spot LLC"
+    },
+    {
+      "id": "8d7f7001-39ae-4a6a-a880-1f28b4717ac8",
+      "url": "https://www.cars.com/vehicledetail/8d7f7001-39ae-4a6a-a880-1f28b4717ac8/",
+      "price": 29400,
+      "title": "2019 Ford F-150 XLT",
+      "year": 2019,
+      "dealer": "Romeo Ford of Kingston"
+    },
+    {
+      "id": "bace1a3b-2368-4f6b-8a07-053ed248e424",
+      "url": "https://www.cars.com/vehicledetail/bace1a3b-2368-4f6b-8a07-053ed248e424/",
+      "price": 23495,
+      "title": "2016 Ford F-150 XLT",
+      "year": 2016,
+      "dealer": "DriveTime of Plymouth Meeting"
+    },
+    {
+      "id": "284e75f6-5ba8-449d-9f94-5bb1ed297a51",
+      "url": "https://www.cars.com/vehicledetail/284e75f6-5ba8-449d-9f94-5bb1ed297a51/",
+      "price": 26989,
+      "title": "2022 Ford F-150 XL",
+      "year": 2022,
+      "dealer": "Blasius Kia"
+    },
+    {
+      "id": "cf748d96-2bb4-4694-8646-a60bdca859d5",
+      "url": "https://www.cars.com/vehicledetail/cf748d96-2bb4-4694-8646-a60bdca859d5/",
+      "price": 24388,
+      "title": "2018 Ford F-150 XL",
+      "year": 2018,
+      "dealer": "Mt. Ephraim Chrysler Dodge RAM"
+    },
+    {
+      "id": "f83d52de-6cb2-4189-a006-35c630ae718d",
+      "url": "https://www.cars.com/vehicledetail/f83d52de-6cb2-4189-a006-35c630ae718d/",
+      "price": 31988,
+      "title": "2021 Ford F-150 XLT",
+      "year": 2021,
+      "dealer": "Gateway Kia of Warrington"
+    },
+    {
+      "id": "d96593b5-533f-4109-a16c-7823a488de6f",
+      "url": "https://www.cars.com/vehicledetail/d96593b5-533f-4109-a16c-7823a488de6f/",
+      "price": 23995,
+      "title": "2014 Ford F-150 Lariat",
+      "year": 2014,
+      "dealer": "Joshua Motor Car Co Inc"
+    },
+    {
+      "id": "599f4d6d-7603-46c0-8781-41779270936c",
+      "url": "https://www.cars.com/vehicledetail/599f4d6d-7603-46c0-8781-41779270936c/",
+      "price": 21998,
+      "title": "2015 Ford F-150 XLT",
+      "year": 2015,
+      "dealer": "CarMax Jacksonville NC"
+    },
+    {
+      "id": "804ad68e-7386-46dc-ac39-e9a468e2c5b5",
+      "url": "https://www.cars.com/vehicledetail/804ad68e-7386-46dc-ac39-e9a468e2c5b5/",
+      "price": 34490,
+      "title": "2019 Ford F-150 XLT",
+      "year": 2019,
+      "dealer": "Bob Ruth Ford"
+    }
+  ]
+}

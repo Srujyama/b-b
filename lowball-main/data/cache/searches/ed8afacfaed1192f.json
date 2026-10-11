@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=honda",
+  "cached_at": 1784398595.0174441,
+  "cards": [
+    {
+      "id": "e1cf99ad-f7ce-4cde-a0e9-57225fd5048d",
+      "url": "https://www.cars.com/vehicledetail/e1cf99ad-f7ce-4cde-a0e9-57225fd5048d/",
+      "price": 26421,
+      "title": "2025 Honda Accord SE",
+      "year": 2025,
+      "dealer": "Mike Piazza Honda"
+    },
+    {
+      "id": "46b100c4-2891-469a-8634-c6d81d79763e",
+      "url": "https://www.cars.com/vehicledetail/46b100c4-2891-469a-8634-c6d81d79763e/",
+      "price": 22686,
+      "title": "2021 Honda Accord Sport SE",
+      "year": 2021,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "83a7df94-7bf5-45d1-923f-3b0f11e2ed52",
+      "url": "https://www.cars.com/vehicledetail/83a7df94-7bf5-45d1-923f-3b0f11e2ed52/",
+      "price": 27486,
+      "title": "2025 Honda Accord LX 1.5T",
+      "year": 2025,
+      "dealer": "Lester Glenn Chrysler Dodge Jeep RAM"
+    },
+    {
+      "id": "f85bf348-74c4-4d28-b6ef-7bed3cf57702",
+      "url": "https://www.cars.com/vehicledetail/f85bf348-74c4-4d28-b6ef-7bed3cf57702/",
+      "price": 15997,
+      "title": "2019 Honda Accord Sport 2.0T",
+      "year": 2019,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "3938ef07-3899-4e4c-8e3f-73b25a5402e7",
+      "url": "https://www.cars.com/vehicledetail/3938ef07-3899-4e4c-8e3f-73b25a5402e7/",
+      "price": 25694,
+      "title": "2024 Honda Accord LX",
+      "year": 2024,
+      "dealer": "DCH Paramus Honda"
+    },
+    {
+      "id": "20fdad30-bdd1-401c-8a67-8c142521deb1",
+      "url": "https://www.cars.com/vehicledetail/20fdad30-bdd1-401c-8a67-8c142521deb1/",
+      "price": 11495,
+      "title": "2013 Honda Accord EX-L",
+      "year": 2013,
+      "dealer": "Honda of Mahwah"
+    },
+    {
+      "id": "be3780ba-fe78-49ee-a97c-5c162ba83d78",
+      "url": "https://www.cars.com/vehicledetail/be3780ba-fe78-49ee-a97c-5c162ba83d78/",
+      "price": 22979,
+      "title": "2020 Honda Accord Sport 2.0T",
+      "year": 2020,
+      "dealer": "DCH Montclair Acura"
+    },
+    {
+      "id": "26267276-0153-488f-8644-809a6c2b5a1c",
+      "url": "https://www.cars.com/vehicledetail/26267276-0153-488f-8644-809a6c2b5a1c/",
+      "price": 25337,
+      "title": "2024 Honda Civic Sport",
+      "year": 2024,
+      "dealer": "Executive Honda"
+    },
+    {
+      "id": "5af0fb8d-a74c-462b-bb79-fb9f8f7e4327",
+      "url": "https://www.cars.com/vehicledetail/5af0fb8d-a74c-462b-bb79-fb9f8f7e4327/",
+      "price": 23672,
+      "title": "2023 Honda Accord EX",
+      "year": 2023,
+      "dealer": "Planet Honda"
+    },
+    {
+      "id": "ff95e550-1b19-4639-bf97-faa95cd59227",
+      "url": "https://www.cars.com/vehicledetail/ff95e550-1b19-4639-bf97-faa95cd59227/",
+      "price": 12594,
+      "title": "2014 Honda Accord EX-L",
+      "year": 2014,
+      "dealer": "BMW of Ramsey"
+    },
+    {
+      "id": "d57704f2-e3d6-45c2-9e8a-604bcafe1e21",
+      "url": "https://www.cars.com/vehicledetail/d57704f2-e3d6-45c2-9e8a-604bcafe1e21/",
+      "price": 15225,
+      "title": "2015 Honda Accord EX-L",
+      "year": 2015,
+      "dealer": "NJ State Auto Used Cars"
+    },
+    {
+      "id": "399c9807-75c2-42cc-8f25-2c55d6df163c",
+      "url": "https://www.cars.com/vehicledetail/399c9807-75c2-42cc-8f25-2c55d6df163c/",
+      "price": 23198,
+      "title": "2018 Honda Accord Touring",
+      "year": 2018,
+      "dealer": "BMW of Atlantic City"
+    },
+    {
+      "id": "50242690-c92f-47d6-890f-f01f734e12c9",
+      "url": "https://www.cars.com/vehicledetail/50242690-c92f-47d6-890f-f01f734e12c9/",
+      "price": 17797,
+      "title": "2019 Honda Civic LX",
+      "year": 2019,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "1cdb7b7b-b600-4e94-8662-58e3c726b427",
+      "url": "https://www.cars.com/vehicledetail/1cdb7b7b-b600-4e94-8662-58e3c726b427/",
+      "price": 29636,
+      "title": "2024 Honda Accord Hybrid Sport-L",
+      "year": 2024,
+      "dealer": "Honda Universe"
+    },
+    {
+      "id": "1e4767e6-768e-4dcf-b3dd-b77288e02633",
+      "url": "https://www.cars.com/vehicledetail/1e4767e6-768e-4dcf-b3dd-b77288e02633/",
+      "price": 12044,
+      "title": "2016 Honda Civic LX-P",
+      "year": 2016,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "c497ee26-b145-4f75-91f5-a5291708e14b",
+      "url": "https://www.cars.com/vehicledetail/c497ee26-b145-4f75-91f5-a5291708e14b/",
+      "price": 17289,
+      "title": "2019 Honda Accord Sport",
+      "year": 2019,
+      "dealer": "DCH Kay Honda"
+    },
+    {
+      "id": "bd44be73-a987-4fb4-b211-2dab1d12d6ac",
+      "url": "https://www.cars.com/vehicledetail/bd44be73-a987-4fb4-b211-2dab1d12d6ac/",
+      "price": 22333,
+      "title": "2023 Honda Accord LX CVT",
+      "year": 2023,
+      "dealer": "Bayside Chrysler Jeep Dodge RAM"
+    },
+    {
+      "id": "6ecc6bab-7c66-4420-90fb-d40e9a7b3cbd",
+      "url": "https://www.cars.com/vehicledetail/6ecc6bab-7c66-4420-90fb-d40e9a7b3cbd/",
+      "price": 26489,
+      "title": "2024 Honda Accord EX",
+      "year": 2024,
+      "dealer": "Lehigh Valley Honda"
+    },
+    {
+      "id": "70fb8497-2f29-4739-90df-952b03a286e8",
+      "url": "https://www.cars.com/vehicledetail/70fb8497-2f29-4739-90df-952b03a286e8/",
+      "price": 29045,
+      "title": "2024 Honda Accord EX",
+      "year": 2024,
+      "dealer": "Conicelli Autoplex"
+    },
+    {
+      "id": "71d342ab-9da0-4a5b-98b6-1be4d673713e",
+      "url": "https://www.cars.com/vehicledetail/71d342ab-9da0-4a5b-98b6-1be4d673713e/",
+      "price": 25597,
+      "title": "2024 Honda Civic EX-L",
+      "year": 2024,
+      "dealer": "Liberty Honda"
+    },
+    {
+      "id": "45fd6719-55df-4dfa-ae93-86820f6b7f26",
+      "url": "https://www.cars.com/vehicledetail/45fd6719-55df-4dfa-ae93-86820f6b7f26/",
+      "price": 25465,
+      "title": "2023 Honda Civic Sport",
+      "year": 2023,
+      "dealer": "Matt Burne Honda"
+    },
+    {
+      "id": "9cbafbcf-4b93-47fa-9bd3-853eee7be403",
+      "url": "https://www.cars.com/vehicledetail/9cbafbcf-4b93-47fa-9bd3-853eee7be403/",
+      "price": 26785,
+      "title": "2023 Honda Accord EX",
+      "year": 2023,
+      "dealer": "Piazza Honda of Springfield"
+    },
+    {
+      "id": "9cf8b186-2580-41bc-85bb-957adead8b7a",
+      "url": "https://www.cars.com/vehicledetail/9cf8b186-2580-41bc-85bb-957adead8b7a/",
+      "price": 17240,
+      "title": "2018 Honda Fit Sport",
+      "year": 2018,
+      "dealer": "Bob Ruth Ford"
+    },
+    {
+      "id": "9eec293a-aa4f-4be4-9b4e-a0972cae576e",
+      "url": "https://www.cars.com/vehicledetail/9eec293a-aa4f-4be4-9b4e-a0972cae576e/",
+      "price": 31170,
+      "title": "2025 Honda Civic Si Base",
+      "year": 2025,
+      "dealer": "Bob Johnson Used"
+    }
+  ]
+}

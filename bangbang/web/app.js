@@ -1,0 +1,977 @@
+// BangBang web: shared helpers (exported, reused by clinic.js) + the patient flow.
+// Vanilla ES module, no build step. Contract: bangbang/docs/API.md + server/src/types.ts CaseEvent.
+
+const ELEVEN_CLIENT_URL = "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.25.0/+esm";
+
+/* ------------------------------------------------------------------ i18n */
+
+export const I18N = {
+  zh: {
+    clinicLink: "诊所入口", patientLink: "病人入口", dismiss: "知道了",
+    steps: ["拍账单", "看懂账单", "说说情况", "查价格", "谈价钱", "凭证"],
+    stepOf: (n, total, name) => `第 ${n} 步，共 ${total} 步：${name}`,
+    uploadTitle: "把医院账单拍下来",
+    uploadLede: "帮帮会用中文一行一行解释给您听，找出多收的钱。",
+    takePhoto: "拍照或选择账单文件", yourName: "您的名字", readBill: "读账单",
+    useDemo: "用示范账单试试", demoNote: "示范账单是虚构的病人和账号，只用来演示。",
+    needFile: "请先拍照或选择账单文件，或者用示范账单。",
+    reading: "正在读账单，大约需要半分钟……",
+    billTitle: "您的账单，逐行说明", next: "下一步",
+    hospitalSays: "医院说您要付", errorsFound: (n) => `找到 ${n} 个可能的错误`,
+    atStake: "最多可以少付", noErrors: "暂时没有发现明显错误，帮帮还会去查合理价格。",
+    mayOvercharge: "可能多收", qty: "数量",
+    intakeTitle: "跟帮帮说说您的情况",
+    intakeLede: "用普通话说就可以。帮帮会问您家里几口人、收入多少、最多愿意付多少。",
+    startTalking: "开始说话", stopTalking: "结束对话", connecting: "正在连接……",
+    listening: "帮帮在听", speaking: "帮帮在说话", disconnected: "对话已结束",
+    micDenied: "没有麦克风权限。请在浏览器里允许使用麦克风，或者填表。",
+    orForm: "不方便说话？填表也可以", household: "家里几口人", income: "全家一年收入（美元）",
+    maxPay: "最多愿意付多少（美元）",
+    consent: "我同意帮帮代表我和医院沟通账单，并在我设定的金额内达成协议。",
+    saveIntake: "保存我的信息", needConsent: "需要您勾选同意，帮帮才能代表您去谈。",
+    intakeSaved: (name, max) => `已记录：${name}，最多付 ${max}。`,
+    researchTitle: "帮帮在查合理价格",
+    researchLede: "查联邦医保价格、医院公开的价格表、以及医院依法必须提供的经济援助政策。",
+    startResearch: "开始查", researching: "正在查，来源会一条条出现……",
+    sourcesTitle: "查到的来源", ladderOpening: "开口价", ladderTarget: "目标", ladderWalkaway: "您的上限",
+    mandateLede: "把您的授权（最高金额）记录在链上，谁也改不了。", recordMandate: "记录授权",
+    mandateDone: "授权已记录在链上。", toRoom: "去谈价钱",
+    roomTitle: "帮帮正在和医院谈", asked: "医院要", current: "现在", saved: "省下",
+    counterparty: "医院那边是", cpAgent: "AI 账单员", cpHuman: "真人账单员",
+    whoAdvocate: "帮帮", whoHospital: "医院", whoInsurer: "保险公司", whoPatient: "您",
+    startCall: "开始通话", endCall: "结束通话", calling: "通话中。英文对话下面是中文翻译。",
+    humanMode: "真人模式：请对着麦克风扮演医院账单员，帮帮会跟您谈。",
+    dealAt: (amt) => `成交：${amt}`, toReceipts: "看凭证", waitingLines: "通话开始后，对话会出现在这里。",
+    receiptsTitle: "每一步都有凭证",
+    receiptsLede: "钱先放在托管账户里，医院确认您欠款为零才会付出去。",
+    credential: "证明困难资格", settle: "把钱放进托管", confirmZero: "医院确认余额为零",
+    months: "分期月数", loan: "0% 分期", fedTitle: "一次付清，还是分期？", getAdvice: "看建议",
+    lumpSum: "建议一次付清", paymentPlan: "建议分期付款", rateMove: (bps) => `市场预期利率变化：${bps > 0 ? "+" : ""}${bps} 基点`,
+    loadPayments: "显示帮帮付的数据费", noReceipts: "还没有凭证。每做一步，这里会多一条。",
+    viewTx: "在区块浏览器查看", noPayments: "帮帮还没有付过数据费。",
+    notConfigured: "这一步暂时不能用：", failed: "出错了：", wsLost: "和服务器的实时连接断了，正在重连。",
+    kinds: {
+      EscrowCreate: "钱放进托管", EscrowFinish: "托管放款给医院", CredentialCreate: "诊所签发困难资格证明",
+      CredentialAccept: "您接受资格证明", Batch: "放款和服务费一次完成", VaultDeposit: "社区基金存款",
+      LoanSet: "0% 分期贷款", openMandate: "您的授权上链", mandate: "您的授权上链", logEntry: "谈判记录上链",
+      deal: "成交记录上链", recordDeal: "成交记录上链", "x402-payment": "帮帮付数据费", odds: "美联储利率概率",
+    },
+  },
+  en: {
+    clinicLink: "For clinics", patientLink: "For patients", dismiss: "Dismiss",
+    steps: ["Photo", "Your bill", "Your situation", "Fair prices", "Negotiate", "Receipts"],
+    stepOf: (n, total, name) => `Step ${n} of ${total}: ${name}`,
+    uploadTitle: "Take a photo of your hospital bill",
+    uploadLede: "BangBang explains it line by line and finds what you were overcharged.",
+    takePhoto: "Take a photo or choose a file", yourName: "Your name", readBill: "Read my bill",
+    useDemo: "Try the demo bill", demoNote: "The demo bill uses a made-up patient and account, for demonstration only.",
+    needFile: "Add a photo or file of your bill first, or try the demo bill.",
+    reading: "Reading your bill, about 30 seconds…",
+    billTitle: "Your bill, line by line", next: "Next",
+    hospitalSays: "The hospital says you owe", errorsFound: (n) => `${n} likely error${n === 1 ? "" : "s"} found`,
+    atStake: "Could come off", noErrors: "No obvious errors yet. BangBang still checks fair prices next.",
+    mayOvercharge: "May be overcharged", qty: "Qty",
+    intakeTitle: "Tell BangBang about your situation",
+    intakeLede: "Just talk. BangBang asks about your household, income, and the most you can pay.",
+    startTalking: "Start talking", stopTalking: "End conversation", connecting: "Connecting…",
+    listening: "BangBang is listening", speaking: "BangBang is speaking", disconnected: "Conversation ended",
+    micDenied: "No microphone access. Allow the microphone in your browser, or fill in the form.",
+    orForm: "Can't talk right now? Fill in a form", household: "People in your household", income: "Household income per year (USD)",
+    maxPay: "The most you can pay (USD)",
+    consent: "I authorize BangBang to discuss this bill with the hospital and agree to a deal up to my limit.",
+    saveIntake: "Save my answers", needConsent: "BangBang can only negotiate for you once you tick the consent box.",
+    intakeSaved: (name, max) => `Saved: ${name}, pays at most ${max}.`,
+    researchTitle: "BangBang is checking fair prices",
+    researchLede: "Medicare rates, the hospital's own price file, and the financial-assistance policy it must publish by law.",
+    startResearch: "Start checking", researching: "Checking. Sources appear here as they are found…",
+    sourcesTitle: "Sources found", ladderOpening: "Opening ask", ladderTarget: "Goal", ladderWalkaway: "Your limit",
+    mandateLede: "Record your authorization and limit on-chain so nobody can change it.", recordMandate: "Record authorization",
+    mandateDone: "Authorization recorded on-chain.", toRoom: "Go negotiate",
+    roomTitle: "BangBang is negotiating with the hospital", asked: "Hospital asked", current: "Now", saved: "Saved",
+    counterparty: "Hospital side is", cpAgent: "AI billing agent", cpHuman: "A person",
+    whoAdvocate: "BangBang", whoHospital: "Hospital", whoInsurer: "Insurer", whoPatient: "You",
+    startCall: "Start the call", endCall: "End the call", calling: "On the call. Chinese translation under each line.",
+    humanMode: "Human mode: play the hospital billing office into the microphone. BangBang will negotiate with you.",
+    dealAt: (amt) => `Deal: ${amt}`, toReceipts: "See receipts", waitingLines: "The conversation appears here once the call starts.",
+    receiptsTitle: "A receipt for every step",
+    receiptsLede: "Your money waits in escrow and is paid only after the hospital confirms a zero balance.",
+    credential: "Prove hardship eligibility", settle: "Put the money in escrow", confirmZero: "Hospital confirms zero balance",
+    months: "Months", loan: "0% payment plan", fedTitle: "Pay at once, or in installments?", getAdvice: "Get advice",
+    lumpSum: "Pay in one lump sum", paymentPlan: "Use a payment plan", rateMove: (bps) => `Market-implied rate move: ${bps > 0 ? "+" : ""}${bps} bps`,
+    loadPayments: "Show the data fees BangBang paid", noReceipts: "No receipts yet. Each step adds one here.",
+    viewTx: "View on explorer", noPayments: "BangBang has not paid for any data yet.",
+    notConfigured: "This step isn't available yet: ", failed: "Something failed: ", wsLost: "Lost the live connection to the server. Reconnecting.",
+    kinds: {
+      EscrowCreate: "Money placed in escrow", EscrowFinish: "Escrow released to hospital", CredentialCreate: "Clinic issued hardship credential",
+      CredentialAccept: "Patient accepted credential", Batch: "Release and advocate fee in one batch", VaultDeposit: "Community fund deposit",
+      LoanSet: "0% payment-plan loan", openMandate: "Mandate recorded", mandate: "Mandate recorded", logEntry: "Negotiation log entry",
+      deal: "Deal recorded", recordDeal: "Deal recorded", "x402-payment": "Data fee paid (x402)", odds: "Fed-decision odds",
+    },
+  },
+};
+
+const LANG_KEY = `bb-lang-${location.pathname.includes("clinic") ? "clinic" : "patient"}`;
+let lang = (() => {
+  try {
+    const v = localStorage.getItem(LANG_KEY);
+    if (v === "zh" || v === "en") return v;
+  } catch {}
+  return document.body?.dataset.defaultLang === "en" ? "en" : "zh";
+})();
+const langListeners = new Set();
+
+export const getLang = () => lang;
+export function t(key, ...args) {
+  const v = I18N[lang][key] ?? I18N.zh[key] ?? key;
+  return typeof v === "function" ? v(...args) : v;
+}
+export function applyI18n(root = document) {
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  for (const el of root.querySelectorAll("[data-i18n]")) {
+    const v = t(el.dataset.i18n);
+    if (typeof v === "string") el.textContent = v;
+  }
+  const btn = document.getElementById("lang-toggle");
+  if (btn) btn.textContent = lang === "zh" ? "EN" : "中文";
+}
+export function onLangChange(fn) {
+  langListeners.add(fn);
+}
+export function setupLangToggle() {
+  applyI18n();
+  document.getElementById("lang-toggle")?.addEventListener("click", () => {
+    lang = lang === "zh" ? "en" : "zh";
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {}
+    applyI18n();
+    for (const fn of langListeners) fn(lang);
+  });
+}
+
+/* ------------------------------------------------------------- utilities */
+
+export const $ = (sel, root = document) => root.querySelector(sel);
+const usdFmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+export const usd = (n) => (typeof n === "number" && Number.isFinite(n) ? usdFmt.format(n) : "—");
+
+/** Tiny hyperscript: h("p", {class: "x"}, "text", child). Strings are text nodes (never HTML). */
+export function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs ?? {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : String(v));
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid instanceof Node ? kid : String(kid));
+  return el;
+}
+
+/** Only http(s) links from the server get rendered as hrefs. */
+export function safeUrl(u) {
+  try {
+    const url = new URL(u, location.href);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+export function showError(msg) {
+  const box = document.getElementById("error");
+  if (!box) return alert(msg);
+  document.getElementById("error-text").textContent = msg;
+  box.hidden = false;
+  box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+export function clearError() {
+  const box = document.getElementById("error");
+  if (box) box.hidden = true;
+}
+export function setupErrorBox() {
+  document.getElementById("error-close")?.addEventListener("click", clearError);
+}
+
+export class ApiError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+/** fetch wrapper: JSON in/out, throws ApiError with the server's {error} message. */
+export async function api(path, { method = "GET", body, form } = {}) {
+  const init = { method, headers: {} };
+  if (form) init.body = form;
+  else if (body !== undefined) {
+    init.headers["content-type"] = "application/json";
+    init.body = JSON.stringify(body);
+  }
+  let res;
+  try {
+    res = await fetch(path, init);
+  } catch (e) {
+    throw new ApiError(0, `${method} ${path}: network error (${e.message}). Is the server running?`);
+  }
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { error: text };
+  }
+  if (!res.ok) throw new ApiError(res.status, data?.error || `${method} ${path} failed (${res.status})`);
+  return data;
+}
+
+export function errorText(e) {
+  if (e instanceof ApiError && (e.status === 503 || /not configured/i.test(e.message))) return t("notConfigured") + e.message;
+  return t("failed") + (e?.message ?? String(e));
+}
+
+/** Disable a button while an async action runs; any failure becomes a visible message. */
+export async function busy(btn, fn) {
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add("busy");
+  }
+  try {
+    clearError();
+    return await fn();
+  } catch (e) {
+    showError(errorText(e));
+    return undefined;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove("busy");
+    }
+  }
+}
+
+/* ----------------------------------------------------------- live events */
+
+/** Subscribe to WS /ws?case=<id>; reconnects with backoff. Returns {close}. */
+export function connectCase(id, onEvent) {
+  let ws;
+  let closed = false;
+  let tries = 0;
+  const open = () => {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    ws = new WebSocket(`${proto}://${location.host}/ws?case=${encodeURIComponent(id)}`);
+    ws.onopen = () => {
+      tries = 0;
+    };
+    ws.onmessage = (m) => {
+      let ev;
+      try {
+        ev = JSON.parse(m.data);
+      } catch {
+        return;
+      }
+      onEvent(ev);
+    };
+    ws.onclose = () => {
+      if (closed) return;
+      tries += 1;
+      if (tries === 3) showError(t("wsLost"));
+      setTimeout(open, Math.min(8000, 500 * 2 ** tries));
+    };
+  };
+  open();
+  return {
+    close() {
+      closed = true;
+      ws?.close();
+    },
+  };
+}
+
+/** Merge a CaseEvent into a local CasePacket copy. Returns true if the packet changed. */
+export function mergeEvent(packet, ev) {
+  switch (ev.type) {
+    case "status":
+      packet.status = ev.status;
+      return true;
+    case "transcript": {
+      const l = ev.line;
+      const same = packet.transcript.find((x) => x.role === l.role && x.at === l.at && x.text === l.text);
+      if (same) Object.assign(same, l);
+      else packet.transcript.push(l);
+      return true;
+    }
+    case "offer": {
+      const o = ev.offer;
+      if (!packet.offers.some((x) => x.by === o.by && x.amount === o.amount && x.at === o.at)) packet.offers.push(o);
+      return true;
+    }
+    case "deal":
+      packet.agreedAmount = ev.amount;
+      return true;
+    case "receipt":
+      addReceipts(packet, [ev.receipt]);
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function addReceipts(packet, receipts) {
+  for (const r of receipts ?? []) {
+    if (!r || typeof r !== "object") continue;
+    if (!packet.receipts.some((x) => x.txHash === r.txHash && x.kind === r.kind)) packet.receipts.push(r);
+  }
+}
+
+/* ------------------------------------------------- voice: browser audio */
+
+/** Plays base64 PCM16 mono chunks from /ws `audio` events, in arrival order, so turns never overlap. */
+export function createAudio(onSpeaking) {
+  let ctx;
+  let head = 0;
+  const until = {};
+  const ensure = () => {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!ctx && AC) ctx = new AC();
+    if (ctx?.state === "suspended") ctx.resume();
+    return ctx;
+  };
+  return {
+    unlock: ensure,
+    play({ who, sampleRate, chunk }) {
+      const c = ensure();
+      if (!c || !chunk) return;
+      const bin = atob(chunk);
+      const n = bin.length >> 1;
+      if (!n) return;
+      const buf = c.createBuffer(1, n, sampleRate || 16000);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) {
+        let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+        if (v >= 0x8000) v -= 0x10000;
+        ch[i] = v / 32768;
+      }
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.connect(c.destination);
+      const start = Math.max(c.currentTime + 0.04, head);
+      src.start(start);
+      head = start + buf.duration;
+      until[who] = head;
+      onSpeaking?.(who, true);
+      const ms = (head - c.currentTime) * 1000 + 30;
+      setTimeout(() => {
+        if (c.currentTime >= (until[who] ?? 0) - 0.02) onSpeaking?.(who, false);
+      }, ms);
+    },
+  };
+}
+
+let elevenModule;
+/** Lazy-load @elevenlabs/client (pinned) and start a browser conversation from a signed URL. */
+export async function startElevenConversation(signedUrl, callbacks = {}, dynamicVariables) {
+  if (!elevenModule) {
+    try {
+      elevenModule = await import(ELEVEN_CLIENT_URL);
+    } catch (e) {
+      throw new Error(`could not load the ElevenLabs voice client from the CDN (${e.message})`);
+    }
+  }
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    throw new Error(t("micDenied"));
+  }
+  return elevenModule.Conversation.startSession({
+    signedUrl,
+    connectionType: "websocket",
+    ...(dynamicVariables ? { dynamicVariables } : {}),
+    ...callbacks,
+  });
+}
+
+/* ------------------------------------------------- negotiation room (shared) */
+
+const ROLE_KEYS = {
+  advocate: "whoAdvocate", agent: "whoAdvocate", ai: "whoAdvocate", bangbang: "whoAdvocate",
+  hospital: "whoHospital", billing: "whoHospital", insurer: "whoInsurer", payer: "whoInsurer",
+  patient: "whoPatient", user: "whoPatient",
+};
+export const roleLabel = (role) => (ROLE_KEYS[String(role).toLowerCase()] ? t(ROLE_KEYS[String(role).toLowerCase()]) : role);
+const sideOf = (role) => (/advoc|bang|^agent$|^ai$/i.test(role) ? "us" : "them");
+
+/**
+ * Shared room renderer. Expects in the page: #transcript, #tk-asked, #tk-current, #tk-saved, #tk-pct,
+ * #deal-stamp, #v-advocate, #v-hospital. getAsked() returns the starting $ (or undefined).
+ */
+export function createRoom({ getPacket, getAsked }) {
+  const audio = createAudio((who, on) => {
+    const id = who === "advocate" ? "v-advocate" : "v-hospital";
+    document.getElementById(id)?.classList.toggle("on", on);
+  });
+  let lastLen = -1;
+
+  function renderTranscript() {
+    const p = getPacket();
+    const list = document.getElementById("transcript");
+    if (!list || !p) return;
+    list.replaceChildren();
+    if (!p.transcript.length) {
+      list.append(h("li", { class: "empty" }, t("waitingLines")));
+      lastLen = 0;
+      return;
+    }
+    const zhFirst = getLang() === "zh";
+    for (const line of p.transcript) {
+      const zh = line.textZh ? h("p", { class: "zh", lang: "zh-CN" }, line.textZh) : null;
+      const en = h("p", { class: "en", lang: "en" }, line.text);
+      list.append(
+        h("li", { class: `line ${sideOf(line.role)}` }, h("span", { class: "who" }, roleLabel(line.role)), ...(zhFirst ? [zh, en] : [en, zh])),
+      );
+    }
+    if (p.transcript.length !== lastLen) list.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    lastLen = p.transcript.length;
+  }
+
+  function renderTicker() {
+    const p = getPacket();
+    if (!p) return;
+    const asked = getAsked();
+    const theirs = [...p.offers].reverse().find((o) => o.by !== "advocate");
+    const current = p.agreedAmount ?? theirs?.amount ?? p.offers.at(-1)?.amount;
+    document.getElementById("tk-asked").textContent = usd(asked);
+    document.getElementById("tk-current").textContent = usd(current);
+    const saved = typeof asked === "number" && typeof current === "number" ? asked - current : undefined;
+    document.getElementById("tk-saved").textContent = saved != null && saved > 0 ? usd(saved) : "—";
+    document.getElementById("tk-pct").textContent = saved != null && saved > 0 && asked > 0 ? `${Math.round((saved / asked) * 100)}%` : "";
+    const stamp = document.getElementById("deal-stamp");
+    if (stamp) stamp.hidden = p.agreedAmount == null;
+  }
+
+  return {
+    audio,
+    render() {
+      renderTicker();
+      renderTranscript();
+    },
+    handle(ev) {
+      if (ev.type === "audio") audio.play(ev);
+    },
+  };
+}
+
+/** Render one receipt for a timeline. */
+const CHAINS = {
+  xrpl: { name: "XRPL", note: "devnet" },
+  bsc: { name: "BNB Chain", note: "testnet" },
+  base: { name: "AUSD on Base", note: "Sepolia" },
+  gemini: { name: "Gemini", note: "markets" },
+};
+export function receiptItem(r) {
+  const chain = CHAINS[r.chain] ?? { name: r.chain, note: "" };
+  const kinds = t("kinds");
+  const label = (kinds && kinds[r.kind]) || r.kind;
+  const href = safeUrl(r.explorerUrl);
+  const amount = r.detail && (r.detail.amount ?? r.detail.value ?? r.detail.price);
+  const when = new Date(r.at);
+  return h(
+    "li",
+    { class: `receipt chain-${r.chain}` },
+    h("span", { class: "chain-mark", "aria-hidden": "true" }, chainGlyph(r.chain)),
+    h(
+      "div",
+      { class: "r-body" },
+      h("p", { class: "r-title" }, label),
+      h(
+        "p",
+        { class: "r-meta" },
+        `${chain.name} ${chain.note}`,
+        amount != null ? `  ${typeof amount === "number" ? usd(amount) : amount}` : "",
+        isNaN(when) ? "" : `  ${when.toLocaleTimeString(getLang() === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })}`,
+      ),
+      href
+        ? h("a", { class: "r-link", href, target: "_blank", rel: "noopener" }, `${t("viewTx")} ${shortHash(r.txHash)}`)
+        : h("p", { class: "r-meta" }, shortHash(r.txHash)),
+    ),
+  );
+}
+const shortHash = (x) => (x && x.length > 14 ? `${x.slice(0, 6)}…${x.slice(-4)}` : x || "");
+function chainGlyph(chain) {
+  // Simple geometric marks per network (not brand logos), colored in CSS.
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", "24");
+  svg.setAttribute("height", "24");
+  const paths = {
+    xrpl: "M4 5l5 5a4 4 0 006 0l5-5M4 19l5-5a4 4 0 016 0l5 5",
+    bsc: "M12 3l3 3-3 3-3-3zM6 9l3 3-3 3-3-3zM18 9l3 3-3 3-3-3zM12 15l3 3-3 3-3-3z",
+    base: "M12 3a9 9 0 110 18 9 9 0 010-18zM3 12h12",
+    gemini: "M12 3a9 9 0 019 9M12 21a9 9 0 01-9-9M7 7h10v10H7z",
+  };
+  const p = document.createElementNS(ns, "path");
+  p.setAttribute("d", paths[chain] ?? "M5 5h14v14H5z");
+  p.setAttribute("fill", "none");
+  p.setAttribute("stroke", "currentColor");
+  p.setAttribute("stroke-width", "2");
+  p.setAttribute("stroke-linejoin", "round");
+  p.setAttribute("stroke-linecap", "round");
+  svg.append(p);
+  return svg;
+}
+
+/* ===================================================== patient flow ===== */
+
+const SCREENS = ["upload", "bill", "intake", "research", "room", "receipts"];
+
+function initPatient() {
+  setupLangToggle();
+  setupErrorBox();
+
+  const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null };
+  const P = () => state.packet;
+  const room = createRoom({ getPacket: P, getAsked: () => P()?.bill?.patientBalance });
+
+  /* ---- navigation ---- */
+  function show(name) {
+    state.screen = name;
+    for (const s of document.querySelectorAll(".screen")) s.hidden = s.dataset.screen !== name;
+    renderProgress();
+    document.querySelector(`[data-screen="${name}"] h1`)?.focus?.({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function renderProgress() {
+    const idx = SCREENS.indexOf(state.screen);
+    const names = t("steps");
+    document.querySelectorAll("#steps li").forEach((li, i) => {
+      li.className = i < idx ? "done" : i === idx ? "now" : "";
+      li.setAttribute("aria-current", i === idx ? "step" : "false");
+      li.title = names[i];
+    });
+    $("#step-label").textContent = t("stepOf", idx + 1, SCREENS.length, names[idx]);
+  }
+  document.querySelectorAll(".screen h1").forEach((h1) => h1.setAttribute("tabindex", "-1"));
+
+  /* ---- case lifecycle ---- */
+  function adopt(packet) {
+    if (!packet || !packet.id) throw new Error("server returned no case");
+    const fresh = !state.packet || state.packet.id !== packet.id;
+    state.packet = packet;
+    if (fresh) {
+      state.sub?.close();
+      state.logs = [];
+      state.sub = connectCase(packet.id, onEvent);
+      try {
+        history.replaceState(null, "", `#case=${packet.id}`);
+      } catch {}
+    }
+    renderAll();
+  }
+
+  function onEvent(ev) {
+    if (ev.type === "case") {
+      if (!ev.packet) return;
+      state.packet = ev.packet;
+      renderAll();
+      return;
+    }
+    if (ev.type === "audio") return room.handle(ev);
+    if (ev.type === "log") {
+      state.logs.push(ev);
+      renderFeed();
+      return;
+    }
+    if (ev.type === "error") return showError(t("failed") + ev.message);
+    if (!state.packet) return;
+    if (mergeEvent(state.packet, ev)) {
+      if (ev.type === "deal") $("#room-status").textContent = t("dealAt", usd(ev.amount));
+      renderAll();
+    }
+  }
+
+  function renderAll() {
+    renderBill();
+    renderIntake();
+    renderResearch();
+    room.render();
+    renderReceipts();
+  }
+
+  /* ---- 1 upload ---- */
+  $("#bill-file").addEventListener("change", (e) => {
+    const f = e.target.files?.[0];
+    $("#file-name").textContent = f ? f.name : t("takePhoto");
+  });
+  $("#upload-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const file = $("#bill-file").files?.[0];
+    if (!file) return showError(t("needFile"));
+    const name = $("#patient-name").value.trim();
+    const form = new FormData();
+    if (name) form.append("patient", JSON.stringify({ name, language: "zh", maxPay: 0, consent: false }));
+    form.append("bill", file, file.name);
+    busy($("#upload-btn"), async () => {
+      $("#file-name").textContent = t("reading");
+      adopt(await api("/api/cases", { method: "POST", form }));
+      show("bill");
+    }).finally(() => {
+      $("#file-name").textContent = file.name;
+    });
+  });
+  $("#demo-btn").addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      adopt(await api("/api/cases/demo", { method: "POST", body: {} }));
+      show("bill");
+    }),
+  );
+
+  /* ---- 2 bill ---- */
+  function renderBill() {
+    const p = P();
+    const bill = p?.bill;
+    const sum = $("#bill-summary");
+    const list = $("#bill-lines");
+    if (!bill) return;
+    const zh = getLang() === "zh";
+    const flags = p.flags ?? [];
+    const stake = flags.reduce((a, f) => a + (Number(f.amountAtStake) || 0), 0);
+    sum.replaceChildren(
+      h("p", { class: "provider" }, bill.provider?.name ?? ""),
+      h("div", { class: "owe" }, h("span", {}, t("hospitalSays")), h("b", {}, usd(bill.patientBalance))),
+      flags.length
+        ? h("div", { class: "stake" }, h("span", {}, t("errorsFound", flags.length)), h("b", {}, `${t("atStake")} ${usd(stake)}`))
+        : h("p", { class: "fine" }, t("noErrors")),
+      ...flags.filter((f) => f.lineIndex == null).map(flagEl),
+    );
+    list.replaceChildren(
+      ...bill.lineItems.map((li, i) => {
+        const lf = flags.filter((f) => f.lineIndex === i);
+        return h(
+          "li",
+          { class: lf.length ? "flagged" : "" },
+          h(
+            "div",
+            { class: "li-head" },
+            h("p", { class: "li-desc" }, zh ? li.descriptionZh || li.description : li.description),
+            h("b", { class: "li-amt" }, usd(li.charge)),
+          ),
+          h(
+            "p",
+            { class: "li-meta" },
+            [li.code ? `${li.codeType ?? ""} ${li.code}`.trim() : "", zh && li.descriptionZh ? li.description : "", li.qty > 1 ? `${t("qty")} ${li.qty}` : "", li.date ?? ""]
+              .filter(Boolean)
+              .join("   "),
+          ),
+          ...lf.map(flagEl),
+        );
+      }),
+    );
+  }
+  function flagEl(f) {
+    const zh = getLang() === "zh";
+    return h(
+      "div",
+      { class: `flag kind-${f.kind}` },
+      h("p", {}, zh ? f.messageZh || f.message : f.message),
+      f.amountAtStake ? h("b", {}, `${t("mayOvercharge")} ${usd(f.amountAtStake)}`) : null,
+    );
+  }
+  $("#to-intake").addEventListener("click", () => show("intake"));
+
+  /* ---- 3 intake ---- */
+  function intakeOk() {
+    const pt = P()?.patient;
+    return Boolean(pt && pt.consent && pt.maxPay > 0);
+  }
+  function renderIntake() {
+    const pt = P()?.patient;
+    const done = $("#intake-done");
+    if (pt && !$("#f-name").value) {
+      $("#f-name").value = pt.name ?? "";
+      if (pt.householdSize) $("#f-household").value = pt.householdSize;
+      if (pt.annualIncome) $("#f-income").value = pt.annualIncome;
+      if (pt.maxPay) $("#f-maxpay").value = pt.maxPay;
+      $("#f-consent").checked = Boolean(pt.consent);
+    }
+    if (intakeOk()) {
+      done.hidden = false;
+      done.textContent = t("intakeSaved", pt.name, usd(pt.maxPay));
+    } else done.hidden = true;
+    $("#to-research").disabled = !intakeOk();
+  }
+  function addBubble(source, text) {
+    $("#intake-transcript").append(h("li", { class: source === "user" ? "me" : "bb" }, text));
+    $("#intake-transcript").lastElementChild.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  function setTalking(on) {
+    const btn = $("#talk-btn");
+    btn.setAttribute("aria-pressed", String(on));
+    btn.classList.toggle("live", on);
+    $("#talk-label").textContent = on ? t("stopTalking") : t("startTalking");
+  }
+  $("#talk-btn").addEventListener("click", async (e) => {
+    if (state.convo) {
+      const c = state.convo;
+      state.convo = null;
+      setTalking(false);
+      await c.endSession().catch(() => {});
+      return;
+    }
+    if (!P()) return showError(t("needFile"));
+    await busy(e.currentTarget, async () => {
+      $("#talk-status").textContent = t("connecting");
+      try {
+        const { signedUrl } = await api("/api/intake/signed-url");
+        if (!signedUrl) throw new Error("/api/intake/signed-url returned no signedUrl");
+        state.convo = await startElevenConversation(
+          signedUrl,
+          {
+            onMessage: ({ message, source }) => message && addBubble(source, message),
+            onModeChange: ({ mode }) => {
+              $("#talk-status").textContent = mode === "speaking" ? t("speaking") : t("listening");
+              $("#talk-btn").classList.toggle("speaking", mode === "speaking");
+            },
+            onError: (m) => showError(t("failed") + m),
+            onDisconnect: () => {
+              state.convo = null;
+              setTalking(false);
+              $("#talk-status").textContent = t("disconnected");
+              api(`/api/cases/${P().id}`).then(adopt).catch(() => {});
+            },
+          },
+          { case_id: P().id },
+        );
+        setTalking(true);
+        $("#talk-status").textContent = t("listening");
+      } catch (err) {
+        $("#talk-status").textContent = "";
+        throw err;
+      }
+    });
+  });
+  $("#intake-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!P()) return showError(t("needFile"));
+    if (!$("#f-consent").checked) return showError(t("needConsent"));
+    const num = (sel) => ($(sel).value === "" ? undefined : Number($(sel).value));
+    const args = {
+      case_id: P().id,
+      name: $("#f-name").value.trim(),
+      household_size: num("#f-household"),
+      annual_income: num("#f-income"),
+      max_pay: num("#f-maxpay"),
+      consent: true,
+    };
+    busy($("#intake-submit"), async () => {
+      // Same tool the voice agent calls (submit_intake), so voice and form take one path.
+      const res = await api("/api/eleven/tools/submit_intake", { method: "POST", body: args });
+      if (res && res.ok === false) throw new Error(res.message || "submit_intake rejected the form");
+      adopt(res?.packet?.id ? res.packet : await api(`/api/cases/${P().id}`));
+    });
+  });
+  $("#to-research").addEventListener("click", () => {
+    if (!intakeOk()) return showError(t("needConsent"));
+    show("research");
+  });
+
+  /* ---- 4 research ---- */
+  function renderFeed() {
+    const feed = $("#research-feed");
+    const zh = getLang() === "zh";
+    feed.replaceChildren(...state.logs.map((l) => h("li", {}, zh ? l.messageZh || l.message : l.message)));
+    if (state.screen === "research") feed.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  function renderResearch() {
+    const p = P();
+    if (!p) return;
+    const researched = ["researched", "mandated", "negotiating", "agreed", "settled"].includes(p.status) || p.fairPrices.length > 0;
+    const ladder = $("#ladder");
+    if (researched) {
+      const sources = [...p.fairPrices.flatMap((f) => f.sources ?? []), ...(p.charity?.sources ?? [])];
+      const seen = new Set();
+      ladder.hidden = false;
+      ladder.replaceChildren(
+        h(
+          "div",
+          { class: "rungs" },
+          rung(t("ladderOpening"), p.opening),
+          rung(t("ladderTarget"), p.target),
+          rung(t("ladderWalkaway"), p.walkaway ?? p.patient?.maxPay),
+        ),
+        p.charity ? h("p", { class: "charity" }, p.charity.summary) : null,
+        sources.length ? h("h2", {}, t("sourcesTitle")) : null,
+        h(
+          "ul",
+          { class: "sources" },
+          ...sources
+            .filter((s) => s && s.url && !seen.has(s.url) && seen.add(s.url))
+            .map((s) => {
+              const href = safeUrl(s.url);
+              return h("li", {}, href ? h("a", { href, target: "_blank", rel: "noopener" }, s.title || s.url) : s.title, h("span", { class: "via" }, s.via));
+            }),
+        ),
+      );
+      $("#mandate-box").hidden = false;
+      $("#to-room").disabled = false;
+    }
+    const hasMandate = p.receipts.some((r) => r.chain === "bsc" && /mandate/i.test(r.kind));
+    if (hasMandate) {
+      $("#mandate-box").replaceChildren(h("p", {}, t("mandateDone")), receiptList(p.receipts.filter((r) => r.chain === "bsc" && /mandate/i.test(r.kind))));
+    }
+  }
+  const rung = (label, v) => h("div", { class: "rung" }, h("span", {}, label), h("b", {}, usd(v)));
+  const receiptList = (rs) => h("ol", { class: "timeline compact" }, ...rs.map(receiptItem));
+
+  $("#research-btn").addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      if (!state.logs.length) $("#research-feed").replaceChildren(h("li", { class: "empty" }, t("researching")));
+      adopt(await api(`/api/cases/${P().id}/research`, { method: "POST", body: {} }));
+    }),
+  );
+  $("#mandate-btn").addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      const r = await api(`/api/cases/${P().id}/mandate`, { method: "POST", body: {} });
+      addReceipts(P(), Array.isArray(r) ? r : [r]);
+      renderAll();
+    }),
+  );
+  $("#to-room").addEventListener("click", () => show("room"));
+
+  /* ---- 5 room ---- */
+  $("#negotiate-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    if (state.callConvo) {
+      const c = state.callConvo;
+      state.callConvo = null;
+      btn.textContent = t("startCall");
+      await c.endSession().catch(() => {});
+      return;
+    }
+    room.audio.unlock(); // user gesture: lets the browser play the agents' audio
+    const counterparty = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
+    await busy(btn, async () => {
+      const res = await api(`/api/cases/${P().id}/negotiate`, { method: "POST", body: { counterparty } });
+      if (res?.mode === "human") {
+        if (!res.advocateSignedUrl) throw new Error("negotiate returned no advocateSignedUrl for human mode");
+        $("#room-status").textContent = t("humanMode");
+        state.callConvo = await startElevenConversation(
+          res.advocateSignedUrl,
+          {
+            onMessage: ({ message, source }) => {
+              if (!message) return;
+              const line = { role: source === "ai" ? "advocate" : "hospital", text: message, at: new Date().toISOString() };
+              mergeEvent(P(), { type: "transcript", line });
+              room.render();
+            },
+            onError: (m) => showError(t("failed") + m),
+            onDisconnect: () => {
+              state.callConvo = null;
+              $("#negotiate-btn").textContent = t("startCall");
+            },
+          },
+          { case_id: P().id },
+        );
+        btn.textContent = t("endCall");
+      } else {
+        $("#room-status").textContent = t("calling");
+      }
+    });
+  });
+  $("#to-receipts").addEventListener("click", () => show("receipts"));
+
+  /* ---- 6 receipts ---- */
+  function renderReceipts() {
+    const p = P();
+    if (!p) return;
+    const list = $("#receipts");
+    const rs = [...p.receipts].sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    list.replaceChildren(...(rs.length ? rs.map(receiptItem) : [h("li", { class: "empty" }, t("noReceipts"))]));
+    if (p.financing) renderFed(p.financing);
+  }
+  const post = (path, body = {}) => api(`/api/cases/${P().id}/${path}`, { method: "POST", body });
+  const receiptAction = (sel, fn) =>
+    $(sel).addEventListener("click", (e) =>
+      busy(e.currentTarget, async () => {
+        if (!P()) throw new Error(t("needFile"));
+        const r = await fn();
+        addReceipts(P(), Array.isArray(r) ? r : [r]);
+        renderAll();
+      }),
+    );
+  receiptAction("#credential-btn", () => post("credential"));
+  receiptAction("#settle-btn", () => post("settle"));
+  receiptAction("#confirm-btn", () => post("confirm-zero-balance"));
+  receiptAction("#loan-btn", () => post("loan", { months: Number($("#loan-months").value) || 12 }));
+  $("#x402-btn").addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      const rs = await api("/api/x402/payments");
+      if (!Array.isArray(rs) || !rs.length) throw new Error(t("noPayments"));
+      addReceipts(P(), rs);
+      renderAll();
+    }),
+  );
+  $("#financing-btn").addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      const adv = await post("financing");
+      if (P()) P().financing = adv;
+      renderFed(adv);
+    }),
+  );
+  function renderFed(adv) {
+    const zh = getLang() === "zh";
+    const odds = adv.fedOdds;
+    $("#fed-body").replaceChildren(
+      h("p", { class: `rec ${adv.recommendation}` }, adv.recommendation === "lump_sum" ? t("lumpSum") : t("paymentPlan")),
+      h("p", {}, zh ? adv.reasonZh || adv.reason : adv.reason),
+      odds
+        ? h(
+            "div",
+            { class: "odds" },
+            h("p", { class: "fine" }, odds.market),
+            ...odds.outcomes.map((o) =>
+              h(
+                "div",
+                { class: "odd" },
+                h("span", {}, o.label),
+                h("span", { class: "bar" }, h("i", { style: `width:${Math.max(0, Math.min(100, o.prob * 100)).toFixed(1)}%` })),
+                h("b", {}, `${Math.round(o.prob * 100)}%`),
+              ),
+            ),
+          )
+        : null,
+      typeof adv.expectedRatePath === "number" ? h("p", { class: "fine" }, t("rateMove", Math.round(adv.expectedRatePath))) : null,
+      h(
+        "ul",
+        { class: "sources" },
+        ...(adv.sources ?? []).map((s) => {
+          const href = safeUrl(s.url);
+          return h("li", {}, href ? h("a", { href, target: "_blank", rel: "noopener" }, s.title || s.url) : s.title);
+        }),
+      ),
+    );
+  }
+
+  /* ---- language + resume ---- */
+  onLangChange(() => {
+    renderProgress();
+    renderAll();
+    renderFeed();
+    setTalking(Boolean(state.convo));
+    if (!$("#bill-file").files?.length) $("#file-name").textContent = t("takePhoto");
+  });
+
+  const resumeId = new URLSearchParams(location.hash.slice(1)).get("case");
+  show("upload");
+  if (resumeId) {
+    api(`/api/cases/${encodeURIComponent(resumeId)}`)
+      .then((p) => {
+        adopt(p);
+        const byStatus = { intake: "bill", audited: "bill", researched: "research", mandated: "room", negotiating: "room", agreed: "receipts", settled: "receipts", failed: "room" };
+        show(byStatus[p.status] ?? "bill");
+      })
+      .catch(() => history.replaceState(null, "", location.pathname));
+  }
+}
+
+if (document.getElementById("patient-app")) initPatient();

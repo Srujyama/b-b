@@ -1,0 +1,126 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=honda&models%5B%5D=honda-civic&list_price_max=20000",
+  "cached_at": 1784391559.870212,
+  "cards": [
+    {
+      "id": "70cf9e1e-a0b7-4118-946c-3bd64d3ea59b",
+      "url": "https://www.cars.com/vehicledetail/70cf9e1e-a0b7-4118-946c-3bd64d3ea59b/",
+      "price": 19379
+    },
+    {
+      "id": "15df4c74-722a-481b-9de4-8fe74f2d68b9",
+      "url": "https://www.cars.com/vehicledetail/15df4c74-722a-481b-9de4-8fe74f2d68b9/",
+      "price": 14794
+    },
+    {
+      "id": "50242690-c92f-47d6-890f-f01f734e12c9",
+      "url": "https://www.cars.com/vehicledetail/50242690-c92f-47d6-890f-f01f734e12c9/",
+      "price": 17797
+    },
+    {
+      "id": "1e4767e6-768e-4dcf-b3dd-b77288e02633",
+      "url": "https://www.cars.com/vehicledetail/1e4767e6-768e-4dcf-b3dd-b77288e02633/",
+      "price": 12044
+    },
+    {
+      "id": "9afe98cd-9c0e-4a22-9175-4c9a80b63cc4",
+      "url": "https://www.cars.com/vehicledetail/9afe98cd-9c0e-4a22-9175-4c9a80b63cc4/",
+      "price": 17219
+    },
+    {
+      "id": "0ff569f9-1064-4832-864c-a688797b9394",
+      "url": "https://www.cars.com/vehicledetail/0ff569f9-1064-4832-864c-a688797b9394/",
+      "price": 16694
+    },
+    {
+      "id": "c3b9c829-8df4-4247-9699-f066285ab60b",
+      "url": "https://www.cars.com/vehicledetail/c3b9c829-8df4-4247-9699-f066285ab60b/",
+      "price": 19075
+    },
+    {
+      "id": "f1d21dfa-8739-4bff-b522-81ab5ca947a0",
+      "url": "https://www.cars.com/vehicledetail/f1d21dfa-8739-4bff-b522-81ab5ca947a0/",
+      "price": 19294
+    },
+    {
+      "id": "d82e037f-f492-4a2f-979f-c63409aee630",
+      "url": "https://www.cars.com/vehicledetail/d82e037f-f492-4a2f-979f-c63409aee630/",
+      "price": 15255
+    },
+    {
+      "id": "0202b3eb-eb36-4fa0-a116-8a317fb76f75",
+      "url": "https://www.cars.com/vehicledetail/0202b3eb-eb36-4fa0-a116-8a317fb76f75/",
+      "price": 13199
+    },
+    {
+      "id": "1c3ffc30-cc4e-41bb-8494-5ea09d18f372",
+      "url": "https://www.cars.com/vehicledetail/1c3ffc30-cc4e-41bb-8494-5ea09d18f372/",
+      "price": 17549
+    },
+    {
+      "id": "8ec79a6f-26fd-4026-8faa-e4e6434b0793",
+      "url": "https://www.cars.com/vehicledetail/8ec79a6f-26fd-4026-8faa-e4e6434b0793/",
+      "price": 16175
+    },
+    {
+      "id": "0e0e965c-d3c0-40eb-b156-64711fc9f293",
+      "url": "https://www.cars.com/vehicledetail/0e0e965c-d3c0-40eb-b156-64711fc9f293/",
+      "price": 17045
+    },
+    {
+      "id": "4cd16281-596e-4ee3-939d-f80c0d0da23f",
+      "url": "https://www.cars.com/vehicledetail/4cd16281-596e-4ee3-939d-f80c0d0da23f/",
+      "price": 17794
+    },
+    {
+      "id": "b3be567a-100f-43cc-8ad1-601afb6400d7",
+      "url": "https://www.cars.com/vehicledetail/b3be567a-100f-43cc-8ad1-601afb6400d7/",
+      "price": 15811
+    },
+    {
+      "id": "58ad937d-adbb-47cf-a6bd-fcef53422f9d",
+      "url": "https://www.cars.com/vehicledetail/58ad937d-adbb-47cf-a6bd-fcef53422f9d/",
+      "price": 16998
+    },
+    {
+      "id": "cdb4c2d8-094e-4b96-a02a-b14234464587",
+      "url": "https://www.cars.com/vehicledetail/cdb4c2d8-094e-4b96-a02a-b14234464587/",
+      "price": 9597
+    },
+    {
+      "id": "a4e30339-6dc7-407c-b352-2f888d61ad74",
+      "url": "https://www.cars.com/vehicledetail/a4e30339-6dc7-407c-b352-2f888d61ad74/",
+      "price": 18670
+    },
+    {
+      "id": "d14dbccd-b5c9-494d-94e3-321fe88e42cc",
+      "url": "https://www.cars.com/vehicledetail/d14dbccd-b5c9-494d-94e3-321fe88e42cc/",
+      "price": 19679
+    },
+    {
+      "id": "cd27b920-e2e4-4102-8964-5b99c105c260",
+      "url": "https://www.cars.com/vehicledetail/cd27b920-e2e4-4102-8964-5b99c105c260/",
+      "price": 15794
+    },
+    {
+      "id": "c3411ca2-fb36-466e-9a5a-fa5605128922",
+      "url": "https://www.cars.com/vehicledetail/c3411ca2-fb36-466e-9a5a-fa5605128922/",
+      "price": 13395
+    },
+    {
+      "id": "c57366d2-a3ac-4bdc-97fc-b90a9867cecc",
+      "url": "https://www.cars.com/vehicledetail/c57366d2-a3ac-4bdc-97fc-b90a9867cecc/",
+      "price": 10992
+    },
+    {
+      "id": "c0c42ba7-8f3e-4d9b-8c5a-ba8a26f30903",
+      "url": "https://www.cars.com/vehicledetail/c0c42ba7-8f3e-4d9b-8c5a-ba8a26f30903/",
+      "price": 19998
+    },
+    {
+      "id": "793d9862-7de5-4df3-a0f1-155f54da5aa0",
+      "url": "https://www.cars.com/vehicledetail/793d9862-7de5-4df3-a0f1-155f54da5aa0/",
+      "price": 18998
+    }
+  ]
+}

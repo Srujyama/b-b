@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=toyota",
+  "cached_at": 1784398585.671623,
+  "cards": [
+    {
+      "id": "197ced47-0207-4832-aa93-5a2a59795e03",
+      "url": "https://www.cars.com/vehicledetail/197ced47-0207-4832-aa93-5a2a59795e03/",
+      "price": 57994,
+      "title": "2023 Toyota Supra 3.0 Premium",
+      "year": 2023,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "f938b1d2-708f-496f-a8d2-b37c0ff042c4",
+      "url": "https://www.cars.com/vehicledetail/f938b1d2-708f-496f-a8d2-b37c0ff042c4/",
+      "price": 35794,
+      "title": "2023 Toyota Tacoma Limited",
+      "year": 2023,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "67c8304f-7cc8-40bf-8b63-f41eac6dd701",
+      "url": "https://www.cars.com/vehicledetail/67c8304f-7cc8-40bf-8b63-f41eac6dd701/",
+      "price": 27294,
+      "title": "2024 Toyota Camry XSE",
+      "year": 2024,
+      "dealer": "Atlantic Toyota"
+    },
+    {
+      "id": "6c858c75-472c-4b37-b35e-f19d8e04db1e",
+      "url": "https://www.cars.com/vehicledetail/6c858c75-472c-4b37-b35e-f19d8e04db1e/",
+      "price": 40196,
+      "title": "2025 Toyota Tacoma SR5",
+      "year": 2025,
+      "dealer": "Faulkner Toyota Trevose"
+    },
+    {
+      "id": "a9fbf7ce-5769-4254-afad-d54bef7dd618",
+      "url": "https://www.cars.com/vehicledetail/a9fbf7ce-5769-4254-afad-d54bef7dd618/",
+      "price": 41399,
+      "title": "2022 Toyota Tacoma TRD Sport",
+      "year": 2022,
+      "dealer": "Hudson Toyota"
+    },
+    {
+      "id": "52493307-c9b1-468a-ab25-a8e36d465ea2",
+      "url": "https://www.cars.com/vehicledetail/52493307-c9b1-468a-ab25-a8e36d465ea2/",
+      "price": 26498,
+      "title": "2017 Toyota Tacoma TRD Sport",
+      "year": 2017,
+      "dealer": "BMW of Bloomfield"
+    },
+    {
+      "id": "0982ff61-7b48-4a0c-994b-3a68f092157e",
+      "url": "https://www.cars.com/vehicledetail/0982ff61-7b48-4a0c-994b-3a68f092157e/",
+      "price": 18993,
+      "title": "2015 Toyota Tacoma Base",
+      "year": 2015,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "64dbc86f-e2bc-4eb3-9da6-8e68064c6a97",
+      "url": "https://www.cars.com/vehicledetail/64dbc86f-e2bc-4eb3-9da6-8e68064c6a97/",
+      "price": 32922,
+      "title": "2020 Toyota Tacoma TRD Sport",
+      "year": 2020,
+      "dealer": "Chapman Auto Store of EHT, NJ"
+    },
+    {
+      "id": "95abbe23-ac64-404e-8f52-2309dd70b743",
+      "url": "https://www.cars.com/vehicledetail/95abbe23-ac64-404e-8f52-2309dd70b743/",
+      "price": 39403,
+      "title": "2025 Toyota Tacoma SR5",
+      "year": 2025,
+      "dealer": "Sloane Toyota of Philadelphia"
+    },
+    {
+      "id": "d9fd3dcd-22ee-486c-bb91-ccd1e54bc64c",
+      "url": "https://www.cars.com/vehicledetail/d9fd3dcd-22ee-486c-bb91-ccd1e54bc64c/",
+      "price": 20997,
+      "title": "2017 Toyota Camry XLE",
+      "year": 2017,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "cb286e12-ce9f-4aad-9d65-3bfd54aef91c",
+      "url": "https://www.cars.com/vehicledetail/cb286e12-ce9f-4aad-9d65-3bfd54aef91c/",
+      "price": 36730,
+      "title": "2021 Toyota Tacoma TRD Sport",
+      "year": 2021,
+      "dealer": "Ciocca Ford of Quakertown"
+    },
+    {
+      "id": "1acf2c90-0461-42d8-ac08-59125d47f9b8",
+      "url": "https://www.cars.com/vehicledetail/1acf2c90-0461-42d8-ac08-59125d47f9b8/",
+      "price": 44712,
+      "title": "2024 Toyota Tacoma TRD Off Road",
+      "year": 2024,
+      "dealer": "Toyota of Turnersville"
+    },
+    {
+      "id": "120a35f8-d1f9-4781-9b96-549e63871388",
+      "url": "https://www.cars.com/vehicledetail/120a35f8-d1f9-4781-9b96-549e63871388/",
+      "price": 32789,
+      "title": "2024 Toyota Camry TRD V6",
+      "year": 2024,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "d3071145-1b12-45cf-b5dd-d03bb602730e",
+      "url": "https://www.cars.com/vehicledetail/d3071145-1b12-45cf-b5dd-d03bb602730e/",
+      "price": 34349,
+      "title": "2022 Toyota Tacoma TRD Off Road",
+      "year": 2022,
+      "dealer": "Tasca Ford Dickson City"
+    },
+    {
+      "id": "1da55889-8d05-4479-bcfc-d0d89226b79d",
+      "url": "https://www.cars.com/vehicledetail/1da55889-8d05-4479-bcfc-d0d89226b79d/",
+      "price": 35383,
+      "title": "2021 Toyota Tacoma TRD Off Road",
+      "year": 2021,
+      "dealer": "Atlantic Toyota"
+    },
+    {
+      "id": "46e47ed5-909d-46fd-8c39-eb77d94ae680",
+      "url": "https://www.cars.com/vehicledetail/46e47ed5-909d-46fd-8c39-eb77d94ae680/",
+      "price": 37991,
+      "title": "2023 Toyota Tacoma TRD Sport",
+      "year": 2023,
+      "dealer": "Toyota of Hackensack"
+    },
+    {
+      "id": "089c853c-7c3d-447f-bf1c-9b10f4c3d24f",
+      "url": "https://www.cars.com/vehicledetail/089c853c-7c3d-447f-bf1c-9b10f4c3d24f/",
+      "price": 8160,
+      "title": "2017 Toyota Camry LE",
+      "year": 2017,
+      "dealer": "Planet Honda"
+    },
+    {
+      "id": "c54490c2-39b2-47a7-8657-eb79d84b0eef",
+      "url": "https://www.cars.com/vehicledetail/c54490c2-39b2-47a7-8657-eb79d84b0eef/",
+      "price": 19846,
+      "title": "2019 Toyota Camry LE",
+      "year": 2019,
+      "dealer": "DCH Honda of Nanuet"
+    },
+    {
+      "id": "d3ea5dc9-72b6-44c0-89d0-d8207cbccf90",
+      "url": "https://www.cars.com/vehicledetail/d3ea5dc9-72b6-44c0-89d0-d8207cbccf90/",
+      "price": 37083,
+      "title": "2020 Toyota Tacoma TRD Sport",
+      "year": 2020,
+      "dealer": "Westbury Toyota"
+    },
+    {
+      "id": "75e50bb9-a0d3-4d81-8b1e-b41fc45929d3",
+      "url": "https://www.cars.com/vehicledetail/75e50bb9-a0d3-4d81-8b1e-b41fc45929d3/",
+      "price": 42499,
+      "title": "2025 Toyota 4Runner SR5",
+      "year": 2025,
+      "dealer": "Galaxy Toyota"
+    },
+    {
+      "id": "e6a524e5-4d36-4728-aca4-56677486f181",
+      "url": "https://www.cars.com/vehicledetail/e6a524e5-4d36-4728-aca4-56677486f181/",
+      "price": 31879,
+      "title": "2020 Toyota Tacoma SR5",
+      "year": 2020,
+      "dealer": "Wayne Ford"
+    },
+    {
+      "id": "9b969529-2e81-4573-b244-172b2ffdf2ee",
+      "url": "https://www.cars.com/vehicledetail/9b969529-2e81-4573-b244-172b2ffdf2ee/",
+      "price": 36070,
+      "title": "2023 Toyota Tacoma SR5",
+      "year": 2023,
+      "dealer": "Novak Motors"
+    },
+    {
+      "id": "5e64466e-ee9d-4bdb-a1ad-354263b5f83b",
+      "url": "https://www.cars.com/vehicledetail/5e64466e-ee9d-4bdb-a1ad-354263b5f83b/",
+      "price": 66467,
+      "title": "2026 Toyota GR Supra 3.0 Premium",
+      "year": 2026,
+      "dealer": "Imperial Toyota"
+    },
+    {
+      "id": "e64d9052-7647-4159-a0cb-9c45c3d0413b",
+      "url": "https://www.cars.com/vehicledetail/e64d9052-7647-4159-a0cb-9c45c3d0413b/",
+      "price": 68159,
+      "title": "2026 Toyota Land Cruiser Base",
+      "year": 2026,
+      "dealer": "Bob Johnson Used"
+    }
+  ]
+}

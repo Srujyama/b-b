@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=gmc",
+  "cached_at": 1784398867.97052,
+  "cards": [
+    {
+      "id": "74534a06-4b5c-45e7-91de-5c3fbd3846b6",
+      "url": "https://www.cars.com/vehicledetail/74534a06-4b5c-45e7-91de-5c3fbd3846b6/",
+      "price": 40994,
+      "title": "2022 GMC Yukon XL SLE",
+      "year": 2022,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "bd1f738c-dbf3-4446-94e8-0b0b49941b8a",
+      "url": "https://www.cars.com/vehicledetail/bd1f738c-dbf3-4446-94e8-0b0b49941b8a/",
+      "price": 73254,
+      "title": "2024 GMC HUMMER EV Pickup 3X",
+      "year": 2024,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "e93b1066-258a-4745-9000-d6dc2a8eb697",
+      "url": "https://www.cars.com/vehicledetail/e93b1066-258a-4745-9000-d6dc2a8eb697/",
+      "price": 73113,
+      "title": "2024 GMC Yukon Denali",
+      "year": 2024,
+      "dealer": "BMW of Ramsey"
+    },
+    {
+      "id": "1f89273e-eef9-4d10-91c0-f47d59d69fd1",
+      "url": "https://www.cars.com/vehicledetail/1f89273e-eef9-4d10-91c0-f47d59d69fd1/",
+      "price": 52564,
+      "title": "2023 GMC Yukon Denali Ultimate",
+      "year": 2023,
+      "dealer": "Excel Auto Lounge"
+    },
+    {
+      "id": "f3b59193-1ac3-4e97-a179-04138556d3f8",
+      "url": "https://www.cars.com/vehicledetail/f3b59193-1ac3-4e97-a179-04138556d3f8/",
+      "price": 65990,
+      "title": "2023 GMC Yukon Denali Ultimate",
+      "year": 2023,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "bd0ca001-1c01-42b4-85be-47623de54cb2",
+      "url": "https://www.cars.com/vehicledetail/bd0ca001-1c01-42b4-85be-47623de54cb2/",
+      "price": 42549,
+      "title": "2024 GMC Sierra 1500 Elevation",
+      "year": 2024,
+      "dealer": "Burlington Chevrolet"
+    },
+    {
+      "id": "13999539-90d3-40ed-b3fc-111cc1ebdddd",
+      "url": "https://www.cars.com/vehicledetail/13999539-90d3-40ed-b3fc-111cc1ebdddd/",
+      "price": 69362,
+      "title": "2024 GMC Yukon Denali",
+      "year": 2024,
+      "dealer": "Performance Buick GMC"
+    },
+    {
+      "id": "2bbefa01-db9b-4969-9f53-8dea45e87be6",
+      "url": "https://www.cars.com/vehicledetail/2bbefa01-db9b-4969-9f53-8dea45e87be6/",
+      "price": 60165,
+      "title": "2026 GMC Sierra EV Standard Range Elevation",
+      "year": 2026,
+      "dealer": "Bomnin Chevrolet Buick GMC Nanuet"
+    },
+    {
+      "id": "c1f0f3ea-937d-4791-a391-bb00a2372522",
+      "url": "https://www.cars.com/vehicledetail/c1f0f3ea-937d-4791-a391-bb00a2372522/",
+      "price": 23294,
+      "title": "2017 GMC Yukon SLT",
+      "year": 2017,
+      "dealer": "Pellegrino Buick GMC"
+    },
+    {
+      "id": "13ff394a-d7a5-43e3-8a3f-af1d81a3d075",
+      "url": "https://www.cars.com/vehicledetail/13ff394a-d7a5-43e3-8a3f-af1d81a3d075/",
+      "price": 60479,
+      "title": "2025 GMC Sierra 1500 Denali",
+      "year": 2025,
+      "dealer": "Star GMC of Easton"
+    },
+    {
+      "id": "b54894b2-d5f0-4e00-b504-b342b9d482ed",
+      "url": "https://www.cars.com/vehicledetail/b54894b2-d5f0-4e00-b504-b342b9d482ed/",
+      "price": 49496,
+      "title": "2023 GMC Sierra 1500 Denali",
+      "year": 2023,
+      "dealer": "Performance Buick GMC"
+    },
+    {
+      "id": "efcf6ed1-288e-4f8e-aa0e-70a568131ac8",
+      "url": "https://www.cars.com/vehicledetail/efcf6ed1-288e-4f8e-aa0e-70a568131ac8/",
+      "price": 49170,
+      "title": "2024 GMC Yukon SLT",
+      "year": 2024,
+      "dealer": "East Hills Chevrolet of Freeport"
+    },
+    {
+      "id": "fe12cf0a-967b-4582-9a5f-891a5c765403",
+      "url": "https://www.cars.com/vehicledetail/fe12cf0a-967b-4582-9a5f-891a5c765403/",
+      "price": 21998,
+      "title": "2016 GMC Yukon Denali",
+      "year": 2016,
+      "dealer": "BMW of Bloomfield"
+    },
+    {
+      "id": "5bbcc7c3-a795-4427-b74a-2f85b991fc5d",
+      "url": "https://www.cars.com/vehicledetail/5bbcc7c3-a795-4427-b74a-2f85b991fc5d/",
+      "price": 32089,
+      "title": "2025 GMC Acadia Elevation",
+      "year": 2025,
+      "dealer": "Piazza Volkswagen of Langhorne"
+    },
+    {
+      "id": "31a14400-f442-4d5f-be1c-6ee2817485a1",
+      "url": "https://www.cars.com/vehicledetail/31a14400-f442-4d5f-be1c-6ee2817485a1/",
+      "price": 37670,
+      "title": "2022 GMC Sierra 1500 Elevation",
+      "year": 2022,
+      "dealer": "East Hills Chevrolet of Freeport"
+    },
+    {
+      "id": "6a056e24-ea73-4bdf-af5e-e438e5613fe9",
+      "url": "https://www.cars.com/vehicledetail/6a056e24-ea73-4bdf-af5e-e438e5613fe9/",
+      "price": 63070,
+      "title": "2022 GMC Yukon Denali",
+      "year": 2022,
+      "dealer": "Novak Motors"
+    },
+    {
+      "id": "00d21927-4027-47be-90d8-df7e0a83cb6f",
+      "url": "https://www.cars.com/vehicledetail/00d21927-4027-47be-90d8-df7e0a83cb6f/",
+      "price": 27489,
+      "title": "2019 GMC Yukon SLT",
+      "year": 2019,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "2ef1c788-73c8-45ab-ba70-354d2d2b0e31",
+      "url": "https://www.cars.com/vehicledetail/2ef1c788-73c8-45ab-ba70-354d2d2b0e31/",
+      "price": 48045,
+      "title": "2023 GMC Sierra 1500 Denali",
+      "year": 2023,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "4260fcc8-a608-4443-9dd9-e9edbaf5eb6e",
+      "url": "https://www.cars.com/vehicledetail/4260fcc8-a608-4443-9dd9-e9edbaf5eb6e/",
+      "price": 20845,
+      "title": "2019 GMC Yukon SLT",
+      "year": 2019,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "ccb2fb08-d4ca-406f-889b-8cc82407ba23",
+      "url": "https://www.cars.com/vehicledetail/ccb2fb08-d4ca-406f-889b-8cc82407ba23/",
+      "price": 90165,
+      "title": "2026 GMC HUMMER EV SUV 2X",
+      "year": 2026,
+      "dealer": "Bomnin Chevrolet Buick GMC Nanuet"
+    },
+    {
+      "id": "674e96f4-961f-46d1-b467-b57d3f5fbbc7",
+      "url": "https://www.cars.com/vehicledetail/674e96f4-961f-46d1-b467-b57d3f5fbbc7/",
+      "price": 18689,
+      "title": "2017 GMC Yukon SLT",
+      "year": 2017,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "3544c735-1a1e-4bf5-b42d-3e4e5f59a441",
+      "url": "https://www.cars.com/vehicledetail/3544c735-1a1e-4bf5-b42d-3e4e5f59a441/",
+      "price": 53997,
+      "title": "2023 GMC Yukon SLT",
+      "year": 2023,
+      "dealer": "Ingersoll Auto of Danbury"
+    },
+    {
+      "id": "eed979d9-6f53-4c4e-8e69-9ad9014ab5b8",
+      "url": "https://www.cars.com/vehicledetail/eed979d9-6f53-4c4e-8e69-9ad9014ab5b8/",
+      "price": 68998,
+      "title": "2023 GMC Yukon Denali Ultimate",
+      "year": 2023,
+      "dealer": "CarMax Albany"
+    },
+    {
+      "id": "548ded72-1cb6-4ac2-98cb-521fb047eb9d",
+      "url": "https://www.cars.com/vehicledetail/548ded72-1cb6-4ac2-98cb-521fb047eb9d/",
+      "price": 7334,
+      "title": "2007 GMC Envoy Denali",
+      "year": 2007,
+      "dealer": "Auto First LLC"
+    }
+  ]
+}

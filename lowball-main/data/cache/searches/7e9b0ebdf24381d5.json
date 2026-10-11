@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=lamborghini",
+  "cached_at": 1784398879.10813,
+  "cards": [
+    {
+      "id": "10a785ab-8448-4282-ad77-e0116a91dac1",
+      "url": "https://www.cars.com/vehicledetail/10a785ab-8448-4282-ad77-e0116a91dac1/",
+      "price": 270993,
+      "title": "2020 Lamborghini Huracan EVO Base",
+      "year": 2020,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "d4c36213-c76b-4800-b36c-ff15cec1f47d",
+      "url": "https://www.cars.com/vehicledetail/d4c36213-c76b-4800-b36c-ff15cec1f47d/",
+      "price": 219688,
+      "title": "2022 Lamborghini Urus /SELEZIONE PRE-OWNED CERTIFIED",
+      "year": 2022,
+      "dealer": "F.C. Kerbeck & Sons"
+    },
+    {
+      "id": "126d35c6-3d11-4e16-b16c-a6502ae4370f",
+      "url": "https://www.cars.com/vehicledetail/126d35c6-3d11-4e16-b16c-a6502ae4370f/",
+      "price": 267393,
+      "title": "2024 Lamborghini Urus S",
+      "year": 2024,
+      "dealer": "McLaren Philadelphia"
+    },
+    {
+      "id": "d0ae51d2-1075-409c-8703-ce44183ac772",
+      "url": "https://www.cars.com/vehicledetail/d0ae51d2-1075-409c-8703-ce44183ac772/",
+      "price": 310654,
+      "title": "2025 Lamborghini Urus SE",
+      "year": 2025,
+      "dealer": "Audi Cherry Hill"
+    },
+    {
+      "id": "f05e0a87-56e1-4ca7-bff3-77115ac45c79",
+      "url": "https://www.cars.com/vehicledetail/f05e0a87-56e1-4ca7-bff3-77115ac45c79/",
+      "price": 319999,
+      "title": "2024 Lamborghini Urus Performante",
+      "year": 2024,
+      "dealer": "Brooklyn Auto Sales"
+    },
+    {
+      "id": "434e14f4-8d90-467d-972d-b1eaa7d953ad",
+      "url": "https://www.cars.com/vehicledetail/434e14f4-8d90-467d-972d-b1eaa7d953ad/",
+      "price": 317900,
+      "title": "2024 Lamborghini Urus Performante",
+      "year": 2024,
+      "dealer": "Bespoke Motor Group - Bentley, Rolls-Royce & Lamborghini Long Island"
+    },
+    {
+      "id": "c288c8db-304f-463f-844a-5563a2267160",
+      "url": "https://www.cars.com/vehicledetail/c288c8db-304f-463f-844a-5563a2267160/",
+      "price": 190490,
+      "title": "2021 Lamborghini Urus",
+      "year": 2021,
+      "dealer": "J & S Autohaus"
+    },
+    {
+      "id": "b0f9751d-b790-419c-8dc0-a0057c34b34f",
+      "url": "https://www.cars.com/vehicledetail/b0f9751d-b790-419c-8dc0-a0057c34b34f/",
+      "price": 215555,
+      "title": "2020 Lamborghini Urus Base",
+      "year": 2020,
+      "dealer": "Performance Dodge RAM of Woodbury"
+    },
+    {
+      "id": "c4369e9a-266b-4861-ba8f-bc7a62e828bf",
+      "url": "https://www.cars.com/vehicledetail/c4369e9a-266b-4861-ba8f-bc7a62e828bf/",
+      "price": 198900,
+      "title": "2020 Lamborghini Urus Base AWD 4dr SUV",
+      "year": 2020,
+      "dealer": "Professional Sales Inc"
+    },
+    {
+      "id": "76e4eb63-e008-41ed-ab27-adcd937abfa6",
+      "url": "https://www.cars.com/vehicledetail/76e4eb63-e008-41ed-ab27-adcd937abfa6/",
+      "price": 179688,
+      "title": "2019 Lamborghini Urus /SELEZIONE PRE-OWNED CERTIFIED",
+      "year": 2019,
+      "dealer": "F.C. Kerbeck & Sons"
+    },
+    {
+      "id": "aebce07c-853a-4251-931a-06420d26144f",
+      "url": "https://www.cars.com/vehicledetail/aebce07c-853a-4251-931a-06420d26144f/",
+      "price": 779688,
+      "title": "2025 Lamborghini Revuelto Coupe",
+      "year": 2025,
+      "dealer": "F.C. Kerbeck & Sons"
+    },
+    {
+      "id": "75703b01-5340-4ef9-aafb-aabfea3813f6",
+      "url": "https://www.cars.com/vehicledetail/75703b01-5340-4ef9-aafb-aabfea3813f6/",
+      "price": 224995,
+      "title": "2017 Lamborghini Huracan LP 610-4",
+      "year": 2017,
+      "dealer": "RT Auto Center"
+    },
+    {
+      "id": "d54f9ee2-d33e-49c8-9190-16363f4529c9",
+      "url": "https://www.cars.com/vehicledetail/d54f9ee2-d33e-49c8-9190-16363f4529c9/",
+      "price": 359970,
+      "title": "2022 Lamborghini Huracan EVO Base",
+      "year": 2022,
+      "dealer": "Manhattan Motorcars"
+    },
+    {
+      "id": "61410215-a215-4a92-b41b-d4a394260f2c",
+      "url": "https://www.cars.com/vehicledetail/61410215-a215-4a92-b41b-d4a394260f2c/",
+      "price": 131799,
+      "title": "2013 Lamborghini Gallardo LP550-2",
+      "year": 2013,
+      "dealer": "Space Auto Group"
+    },
+    {
+      "id": "e4644531-14d8-466b-a517-06d859b10a7d",
+      "url": "https://www.cars.com/vehicledetail/e4644531-14d8-466b-a517-06d859b10a7d/",
+      "price": 328500,
+      "title": "2023 Lamborghini Huracan Sterrato Base",
+      "year": 2023,
+      "dealer": "McLaren Philadelphia"
+    },
+    {
+      "id": "e64c207f-3589-427e-9dd9-48a9888aad0a",
+      "url": "https://www.cars.com/vehicledetail/e64c207f-3589-427e-9dd9-48a9888aad0a/",
+      "price": 330490,
+      "title": "2020 Lamborghini Huracan EVO Base",
+      "year": 2020,
+      "dealer": "J & S Autohaus"
+    },
+    {
+      "id": "b9c1d405-ee74-4c50-9de6-c967a058f3fe",
+      "url": "https://www.cars.com/vehicledetail/b9c1d405-ee74-4c50-9de6-c967a058f3fe/",
+      "price": 270500,
+      "title": "2008 Lamborghini Gallardo Superleggera",
+      "year": 2008,
+      "dealer": "McLaren Philadelphia"
+    },
+    {
+      "id": "056c9f9b-b2ce-468d-9955-42ff8d0c3d5d",
+      "url": "https://www.cars.com/vehicledetail/056c9f9b-b2ce-468d-9955-42ff8d0c3d5d/",
+      "price": 145889,
+      "title": "2008 Lamborghini Gallardo",
+      "year": 2008,
+      "dealer": "Miracle Autosport"
+    },
+    {
+      "id": "3539620c-989e-4b14-978e-e4040bf52a95",
+      "url": "https://www.cars.com/vehicledetail/3539620c-989e-4b14-978e-e4040bf52a95/",
+      "price": 320490,
+      "title": "2021 Lamborghini Huracan EVO Base",
+      "year": 2021,
+      "dealer": "J & S Autohaus"
+    },
+    {
+      "id": "3a4b0434-fc09-402c-a5aa-f62afb37c4f2",
+      "url": "https://www.cars.com/vehicledetail/3a4b0434-fc09-402c-a5aa-f62afb37c4f2/",
+      "price": 270490,
+      "title": "2023 Lamborghini Urus Performante",
+      "year": 2023,
+      "dealer": "J & S Autohaus"
+    },
+    {
+      "id": "49da7bd6-788f-4f8f-a2f8-e2c483394747",
+      "url": "https://www.cars.com/vehicledetail/49da7bd6-788f-4f8f-a2f8-e2c483394747/",
+      "price": 309970,
+      "title": "2024 Lamborghini Huracan Sterrato Base",
+      "year": 2024,
+      "dealer": "Manhattan Motorcars"
+    },
+    {
+      "id": "f709b502-9b7f-4300-9163-331512920a2d",
+      "url": "https://www.cars.com/vehicledetail/f709b502-9b7f-4300-9163-331512920a2d/",
+      "price": 325490,
+      "title": "2025 Lamborghini Urus SE",
+      "year": 2025,
+      "dealer": "J & S Autohaus"
+    },
+    {
+      "id": "ac71a3f6-cdba-4807-9148-f1782ef514c2",
+      "url": "https://www.cars.com/vehicledetail/ac71a3f6-cdba-4807-9148-f1782ef514c2/",
+      "price": 270994,
+      "title": "2022 Lamborghini Huracan EVO Coupe RWD",
+      "year": 2022,
+      "dealer": "Auto Buying Service"
+    },
+    {
+      "id": "61717dc5-77c4-41a5-9745-2f8aff42941f",
+      "url": "https://www.cars.com/vehicledetail/61717dc5-77c4-41a5-9745-2f8aff42941f/",
+      "price": 289995,
+      "title": "2021 Lamborghini Huracan EVO Spyder",
+      "year": 2021,
+      "dealer": "Perfect Auto Collection"
+    }
+  ]
+}

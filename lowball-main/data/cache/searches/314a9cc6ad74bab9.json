@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=hyundai",
+  "cached_at": 1784398685.9057221,
+  "cards": [
+    {
+      "id": "4635886e-1b82-4139-a878-146ae1a4875a",
+      "url": "https://www.cars.com/vehicledetail/4635886e-1b82-4139-a878-146ae1a4875a/",
+      "price": 15894,
+      "title": "2021 Hyundai TUCSON Value",
+      "year": 2021,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "5c58c329-6fcb-40b2-84a5-5e72c5fe18e2",
+      "url": "https://www.cars.com/vehicledetail/5c58c329-6fcb-40b2-84a5-5e72c5fe18e2/",
+      "price": 31686,
+      "title": "2023 Hyundai SANTA FE Calligraphy",
+      "year": 2023,
+      "dealer": "Executive Dodge Jeep RAM"
+    },
+    {
+      "id": "f737440a-80ae-41b1-99ec-003a93d20f2a",
+      "url": "https://www.cars.com/vehicledetail/f737440a-80ae-41b1-99ec-003a93d20f2a/",
+      "price": 23990,
+      "title": "2024 Hyundai TUCSON SE",
+      "year": 2024,
+      "dealer": "Edison Nissan"
+    },
+    {
+      "id": "86261f11-7a17-4339-a618-30c5404762c9",
+      "url": "https://www.cars.com/vehicledetail/86261f11-7a17-4339-a618-30c5404762c9/",
+      "price": 16489,
+      "title": "2021 Hyundai ELANTRA SEL",
+      "year": 2021,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "237c8b0b-c577-46e9-933f-1b0f8c8df956",
+      "url": "https://www.cars.com/vehicledetail/237c8b0b-c577-46e9-933f-1b0f8c8df956/",
+      "price": 18670,
+      "title": "2024 Hyundai ELANTRA SEL",
+      "year": 2024,
+      "dealer": "East Hills Chevrolet of Freeport"
+    },
+    {
+      "id": "696a94f8-a2d1-40a7-809f-128be6503be8",
+      "url": "https://www.cars.com/vehicledetail/696a94f8-a2d1-40a7-809f-128be6503be8/",
+      "price": 18679,
+      "title": "2023 Hyundai TUCSON SE",
+      "year": 2023,
+      "dealer": "DCH Montclair Acura"
+    },
+    {
+      "id": "061fbfad-516d-411f-9560-bfdff14d48d0",
+      "url": "https://www.cars.com/vehicledetail/061fbfad-516d-411f-9560-bfdff14d48d0/",
+      "price": 24694,
+      "title": "2025 Hyundai ELANTRA N Line",
+      "year": 2025,
+      "dealer": "DCH Paramus Honda"
+    },
+    {
+      "id": "e3447e36-7c4a-499e-96a3-c0a52f26f721",
+      "url": "https://www.cars.com/vehicledetail/e3447e36-7c4a-499e-96a3-c0a52f26f721/",
+      "price": 17576,
+      "title": "2024 Hyundai VENUE SEL",
+      "year": 2024,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "0c7cfacd-e475-403c-97ae-228382ba2e51",
+      "url": "https://www.cars.com/vehicledetail/0c7cfacd-e475-403c-97ae-228382ba2e51/",
+      "price": 25990,
+      "title": "2025 Hyundai TUCSON SEL",
+      "year": 2025,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "65e2b761-99c7-4d54-b9ea-030d723451b0",
+      "url": "https://www.cars.com/vehicledetail/65e2b761-99c7-4d54-b9ea-030d723451b0/",
+      "price": 15994,
+      "title": "2019 Hyundai TUCSON SE",
+      "year": 2019,
+      "dealer": "DCH Paramus Honda"
+    },
+    {
+      "id": "e1253c29-5f20-4c59-a7fe-09ca71f607e4",
+      "url": "https://www.cars.com/vehicledetail/e1253c29-5f20-4c59-a7fe-09ca71f607e4/",
+      "price": 19148,
+      "title": "2023 Hyundai ELANTRA SEL",
+      "year": 2023,
+      "dealer": "Raceway Kia of Freehold"
+    },
+    {
+      "id": "0943c51e-936d-48bb-b1f5-f282c8ba7580",
+      "url": "https://www.cars.com/vehicledetail/0943c51e-936d-48bb-b1f5-f282c8ba7580/",
+      "price": 23744,
+      "title": "2024 Hyundai ELANTRA Limited",
+      "year": 2024,
+      "dealer": "Lester Glenn Hyundai"
+    },
+    {
+      "id": "6da9ee1c-7ef1-433e-8857-221e12d489b4",
+      "url": "https://www.cars.com/vehicledetail/6da9ee1c-7ef1-433e-8857-221e12d489b4/",
+      "price": 9863,
+      "title": "2018 Hyundai TUCSON SEL Plus",
+      "year": 2018,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "d5cad898-4974-4b74-aaa6-63ee411f793c",
+      "url": "https://www.cars.com/vehicledetail/d5cad898-4974-4b74-aaa6-63ee411f793c/",
+      "price": 20647,
+      "title": "2022 Hyundai KONA Limited",
+      "year": 2022,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "bc11ffc1-91d1-4120-b264-5aa516d6ebd1",
+      "url": "https://www.cars.com/vehicledetail/bc11ffc1-91d1-4120-b264-5aa516d6ebd1/",
+      "price": 19990,
+      "title": "2021 Hyundai ELANTRA N Line",
+      "year": 2021,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "8a9e467c-e675-429f-a437-61410ac7a04b",
+      "url": "https://www.cars.com/vehicledetail/8a9e467c-e675-429f-a437-61410ac7a04b/",
+      "price": 12975,
+      "title": "2019 Hyundai TUCSON SE",
+      "year": 2019,
+      "dealer": "Tasca Central Ave Hyundai"
+    },
+    {
+      "id": "4042ab0e-763e-4f3a-9728-6707701ebf39",
+      "url": "https://www.cars.com/vehicledetail/4042ab0e-763e-4f3a-9728-6707701ebf39/",
+      "price": 12198,
+      "title": "2018 Hyundai TUCSON SEL",
+      "year": 2018,
+      "dealer": "Hudson Toyota"
+    },
+    {
+      "id": "850b81a6-d46a-41d3-bfe5-8bb0802a58cd",
+      "url": "https://www.cars.com/vehicledetail/850b81a6-d46a-41d3-bfe5-8bb0802a58cd/",
+      "price": 26994,
+      "title": "2023 Hyundai TUCSON Limited",
+      "year": 2023,
+      "dealer": "Route 46 Nissan"
+    },
+    {
+      "id": "e127da60-5322-42f2-aa7b-d937607afca2",
+      "url": "https://www.cars.com/vehicledetail/e127da60-5322-42f2-aa7b-d937607afca2/",
+      "price": 30897,
+      "title": "2025 Hyundai TUCSON Limited",
+      "year": 2025,
+      "dealer": "Planet Honda"
+    },
+    {
+      "id": "f6a8785c-afbd-4c5e-aae1-68db5fd3b998",
+      "url": "https://www.cars.com/vehicledetail/f6a8785c-afbd-4c5e-aae1-68db5fd3b998/",
+      "price": 26204,
+      "title": "2022 Hyundai TUCSON Hybrid Limited",
+      "year": 2022,
+      "dealer": "Hyundai of Turnersville"
+    },
+    {
+      "id": "57093236-efd3-45f9-b988-122432244403",
+      "url": "https://www.cars.com/vehicledetail/57093236-efd3-45f9-b988-122432244403/",
+      "price": 16489,
+      "title": "2021 Hyundai TUCSON Value",
+      "year": 2021,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "6c00ddbb-6178-4db7-a7a9-379315137be7",
+      "url": "https://www.cars.com/vehicledetail/6c00ddbb-6178-4db7-a7a9-379315137be7/",
+      "price": 13295,
+      "title": "2022 Hyundai ELANTRA SEL",
+      "year": 2022,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "bf89b736-ddac-48d5-99af-84c245400c01",
+      "url": "https://www.cars.com/vehicledetail/bf89b736-ddac-48d5-99af-84c245400c01/",
+      "price": 29998,
+      "title": "2022 Hyundai Veloster N",
+      "year": 2022,
+      "dealer": "CarMax Dulles"
+    },
+    {
+      "id": "53cec4a8-b0a8-4627-a930-ddfada47724a",
+      "url": "https://www.cars.com/vehicledetail/53cec4a8-b0a8-4627-a930-ddfada47724a/",
+      "price": 15749,
+      "title": "2020 Hyundai KONA EV Ultimate",
+      "year": 2020,
+      "dealer": "Easterns Automotive Group of Temple Hills"
+    }
+  ]
+}

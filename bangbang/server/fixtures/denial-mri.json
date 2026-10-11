@@ -1,0 +1,26 @@
+{
+  "_note": "DEMO SEED DATA — a fictional, de-identified denied claim for the clinic-mode demo. The payer policy and criteria are NOT stored here; they are looked up live from the payer's site via Context.dev.",
+  "claim": {
+    "payer": "Aetna",
+    "denialReason": "Not medically necessary. The documentation submitted does not establish that the member has completed an adequate trial of conservative therapy or has neurological findings that would warrant advanced imaging of the lumbar spine.",
+    "procedure": { "code": "72148", "description": "MRI lumbar spine without contrast" },
+    "diagnoses": [
+      { "code": "M54.17", "description": "Radiculopathy, lumbosacral region" },
+      { "code": "M51.17", "description": "Intervertebral disc disorders with radiculopathy, lumbosacral region" },
+      { "code": "R29.898", "description": "Other symptoms and signs involving the musculoskeletal system (left plantarflexion weakness)" }
+    ],
+    "claimNumber": "EXAMPLE-2026-0917-4412",
+    "memberId": "W00000000 (redacted)",
+    "patientInitials": "J.R., 47-year-old male",
+    "dateOfService": "2026-09-17",
+    "denialDate": "2026-09-30",
+    "provider": {
+      "name": "Bayview Spine & Sports Medicine (demo clinic)",
+      "physician": "Dr. A. Patel, MD (demo)",
+      "npi": "0000000000",
+      "address": "100 Example Ave, Suite 200, Oakland, CA 94612",
+      "phone": "(510) 555-0142"
+    },
+    "clinicalNotes": "DATE OF VISIT: 2026-09-15. Follow-up, spine clinic.\nHPI: 47-year-old male with low back pain radiating down the posterior left leg to the lateral foot since 2026-07-14 (9 weeks). Pain 7/10, worse with sitting and coughing. Reports numbness of the lateral left foot and difficulty pushing off with the left foot when walking.\nCONSERVATIVE TREATMENT: Completed 6 weeks of supervised physical therapy (12 sessions, 2026-07-21 to 2026-08-29) with McKenzie extension program and core stabilization, without improvement. Naproxen 500 mg twice daily for 8 weeks and a methylprednisolone dose pack on 2026-08-04 with only transient relief. Activity modification and home exercise program ongoing.\nEXAM: Positive straight leg raise on the left at 35 degrees reproducing radicular pain below the knee. Left ankle (Achilles) reflex absent; right 2+. Left plantarflexion strength 4/5; unable to perform single-leg heel raise on the left. Decreased light-touch sensation over the lateral left foot (S1 dermatome). Gait antalgic.\nRED FLAGS: No bowel or bladder dysfunction, no saddle anesthesia, no fever, no weight loss, no history of cancer.\nIMAGING: Lumbar spine X-rays 2026-07-21: mild L5-S1 disc space narrowing, no fracture or listhesis. No prior lumbar MRI.\nASSESSMENT: Left S1 radiculopathy with objective neurological deficit (absent Achilles reflex, plantarflexion weakness), persisting after more than 6 weeks of conservative therapy. Suspect L5-S1 disc herniation.\nPLAN: MRI lumbar spine without contrast to define the lesion and plan treatment; the patient is a candidate for an epidural steroid injection or surgical consultation depending on findings."
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=nissan",
+  "cached_at": 1784398668.125392,
+  "cards": [
+    {
+      "id": "c2e42180-7720-45c6-8e58-595c94d500fb",
+      "url": "https://www.cars.com/vehicledetail/c2e42180-7720-45c6-8e58-595c94d500fb/",
+      "price": 23513,
+      "title": "2023 Nissan Altima 2.5 SV",
+      "year": 2023,
+      "dealer": "Napoli Nissan"
+    },
+    {
+      "id": "b7d17749-f143-4a63-aec9-bddac1ff11ac",
+      "url": "https://www.cars.com/vehicledetail/b7d17749-f143-4a63-aec9-bddac1ff11ac/",
+      "price": 20686,
+      "title": "2023 Nissan Altima 2.5 S",
+      "year": 2023,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "2ad448d9-7429-4bec-a49d-763fa060e056",
+      "url": "https://www.cars.com/vehicledetail/2ad448d9-7429-4bec-a49d-763fa060e056/",
+      "price": 22994,
+      "title": "2023 Nissan Rogue SV",
+      "year": 2023,
+      "dealer": "Route 46 Nissan"
+    },
+    {
+      "id": "350a126b-4522-4b67-80d9-87a981221066",
+      "url": "https://www.cars.com/vehicledetail/350a126b-4522-4b67-80d9-87a981221066/",
+      "price": 14044,
+      "title": "2022 Nissan Altima 2.5 SV",
+      "year": 2022,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "96e8a1b5-95aa-4953-a8c1-be96470c02bd",
+      "url": "https://www.cars.com/vehicledetail/96e8a1b5-95aa-4953-a8c1-be96470c02bd/",
+      "price": 9998,
+      "title": "2014 Nissan Rogue SV",
+      "year": 2014,
+      "dealer": "BMW of Bloomfield"
+    },
+    {
+      "id": "9634e58b-6a5c-4d92-bfec-2366369d9881",
+      "url": "https://www.cars.com/vehicledetail/9634e58b-6a5c-4d92-bfec-2366369d9881/",
+      "price": 14993,
+      "title": "2022 Nissan Rogue SV",
+      "year": 2022,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "f7fd1970-8839-41e6-adc9-e33638d8857d",
+      "url": "https://www.cars.com/vehicledetail/f7fd1970-8839-41e6-adc9-e33638d8857d/",
+      "price": 6589,
+      "title": "2015 Nissan Rogue S",
+      "year": 2015,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "6f3c6232-cbe1-44f9-a3f0-9a33c490e2e2",
+      "url": "https://www.cars.com/vehicledetail/6f3c6232-cbe1-44f9-a3f0-9a33c490e2e2/",
+      "price": 28188,
+      "title": "2023 Nissan Rogue Platinum",
+      "year": 2023,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "9b1abecd-dd66-4aaf-a9d6-e6cd139b70b0",
+      "url": "https://www.cars.com/vehicledetail/9b1abecd-dd66-4aaf-a9d6-e6cd139b70b0/",
+      "price": 15989,
+      "title": "2023 Nissan Rogue SV",
+      "year": 2023,
+      "dealer": "CarVision of Trooper"
+    },
+    {
+      "id": "a8bf3e7f-c576-4a49-81bf-af26520d1182",
+      "url": "https://www.cars.com/vehicledetail/a8bf3e7f-c576-4a49-81bf-af26520d1182/",
+      "price": 19955,
+      "title": "2023 Nissan Rogue SV",
+      "year": 2023,
+      "dealer": "Star Auto Mall"
+    },
+    {
+      "id": "452839fd-0b85-48cd-b905-0be1d86cd23c",
+      "url": "https://www.cars.com/vehicledetail/452839fd-0b85-48cd-b905-0be1d86cd23c/",
+      "price": 20387,
+      "title": "2023 Nissan Rogue SV",
+      "year": 2023,
+      "dealer": "Mercedes-Benz of Paramus"
+    },
+    {
+      "id": "375b988b-ba07-4530-b6cc-c02452ed3f40",
+      "url": "https://www.cars.com/vehicledetail/375b988b-ba07-4530-b6cc-c02452ed3f40/",
+      "price": 29642,
+      "title": "2025 Nissan Rogue Rock Creek",
+      "year": 2025,
+      "dealer": "Nissan of Huntington"
+    },
+    {
+      "id": "575e7e08-5a20-43b1-b6c7-76d7949b08b7",
+      "url": "https://www.cars.com/vehicledetail/575e7e08-5a20-43b1-b6c7-76d7949b08b7/",
+      "price": 18595,
+      "title": "2024 Nissan Altima 2.5 SV",
+      "year": 2024,
+      "dealer": "South Shore Nissan"
+    },
+    {
+      "id": "7359787a-4cf6-4278-bb1d-4aeaa8118dc4",
+      "url": "https://www.cars.com/vehicledetail/7359787a-4cf6-4278-bb1d-4aeaa8118dc4/",
+      "price": 15298,
+      "title": "2020 Nissan Rogue S",
+      "year": 2020,
+      "dealer": "Chapman Auto Store of EHT, NJ"
+    },
+    {
+      "id": "db3934e5-d42b-4550-8544-b76bc77ee1ff",
+      "url": "https://www.cars.com/vehicledetail/db3934e5-d42b-4550-8544-b76bc77ee1ff/",
+      "price": 25928,
+      "title": "2023 Nissan Rogue Platinum",
+      "year": 2023,
+      "dealer": "Legend Nissan"
+    },
+    {
+      "id": "5a9a8242-0727-45a1-97a6-90057a622289",
+      "url": "https://www.cars.com/vehicledetail/5a9a8242-0727-45a1-97a6-90057a622289/",
+      "price": 24988,
+      "title": "2023 Nissan Rogue SL",
+      "year": 2023,
+      "dealer": "Kelly Nissan"
+    },
+    {
+      "id": "e134f6dd-9e62-4c33-85b4-d5f7661bf20a",
+      "url": "https://www.cars.com/vehicledetail/e134f6dd-9e62-4c33-85b4-d5f7661bf20a/",
+      "price": 31500,
+      "title": "2025 Nissan Rogue Platinum",
+      "year": 2025,
+      "dealer": "Raceway Nissan of Freehold"
+    },
+    {
+      "id": "52326c8a-085b-4352-9918-1457e1b0a747",
+      "url": "https://www.cars.com/vehicledetail/52326c8a-085b-4352-9918-1457e1b0a747/",
+      "price": 19997,
+      "title": "2023 Nissan Altima 2.5 SV",
+      "year": 2023,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "7f5ef3f7-e3c5-4303-8864-18e97b16de4a",
+      "url": "https://www.cars.com/vehicledetail/7f5ef3f7-e3c5-4303-8864-18e97b16de4a/",
+      "price": 15775,
+      "title": "2019 Nissan Rogue S",
+      "year": 2019,
+      "dealer": "Napoli Kia"
+    },
+    {
+      "id": "af4f2135-8128-469a-8fa3-bf5d3fa4ab10",
+      "url": "https://www.cars.com/vehicledetail/af4f2135-8128-469a-8fa3-bf5d3fa4ab10/",
+      "price": 18500,
+      "title": "2025 Nissan Altima 2.5 SV",
+      "year": 2025,
+      "dealer": "Stelly Nissan of Yorktown Heights"
+    },
+    {
+      "id": "620fd056-f351-4500-a575-6276a26f7be2",
+      "url": "https://www.cars.com/vehicledetail/620fd056-f351-4500-a575-6276a26f7be2/",
+      "price": 9326,
+      "title": "2017 Nissan Altima 2.5 S",
+      "year": 2017,
+      "dealer": "Honda of Mahwah"
+    },
+    {
+      "id": "025e0a79-c51b-4baa-af6f-a64da5ae4fc6",
+      "url": "https://www.cars.com/vehicledetail/025e0a79-c51b-4baa-af6f-a64da5ae4fc6/",
+      "price": 16200,
+      "title": "2018 Nissan Rogue SL",
+      "year": 2018,
+      "dealer": "BMW of Ramsey"
+    },
+    {
+      "id": "32e4b0c4-5f16-41b8-8084-b8ba8c750068",
+      "url": "https://www.cars.com/vehicledetail/32e4b0c4-5f16-41b8-8084-b8ba8c750068/",
+      "price": 28998,
+      "title": "2018 Nissan 370Z Touring",
+      "year": 2018,
+      "dealer": "CarMax Danvers"
+    },
+    {
+      "id": "20769a4e-5d20-421b-ac8b-7e0350c64ecd",
+      "url": "https://www.cars.com/vehicledetail/20769a4e-5d20-421b-ac8b-7e0350c64ecd/",
+      "price": 29998,
+      "title": "2017 Nissan 370Z Sport",
+      "year": 2017,
+      "dealer": "CarMax Albany"
+    }
+  ]
+}

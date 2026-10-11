@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=kia",
+  "cached_at": 1784398711.503062,
+  "cards": [
+    {
+      "id": "eb853892-54e2-46bd-aae3-91cbec2636b2",
+      "url": "https://www.cars.com/vehicledetail/eb853892-54e2-46bd-aae3-91cbec2636b2/",
+      "price": 24395,
+      "title": "2023 Kia Seltos SX",
+      "year": 2023,
+      "dealer": "Napoli Kia"
+    },
+    {
+      "id": "486c3a4b-817c-47c2-ab67-7058c89516af",
+      "url": "https://www.cars.com/vehicledetail/486c3a4b-817c-47c2-ab67-7058c89516af/",
+      "price": 35975,
+      "title": "2024 Kia Telluride EX",
+      "year": 2024,
+      "dealer": "Volkswagen of Springfield"
+    },
+    {
+      "id": "87052401-3c94-4dda-b3b0-2047f91849f3",
+      "url": "https://www.cars.com/vehicledetail/87052401-3c94-4dda-b3b0-2047f91849f3/",
+      "price": 30785,
+      "title": "2025 Kia Sorento S",
+      "year": 2025,
+      "dealer": "Premier Subaru Kia"
+    },
+    {
+      "id": "4884fdb7-64dd-4783-bc0e-05fe9a6be4e1",
+      "url": "https://www.cars.com/vehicledetail/4884fdb7-64dd-4783-bc0e-05fe9a6be4e1/",
+      "price": 14997,
+      "title": "2017 Kia Sorento EX",
+      "year": 2017,
+      "dealer": "BMW of Bloomfield"
+    },
+    {
+      "id": "dea41336-5733-4c00-b8ab-40d33d4b648d",
+      "url": "https://www.cars.com/vehicledetail/dea41336-5733-4c00-b8ab-40d33d4b648d/",
+      "price": 36490,
+      "title": "2024 Kia Telluride SX",
+      "year": 2024,
+      "dealer": "Unique Auto Mall"
+    },
+    {
+      "id": "0007cff0-9ed6-4d07-b651-d445db7a6da9",
+      "url": "https://www.cars.com/vehicledetail/0007cff0-9ed6-4d07-b651-d445db7a6da9/",
+      "price": 41454,
+      "title": "2024 Kia Telluride SX-Prestige X-Line",
+      "year": 2024,
+      "dealer": "Crowley Kia"
+    },
+    {
+      "id": "a8947a56-1d9b-4609-a1a6-383eab0808cd",
+      "url": "https://www.cars.com/vehicledetail/a8947a56-1d9b-4609-a1a6-383eab0808cd/",
+      "price": 7038,
+      "title": "2012 Kia Sorento EX",
+      "year": 2012,
+      "dealer": "DCH Academy Honda"
+    },
+    {
+      "id": "dcf89195-58e1-4c3d-909d-008961317e1f",
+      "url": "https://www.cars.com/vehicledetail/dcf89195-58e1-4c3d-909d-008961317e1f/",
+      "price": 28135,
+      "title": "2020 Kia Stinger GT",
+      "year": 2020,
+      "dealer": "Honda Universe"
+    },
+    {
+      "id": "1c8557dd-a3b4-41f0-8a1a-dd367a793ebe",
+      "url": "https://www.cars.com/vehicledetail/1c8557dd-a3b4-41f0-8a1a-dd367a793ebe/",
+      "price": 30347,
+      "title": "2022 Kia Telluride S",
+      "year": 2022,
+      "dealer": "Winner Ford"
+    },
+    {
+      "id": "4a9187af-c52c-49a0-895a-d89b6854ef10",
+      "url": "https://www.cars.com/vehicledetail/4a9187af-c52c-49a0-895a-d89b6854ef10/",
+      "price": 33526,
+      "title": "2025 Kia Telluride S",
+      "year": 2025,
+      "dealer": "Executive Kia"
+    },
+    {
+      "id": "5433a7ac-81da-4d20-9830-47b309acc536",
+      "url": "https://www.cars.com/vehicledetail/5433a7ac-81da-4d20-9830-47b309acc536/",
+      "price": 40242,
+      "title": "2024 Kia Telluride SX-Prestige",
+      "year": 2024,
+      "dealer": "Sands Chrysler Jeep Dodge RAM"
+    },
+    {
+      "id": "b65f6a64-5665-418e-8c3d-498e3587c9a7",
+      "url": "https://www.cars.com/vehicledetail/b65f6a64-5665-418e-8c3d-498e3587c9a7/",
+      "price": 35401,
+      "title": "2024 Kia Telluride S",
+      "year": 2024,
+      "dealer": "Burlington Kia"
+    },
+    {
+      "id": "1766251f-24d0-4ddd-807a-6a26e2606c8e",
+      "url": "https://www.cars.com/vehicledetail/1766251f-24d0-4ddd-807a-6a26e2606c8e/",
+      "price": 37481,
+      "title": "2024 Kia Sorento SX",
+      "year": 2024,
+      "dealer": "Sloane Toyota of Malvern"
+    },
+    {
+      "id": "f04df92c-28cc-48d1-9336-e64559bd69c7",
+      "url": "https://www.cars.com/vehicledetail/f04df92c-28cc-48d1-9336-e64559bd69c7/",
+      "price": 13623,
+      "title": "2019 Kia Sportage LX",
+      "year": 2019,
+      "dealer": "Executive Honda"
+    },
+    {
+      "id": "9ef12513-a34a-4d30-bd24-4e1edd562b54",
+      "url": "https://www.cars.com/vehicledetail/9ef12513-a34a-4d30-bd24-4e1edd562b54/",
+      "price": 29794,
+      "title": "2022 Kia Telluride EX",
+      "year": 2022,
+      "dealer": "Acura of Ramsey"
+    },
+    {
+      "id": "816fb3e2-ea59-4e6c-8c88-ab58f053d534",
+      "url": "https://www.cars.com/vehicledetail/816fb3e2-ea59-4e6c-8c88-ab58f053d534/",
+      "price": 30686,
+      "title": "2025 Kia Sorento S",
+      "year": 2025,
+      "dealer": "Executive Kia"
+    },
+    {
+      "id": "9bf6ebfa-37fc-441e-b7cd-b92a2ed328a5",
+      "url": "https://www.cars.com/vehicledetail/9bf6ebfa-37fc-441e-b7cd-b92a2ed328a5/",
+      "price": 31439,
+      "title": "2024 Kia Telluride S",
+      "year": 2024,
+      "dealer": "Boardwalk Honda"
+    },
+    {
+      "id": "434b0d73-92d4-4115-97b7-89867c206e4c",
+      "url": "https://www.cars.com/vehicledetail/434b0d73-92d4-4115-97b7-89867c206e4c/",
+      "price": 29652,
+      "title": "2023 Kia Sorento SX",
+      "year": 2023,
+      "dealer": "Northstar Kia"
+    },
+    {
+      "id": "6593107e-33bc-42b5-b491-b5def699d3c9",
+      "url": "https://www.cars.com/vehicledetail/6593107e-33bc-42b5-b491-b5def699d3c9/",
+      "price": 30198,
+      "title": "2023 Kia Sorento EX",
+      "year": 2023,
+      "dealer": "Kia of Riverdale"
+    },
+    {
+      "id": "64ab85e0-0e67-4ca2-a7aa-ab4bb99cd003",
+      "url": "https://www.cars.com/vehicledetail/64ab85e0-0e67-4ca2-a7aa-ab4bb99cd003/",
+      "price": 23480,
+      "title": "2025 Kia K5 LXS",
+      "year": 2025,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "a3ccb50e-5181-47a3-9ef2-571df3ba2e34",
+      "url": "https://www.cars.com/vehicledetail/a3ccb50e-5181-47a3-9ef2-571df3ba2e34/",
+      "price": 34972,
+      "title": "2023 Kia Telluride SX Prestige X-Pro",
+      "year": 2023,
+      "dealer": "Fette INFINITI"
+    },
+    {
+      "id": "8e9691a2-eeed-4aa9-afb6-4b3e735d0b4f",
+      "url": "https://www.cars.com/vehicledetail/8e9691a2-eeed-4aa9-afb6-4b3e735d0b4f/",
+      "price": 29574,
+      "title": "2023 Kia Sorento S",
+      "year": 2023,
+      "dealer": "Novak Motors"
+    },
+    {
+      "id": "e64d705a-97cc-4539-8a7a-1012520ffd9f",
+      "url": "https://www.cars.com/vehicledetail/e64d705a-97cc-4539-8a7a-1012520ffd9f/",
+      "price": 20224,
+      "title": "2020 Kia Stinger GT-Line",
+      "year": 2020,
+      "dealer": "Easterns Automotive Group of Temple Hills"
+    },
+    {
+      "id": "aa5ecf79-f4bf-4872-97cf-8de7e8a1632e",
+      "url": "https://www.cars.com/vehicledetail/aa5ecf79-f4bf-4872-97cf-8de7e8a1632e/",
+      "price": 8967,
+      "title": "2014 Kia Rio LX",
+      "year": 2014,
+      "dealer": "Imperial Chevrolet"
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=mercedes_benz",
+  "cached_at": 1784398784.892318,
+  "cards": [
+    {
+      "id": "a214d200-44f2-4611-913e-3a6352d01f60",
+      "url": "https://www.cars.com/vehicledetail/a214d200-44f2-4611-913e-3a6352d01f60/",
+      "price": 57899,
+      "title": "2017 Mercedes-Benz G-Class G 550",
+      "year": 2017,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "2d93168f-bdd4-4336-8e82-66fd4a16b335",
+      "url": "https://www.cars.com/vehicledetail/2d93168f-bdd4-4336-8e82-66fd4a16b335/",
+      "price": 56894,
+      "title": "2021 Mercedes-Benz AMG GLE 53 Base",
+      "year": 2021,
+      "dealer": "Hoffman Audi of East Hartford"
+    },
+    {
+      "id": "58bc17a5-63a6-47b4-a6b6-0277b079f0bc",
+      "url": "https://www.cars.com/vehicledetail/58bc17a5-63a6-47b4-a6b6-0277b079f0bc/",
+      "price": 66875,
+      "title": "2022 Mercedes-Benz S-Class S 500 4MATIC",
+      "year": 2022,
+      "dealer": "Benzel-Busch Motor Car"
+    },
+    {
+      "id": "368f346a-852e-420d-b45c-597dd391891c",
+      "url": "https://www.cars.com/vehicledetail/368f346a-852e-420d-b45c-597dd391891c/",
+      "price": 35294,
+      "title": "2016 Mercedes-Benz S-Class 4MATIC",
+      "year": 2016,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "b95c12c0-7ae4-4c4a-beae-3d569199e217",
+      "url": "https://www.cars.com/vehicledetail/b95c12c0-7ae4-4c4a-beae-3d569199e217/",
+      "price": 60899,
+      "title": "2023 Mercedes-Benz S-Class S 500 4MATIC",
+      "year": 2023,
+      "dealer": "Mercedes-Benz of Paramus"
+    },
+    {
+      "id": "e8ac7fe5-2bc6-46e8-87aa-57710b6b3b29",
+      "url": "https://www.cars.com/vehicledetail/e8ac7fe5-2bc6-46e8-87aa-57710b6b3b29/",
+      "price": 72142,
+      "title": "2023 Mercedes-Benz S-Class S 500 4MATIC",
+      "year": 2023,
+      "dealer": "Silver Star Motors"
+    },
+    {
+      "id": "fee2b07f-689d-4241-bf96-2e90cee5dfd8",
+      "url": "https://www.cars.com/vehicledetail/fee2b07f-689d-4241-bf96-2e90cee5dfd8/",
+      "price": 39724,
+      "title": "2019 Mercedes-Benz S-Class S 560 4MATIC",
+      "year": 2019,
+      "dealer": "Wiz Autos"
+    },
+    {
+      "id": "3a412c75-0643-4f29-85e3-a8529a730227",
+      "url": "https://www.cars.com/vehicledetail/3a412c75-0643-4f29-85e3-a8529a730227/",
+      "price": 49999,
+      "title": "2023 Mercedes-Benz AMG C 43 4MATIC",
+      "year": 2023,
+      "dealer": "Mercedes-Benz of Princeton"
+    },
+    {
+      "id": "33055841-0388-4e21-a251-08c3206475cd",
+      "url": "https://www.cars.com/vehicledetail/33055841-0388-4e21-a251-08c3206475cd/",
+      "price": 63683,
+      "title": "2022 Mercedes-Benz S-Class 4MATIC",
+      "year": 2022,
+      "dealer": "Mercedes-Benz of Edison"
+    },
+    {
+      "id": "4ac49ef4-c555-40e4-892e-ea81086a95d6",
+      "url": "https://www.cars.com/vehicledetail/4ac49ef4-c555-40e4-892e-ea81086a95d6/",
+      "price": 62989,
+      "title": "2022 Mercedes-Benz S-Class 4MATIC",
+      "year": 2022,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "c1611044-c4a6-4e38-93aa-92cede218a8c",
+      "url": "https://www.cars.com/vehicledetail/c1611044-c4a6-4e38-93aa-92cede218a8c/",
+      "price": 11535,
+      "title": "2016 Mercedes-Benz E-Class E 350 Sedan 4D",
+      "year": 2016,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "ea837831-9eab-467c-b4ba-2718594de299",
+      "url": "https://www.cars.com/vehicledetail/ea837831-9eab-467c-b4ba-2718594de299/",
+      "price": 66495,
+      "title": "2026 Mercedes-Benz E-Class E 350",
+      "year": 2026,
+      "dealer": "Ray Catena Mercedes Benz Freehold"
+    },
+    {
+      "id": "0018e14f-b1dc-4562-8726-8a9d65e3c1e1",
+      "url": "https://www.cars.com/vehicledetail/0018e14f-b1dc-4562-8726-8a9d65e3c1e1/",
+      "price": 35789,
+      "title": "2022 Mercedes-Benz E-Class 4MATIC",
+      "year": 2022,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "e548f469-36d1-4ac6-9df9-87d4c76a53d2",
+      "url": "https://www.cars.com/vehicledetail/e548f469-36d1-4ac6-9df9-87d4c76a53d2/",
+      "price": 57999,
+      "title": "2022 Mercedes-Benz AMG E 53 4MATIC",
+      "year": 2022,
+      "dealer": "Mercedes-Benz of Princeton"
+    },
+    {
+      "id": "691742a4-566d-4cb8-bf53-5edf8c2bdd53",
+      "url": "https://www.cars.com/vehicledetail/691742a4-566d-4cb8-bf53-5edf8c2bdd53/",
+      "price": 71254,
+      "title": "2026 Mercedes-Benz E-Class E 450 4MATIC",
+      "year": 2026,
+      "dealer": "Rallye Motors"
+    },
+    {
+      "id": "5c8d88bd-bf31-4135-98ce-e539cc974d34",
+      "url": "https://www.cars.com/vehicledetail/5c8d88bd-bf31-4135-98ce-e539cc974d34/",
+      "price": 49165,
+      "title": "2025 Mercedes-Benz E-Class E 350",
+      "year": 2025,
+      "dealer": "Northstar Kia"
+    },
+    {
+      "id": "5051ec3a-138f-43e7-bc49-ef50e12bffcd",
+      "url": "https://www.cars.com/vehicledetail/5051ec3a-138f-43e7-bc49-ef50e12bffcd/",
+      "price": 45098,
+      "title": "2023 Mercedes-Benz E-Class E 350 4MATIC",
+      "year": 2023,
+      "dealer": "Mercedes-Benz of Rockville Centre"
+    },
+    {
+      "id": "626d0b52-3748-4396-9a8c-2d663dbf2565",
+      "url": "https://www.cars.com/vehicledetail/626d0b52-3748-4396-9a8c-2d663dbf2565/",
+      "price": 65745,
+      "title": "2026 Mercedes-Benz E-Class E 350",
+      "year": 2026,
+      "dealer": "Mercedes-Benz of White Plains"
+    },
+    {
+      "id": "dee2fd27-4f5d-4e5b-927f-48ecd8c7b29b",
+      "url": "https://www.cars.com/vehicledetail/dee2fd27-4f5d-4e5b-927f-48ecd8c7b29b/",
+      "price": 41499,
+      "title": "2023 Mercedes-Benz E-Class 4MATIC",
+      "year": 2023,
+      "dealer": "Mercedes-Benz of Atlantic City"
+    },
+    {
+      "id": "9b8946f6-a9ed-411f-a2eb-e6644a94c855",
+      "url": "https://www.cars.com/vehicledetail/9b8946f6-a9ed-411f-a2eb-e6644a94c855/",
+      "price": 54999,
+      "title": "2025 Mercedes-Benz CLE 300 4MATIC Coupe",
+      "year": 2025,
+      "dealer": "Mercedes-Benz of Princeton"
+    },
+    {
+      "id": "85afcc91-33ba-4e6c-9729-c3e8e0552a4b",
+      "url": "https://www.cars.com/vehicledetail/85afcc91-33ba-4e6c-9729-c3e8e0552a4b/",
+      "price": 25794,
+      "title": "2020 Mercedes-Benz E-Class 4MATIC",
+      "year": 2020,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "d1c23d3c-0425-4d8f-88ad-4343925375ce",
+      "url": "https://www.cars.com/vehicledetail/d1c23d3c-0425-4d8f-88ad-4343925375ce/",
+      "price": 46990,
+      "title": "2025 Mercedes-Benz E-Class E 350 4MATIC",
+      "year": 2025,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "60df3a0d-ee07-4a2b-8faa-9bd6f0fdc695",
+      "url": "https://www.cars.com/vehicledetail/60df3a0d-ee07-4a2b-8faa-9bd6f0fdc695/",
+      "price": 39894,
+      "title": "2016 Mercedes-Benz AMG S 63 4MATIC",
+      "year": 2016,
+      "dealer": "Auto Buying Service"
+    },
+    {
+      "id": "f1613653-f0d4-4d77-aa5b-59d1d50f1ed9",
+      "url": "https://www.cars.com/vehicledetail/f1613653-f0d4-4d77-aa5b-59d1d50f1ed9/",
+      "price": 81987,
+      "title": "2019 Mercedes-Benz AMG GT 63 4-Door",
+      "year": 2019,
+      "dealer": "Porsche Stratham"
+    }
+  ]
+}

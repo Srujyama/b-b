@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=ford",
+  "cached_at": 1784398635.599392,
+  "cards": [
+    {
+      "id": "8b1c489c-0312-4c0f-87d1-0e80de6eaec6",
+      "url": "https://www.cars.com/vehicledetail/8b1c489c-0312-4c0f-87d1-0e80de6eaec6/",
+      "price": 47590,
+      "title": "2023 Ford Bronco Outer Banks",
+      "year": 2023,
+      "dealer": "Seabreeze Ford"
+    },
+    {
+      "id": "77d5ee76-be76-409f-8629-f7779ca302da",
+      "url": "https://www.cars.com/vehicledetail/77d5ee76-be76-409f-8629-f7779ca302da/",
+      "price": 44865,
+      "title": "2023 Ford F-150 XLT",
+      "year": 2023,
+      "dealer": "Tasca Ford Dickson City"
+    },
+    {
+      "id": "d6fc3226-66a5-450a-98d8-d86a718c52e2",
+      "url": "https://www.cars.com/vehicledetail/d6fc3226-66a5-450a-98d8-d86a718c52e2/",
+      "price": 62737,
+      "title": "2018 Ford F-150 Lariat",
+      "year": 2018,
+      "dealer": "Deluxe Auto Sales"
+    },
+    {
+      "id": "55cf8979-0a93-456b-b75b-9c944fcc7bb4",
+      "url": "https://www.cars.com/vehicledetail/55cf8979-0a93-456b-b75b-9c944fcc7bb4/",
+      "price": 30599,
+      "title": "2021 Ford F-150 XLT",
+      "year": 2021,
+      "dealer": "Burlington Chevrolet"
+    },
+    {
+      "id": "45e99fe7-9c23-4f83-abff-b1de4a4a3d9b",
+      "url": "https://www.cars.com/vehicledetail/45e99fe7-9c23-4f83-abff-b1de4a4a3d9b/",
+      "price": 61266,
+      "title": "2024 Ford Mustang Dark Horse",
+      "year": 2024,
+      "dealer": "Auto Hub"
+    },
+    {
+      "id": "73a4b21e-e3d7-45aa-8ccd-039a126e3222",
+      "url": "https://www.cars.com/vehicledetail/73a4b21e-e3d7-45aa-8ccd-039a126e3222/",
+      "price": 20625,
+      "title": "2022 Ford Mustang EcoBoost Premium",
+      "year": 2022,
+      "dealer": "NJ State Auto Used Cars"
+    },
+    {
+      "id": "724f62f3-dd2f-4a7f-b9e4-6a5cf562236c",
+      "url": "https://www.cars.com/vehicledetail/724f62f3-dd2f-4a7f-b9e4-6a5cf562236c/",
+      "price": 25451,
+      "title": "2020 Ford F-150 XLT",
+      "year": 2020,
+      "dealer": "Planet Honda"
+    },
+    {
+      "id": "10db9a19-76cb-4912-87ef-de9a845414a3",
+      "url": "https://www.cars.com/vehicledetail/10db9a19-76cb-4912-87ef-de9a845414a3/",
+      "price": 60557,
+      "title": "2025 Ford F-150 Lariat",
+      "year": 2025,
+      "dealer": "Chapman Auto Store of EHT, NJ"
+    },
+    {
+      "id": "3c866e46-17d9-40b3-b225-bb1142f6aef7",
+      "url": "https://www.cars.com/vehicledetail/3c866e46-17d9-40b3-b225-bb1142f6aef7/",
+      "price": 52997,
+      "title": "2024 Ford F-150 Tremor",
+      "year": 2024,
+      "dealer": "Ingersoll Auto of Danbury"
+    },
+    {
+      "id": "12359b62-741d-45f0-90a8-74e839f8db39",
+      "url": "https://www.cars.com/vehicledetail/12359b62-741d-45f0-90a8-74e839f8db39/",
+      "price": 47490,
+      "title": "2023 Ford F-150 Tremor",
+      "year": 2023,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "ffe05110-ade8-4801-8ea8-82db9f606a7b",
+      "url": "https://www.cars.com/vehicledetail/ffe05110-ade8-4801-8ea8-82db9f606a7b/",
+      "price": 67400,
+      "title": "2022 Ford F-150 Raptor",
+      "year": 2022,
+      "dealer": "Dana Ford Lincoln"
+    },
+    {
+      "id": "0964b7ee-587d-432b-b62a-c1a9cfd55cbd",
+      "url": "https://www.cars.com/vehicledetail/0964b7ee-587d-432b-b62a-c1a9cfd55cbd/",
+      "price": 63094,
+      "title": "2025 Ford F-150 Tremor",
+      "year": 2025,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "2dc78456-5c35-4163-9fbf-9ef699d6b6c2",
+      "url": "https://www.cars.com/vehicledetail/2dc78456-5c35-4163-9fbf-9ef699d6b6c2/",
+      "price": 45567,
+      "title": "2023 Ford F-150 XLT",
+      "year": 2023,
+      "dealer": "Maplecrest Ford"
+    },
+    {
+      "id": "614c1928-c3fb-4202-8d16-7c9594f7497b",
+      "url": "https://www.cars.com/vehicledetail/614c1928-c3fb-4202-8d16-7c9594f7497b/",
+      "price": 48894,
+      "title": "2022 Ford F-150 XLT",
+      "year": 2022,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "3bf14555-31a7-413c-87e1-27c1e24b1724",
+      "url": "https://www.cars.com/vehicledetail/3bf14555-31a7-413c-87e1-27c1e24b1724/",
+      "price": 56997,
+      "title": "2023 Ford F-150 Lariat",
+      "year": 2023,
+      "dealer": "Maplecrest Ford Lincoln"
+    },
+    {
+      "id": "30e822b7-e64e-4ebb-ae14-cae3e6846744",
+      "url": "https://www.cars.com/vehicledetail/30e822b7-e64e-4ebb-ae14-cae3e6846744/",
+      "price": 36818,
+      "title": "2023 Ford F-150 XLT",
+      "year": 2023,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "4d45cf06-21f7-4668-8d4a-559da805ab6d",
+      "url": "https://www.cars.com/vehicledetail/4d45cf06-21f7-4668-8d4a-559da805ab6d/",
+      "price": 22690,
+      "title": "2018 Ford F-150 XLT",
+      "year": 2018,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "3f12b095-005f-4899-824d-295f80ec9d45",
+      "url": "https://www.cars.com/vehicledetail/3f12b095-005f-4899-824d-295f80ec9d45/",
+      "price": 39785,
+      "title": "2023 Ford F-150 XL",
+      "year": 2023,
+      "dealer": "Paoli Ford"
+    },
+    {
+      "id": "1bb80ebe-5b33-43c5-b100-d04718f6f184",
+      "url": "https://www.cars.com/vehicledetail/1bb80ebe-5b33-43c5-b100-d04718f6f184/",
+      "price": 35398,
+      "title": "2017 Ford F-150 Raptor",
+      "year": 2017,
+      "dealer": "Hyundai of Trenton"
+    },
+    {
+      "id": "267169bf-4268-4b74-980e-1b8b3f51bb0b",
+      "url": "https://www.cars.com/vehicledetail/267169bf-4268-4b74-980e-1b8b3f51bb0b/",
+      "price": 40796,
+      "title": "2025 Ford Explorer Platinum",
+      "year": 2025,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "a8e1245c-da5d-4d59-b1d5-e361ba95ad65",
+      "url": "https://www.cars.com/vehicledetail/a8e1245c-da5d-4d59-b1d5-e361ba95ad65/",
+      "price": 19311,
+      "title": "2018 Ford F-150 Lariat",
+      "year": 2018,
+      "dealer": "Sansone Rt 1 Auto Mall"
+    },
+    {
+      "id": "581a9ad4-26e3-4804-bd72-ca96ea48fa5c",
+      "url": "https://www.cars.com/vehicledetail/581a9ad4-26e3-4804-bd72-ca96ea48fa5c/",
+      "price": 41990,
+      "title": "2023 Ford F-150 Lariat",
+      "year": 2023,
+      "dealer": "Unique Auto Mall"
+    },
+    {
+      "id": "20268a5d-744c-47e8-9b5b-8b184a6a9360",
+      "url": "https://www.cars.com/vehicledetail/20268a5d-744c-47e8-9b5b-8b184a6a9360/",
+      "price": 34990,
+      "title": "2017 Ford Focus RS Base",
+      "year": 2017,
+      "dealer": "Bob Ruth Ford"
+    },
+    {
+      "id": "ac82ded3-3115-4426-82f0-a52b0278ac04",
+      "url": "https://www.cars.com/vehicledetail/ac82ded3-3115-4426-82f0-a52b0278ac04/",
+      "price": 90490,
+      "title": "2022 Ford Shelby GT500 Base",
+      "year": 2022,
+      "dealer": "Bob Ruth Ford"
+    }
+  ]
+}

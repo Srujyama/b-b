@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=volkswagen",
+  "cached_at": 1784398801.5946481,
+  "cards": [
+    {
+      "id": "c9a1ff02-b8f2-4809-8dfe-32ce5d97910c",
+      "url": "https://www.cars.com/vehicledetail/c9a1ff02-b8f2-4809-8dfe-32ce5d97910c/",
+      "price": 26667,
+      "title": "2023 Volkswagen Tiguan 2.0T SE R-Line Black 4MOTION",
+      "year": 2023,
+      "dealer": "Executive Dodge Jeep RAM"
+    },
+    {
+      "id": "d4cc48f9-90fd-40cd-8b76-b590e28ecc51",
+      "url": "https://www.cars.com/vehicledetail/d4cc48f9-90fd-40cd-8b76-b590e28ecc51/",
+      "price": 40088,
+      "title": "2024 Volkswagen Atlas 2.0T SEL Premium R-Line 4MOTION",
+      "year": 2024,
+      "dealer": "Executive Volkswagen"
+    },
+    {
+      "id": "a4fe2a89-0c97-4140-bfbb-4cf2add900bb",
+      "url": "https://www.cars.com/vehicledetail/a4fe2a89-0c97-4140-bfbb-4cf2add900bb/",
+      "price": 29490,
+      "title": "2024 Volkswagen Atlas 2.0T SE",
+      "year": 2024,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "d146d3aa-356a-4d30-9069-98b5eb2bd27d",
+      "url": "https://www.cars.com/vehicledetail/d146d3aa-356a-4d30-9069-98b5eb2bd27d/",
+      "price": 39127,
+      "title": "2025 Volkswagen Atlas 2.0T Peak Edition",
+      "year": 2025,
+      "dealer": "Acura of Berlin"
+    },
+    {
+      "id": "5ef4b715-1618-42c6-80ec-234fdf506f32",
+      "url": "https://www.cars.com/vehicledetail/5ef4b715-1618-42c6-80ec-234fdf506f32/",
+      "price": 39990,
+      "title": "2025 Volkswagen Atlas 2.0T SEL",
+      "year": 2025,
+      "dealer": "North Penn Volkswagen"
+    },
+    {
+      "id": "6c8b1881-6cee-4eb9-83d9-a8f80dc741ae",
+      "url": "https://www.cars.com/vehicledetail/6c8b1881-6cee-4eb9-83d9-a8f80dc741ae/",
+      "price": 10421,
+      "title": "2019 Volkswagen Atlas 3.6L SE w/Technology",
+      "year": 2019,
+      "dealer": "BMW of Ramsey"
+    },
+    {
+      "id": "8f097071-bda4-4a83-8846-78b124cf0dd7",
+      "url": "https://www.cars.com/vehicledetail/8f097071-bda4-4a83-8846-78b124cf0dd7/",
+      "price": 28089,
+      "title": "2024 Volkswagen Tiguan 2.0T SE R-Line Black",
+      "year": 2024,
+      "dealer": "Lehigh Valley Honda"
+    },
+    {
+      "id": "ab3c2e8b-9859-45dc-bb29-20c910c3f872",
+      "url": "https://www.cars.com/vehicledetail/ab3c2e8b-9859-45dc-bb29-20c910c3f872/",
+      "price": 22676,
+      "title": "2023 Volkswagen Taos 1.5T SE",
+      "year": 2023,
+      "dealer": "Executive Volkswagen"
+    },
+    {
+      "id": "f8b1965d-091b-46d4-ade7-67bad32fea63",
+      "url": "https://www.cars.com/vehicledetail/f8b1965d-091b-46d4-ade7-67bad32fea63/",
+      "price": 23990,
+      "title": "2021 Volkswagen Tiguan 2.0T SE",
+      "year": 2021,
+      "dealer": "Faulkner Toyota Trevose"
+    },
+    {
+      "id": "622c0a4f-5b71-4242-96ba-2475f2c92e06",
+      "url": "https://www.cars.com/vehicledetail/622c0a4f-5b71-4242-96ba-2475f2c92e06/",
+      "price": 33313,
+      "title": "2023 Volkswagen Atlas 3.6L SEL",
+      "year": 2023,
+      "dealer": "Acura by Executive"
+    },
+    {
+      "id": "837870fe-ec29-4639-94bb-83fb6c277fe3",
+      "url": "https://www.cars.com/vehicledetail/837870fe-ec29-4639-94bb-83fb6c277fe3/",
+      "price": 26990,
+      "title": "2022 Volkswagen Tiguan 2.0T SEL R-Line 4MOTION",
+      "year": 2022,
+      "dealer": "Route 46 Chrysler Jeep Dodge RAM"
+    },
+    {
+      "id": "708491b5-3dac-40cc-bc44-446b2ef135d5",
+      "url": "https://www.cars.com/vehicledetail/708491b5-3dac-40cc-bc44-446b2ef135d5/",
+      "price": 21997,
+      "title": "2022 Volkswagen Atlas 3.6L SEL Premium",
+      "year": 2022,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "a2afe4e5-1344-418b-ba0c-b3a0a602bb1a",
+      "url": "https://www.cars.com/vehicledetail/a2afe4e5-1344-418b-ba0c-b3a0a602bb1a/",
+      "price": 6195,
+      "title": "2012 Volkswagen Tiguan 2.0T SE 4MOTION",
+      "year": 2012,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "253d22e3-31be-4bcd-82ed-44a946d07c42",
+      "url": "https://www.cars.com/vehicledetail/253d22e3-31be-4bcd-82ed-44a946d07c42/",
+      "price": 26686,
+      "title": "2023 Volkswagen ID.4 AWD Pro S",
+      "year": 2023,
+      "dealer": "Executive Volkswagen"
+    },
+    {
+      "id": "6775b2be-336e-441c-9330-45ea4c5db86d",
+      "url": "https://www.cars.com/vehicledetail/6775b2be-336e-441c-9330-45ea4c5db86d/",
+      "price": 19778,
+      "title": "2022 Volkswagen Tiguan 2.0T SE 4MOTION",
+      "year": 2022,
+      "dealer": "Maserati of Bergen County"
+    },
+    {
+      "id": "f1a91a22-8bda-4949-b7d3-cc89423128e4",
+      "url": "https://www.cars.com/vehicledetail/f1a91a22-8bda-4949-b7d3-cc89423128e4/",
+      "price": 17178,
+      "title": "2019 Volkswagen Tiguan 2.0T SEL R-Line 4MOTION",
+      "year": 2019,
+      "dealer": "Prestige Lexus of Ramsey"
+    },
+    {
+      "id": "aa3f884c-a9b4-4f67-8129-a65f911e6bb6",
+      "url": "https://www.cars.com/vehicledetail/aa3f884c-a9b4-4f67-8129-a65f911e6bb6/",
+      "price": 20563,
+      "title": "2021 Volkswagen Tiguan 2.0T SEL",
+      "year": 2021,
+      "dealer": "DCH Honda of Nanuet"
+    },
+    {
+      "id": "0cabe884-a830-460d-be18-0d61b59457eb",
+      "url": "https://www.cars.com/vehicledetail/0cabe884-a830-460d-be18-0d61b59457eb/",
+      "price": 26379,
+      "title": "2024 Volkswagen Tiguan 2.0T SE R-Line Black",
+      "year": 2024,
+      "dealer": "DCH Montclair Acura"
+    },
+    {
+      "id": "ef0cb95e-e3b7-4071-9e06-a207b7f224d5",
+      "url": "https://www.cars.com/vehicledetail/ef0cb95e-e3b7-4071-9e06-a207b7f224d5/",
+      "price": 22594,
+      "title": "2021 Volkswagen Atlas 2.0T SE w/Technology 4MOTION",
+      "year": 2021,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "cdc07ba5-6c96-4f16-bcf4-dce114cae09e",
+      "url": "https://www.cars.com/vehicledetail/cdc07ba5-6c96-4f16-bcf4-dce114cae09e/",
+      "price": 18388,
+      "title": "2023 Volkswagen Jetta 1.5T SE",
+      "year": 2023,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "67fde7dd-a2ed-4e5c-99c4-e0df1b1c2129",
+      "url": "https://www.cars.com/vehicledetail/67fde7dd-a2ed-4e5c-99c4-e0df1b1c2129/",
+      "price": 20895,
+      "title": "2022 Volkswagen Tiguan 2.0T SE",
+      "year": 2022,
+      "dealer": "Jack Daniels Volkswagen"
+    },
+    {
+      "id": "4f575fa4-8061-45bd-9cfa-ba9e00dc1154",
+      "url": "https://www.cars.com/vehicledetail/4f575fa4-8061-45bd-9cfa-ba9e00dc1154/",
+      "price": 33274,
+      "title": "2024 Volkswagen Atlas 2.0T SE w/Technology 4MOTION",
+      "year": 2024,
+      "dealer": "Galaxy Toyota"
+    },
+    {
+      "id": "f2dbdbe2-fa10-4631-90db-a7ee14235d0b",
+      "url": "https://www.cars.com/vehicledetail/f2dbdbe2-fa10-4631-90db-a7ee14235d0b/",
+      "price": 22240,
+      "title": "2017 Volkswagen Beetle 1.8T S",
+      "year": 2017,
+      "dealer": "Bob Ruth Ford"
+    },
+    {
+      "id": "10958f0f-70bf-461b-8765-87ad6dfde6ab",
+      "url": "https://www.cars.com/vehicledetail/10958f0f-70bf-461b-8765-87ad6dfde6ab/",
+      "price": 32998,
+      "title": "2017 Volkswagen Beetle SE",
+      "year": 2017,
+      "dealer": "CarMax Newark"
+    }
+  ]
+}

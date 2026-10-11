@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=lexus",
+  "cached_at": 1784398891.4599092,
+  "cards": [
+    {
+      "id": "a4926aec-7f92-432b-bff9-1909b3244742",
+      "url": "https://www.cars.com/vehicledetail/a4926aec-7f92-432b-bff9-1909b3244742/",
+      "price": 34675,
+      "title": "2018 Lexus RC 300 Base",
+      "year": 2018,
+      "dealer": "Stoler Lexus"
+    },
+    {
+      "id": "d42f4480-c26d-4142-b632-a7c9d8673bae",
+      "url": "https://www.cars.com/vehicledetail/d42f4480-c26d-4142-b632-a7c9d8673bae/",
+      "price": 40495,
+      "title": "2023 Lexus NX 350 Premium",
+      "year": 2023,
+      "dealer": "Mercedes-Benz of Atlantic City"
+    },
+    {
+      "id": "7e9f4194-9162-4b33-a5ec-63db1f34f785",
+      "url": "https://www.cars.com/vehicledetail/7e9f4194-9162-4b33-a5ec-63db1f34f785/",
+      "price": 27175,
+      "title": "2018 Lexus RX 350 Base",
+      "year": 2018,
+      "dealer": "Lexus of Freeport"
+    },
+    {
+      "id": "0c76a472-4bb3-46fa-a10b-3dc8ff5fc914",
+      "url": "https://www.cars.com/vehicledetail/0c76a472-4bb3-46fa-a10b-3dc8ff5fc914/",
+      "price": 40440,
+      "title": "2023 Lexus ES 350 Base",
+      "year": 2023,
+      "dealer": "Prestige Lexus of Ramsey"
+    },
+    {
+      "id": "fbba2225-8e9f-4e38-a460-c2b87e20920c",
+      "url": "https://www.cars.com/vehicledetail/fbba2225-8e9f-4e38-a460-c2b87e20920c/",
+      "price": 47675,
+      "title": "2024 Lexus RX 350 Premium",
+      "year": 2024,
+      "dealer": "Stoler Lexus"
+    },
+    {
+      "id": "b1f83501-3863-45de-9a09-f94a275ee59e",
+      "url": "https://www.cars.com/vehicledetail/b1f83501-3863-45de-9a09-f94a275ee59e/",
+      "price": 42599,
+      "title": "2023 Lexus RX 350 Premium Plus",
+      "year": 2023,
+      "dealer": "DCH Academy Honda"
+    },
+    {
+      "id": "10ee710f-0116-4a3b-bcc9-17f283eb0ccd",
+      "url": "https://www.cars.com/vehicledetail/10ee710f-0116-4a3b-bcc9-17f283eb0ccd/",
+      "price": 47995,
+      "title": "2024 Lexus RX 350 Premium Plus",
+      "year": 2024,
+      "dealer": "DARCARS Lexus of Greenwich"
+    },
+    {
+      "id": "be7f7d46-a73e-4638-a171-df70e660754e",
+      "url": "https://www.cars.com/vehicledetail/be7f7d46-a73e-4638-a171-df70e660754e/",
+      "price": 33294,
+      "title": "2023 Lexus RZ 450e Luxury",
+      "year": 2023,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "6bef2288-a842-4f40-8b81-f6c587b3fa79",
+      "url": "https://www.cars.com/vehicledetail/6bef2288-a842-4f40-8b81-f6c587b3fa79/",
+      "price": 30350,
+      "title": "2019 Lexus ES 350 Base",
+      "year": 2019,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "8178a521-85c7-4a0a-90e0-907e48d90644",
+      "url": "https://www.cars.com/vehicledetail/8178a521-85c7-4a0a-90e0-907e48d90644/",
+      "price": 20889,
+      "title": "2018 Lexus ES 350 Base",
+      "year": 2018,
+      "dealer": "Hyundai of Trenton"
+    },
+    {
+      "id": "b6cc9b66-0eb2-46cd-abfd-805dc38744af",
+      "url": "https://www.cars.com/vehicledetail/b6cc9b66-0eb2-46cd-abfd-805dc38744af/",
+      "price": 47670,
+      "title": "2021 Lexus RX 350 F SPORT Appearance",
+      "year": 2021,
+      "dealer": "Rallye Lexus"
+    },
+    {
+      "id": "a6425865-3909-451f-99aa-a039637373be",
+      "url": "https://www.cars.com/vehicledetail/a6425865-3909-451f-99aa-a039637373be/",
+      "price": 21594,
+      "title": "2020 Lexus ES 350 Base",
+      "year": 2020,
+      "dealer": "DCH Paramus Honda"
+    },
+    {
+      "id": "082891ff-2762-44cb-9300-77e58be57782",
+      "url": "https://www.cars.com/vehicledetail/082891ff-2762-44cb-9300-77e58be57782/",
+      "price": 52034,
+      "title": "2024 Lexus RX 350 F SPORT Handling",
+      "year": 2024,
+      "dealer": "Westbury Toyota"
+    },
+    {
+      "id": "281b2c3e-d9a7-4db8-b85e-56754d9593b2",
+      "url": "https://www.cars.com/vehicledetail/281b2c3e-d9a7-4db8-b85e-56754d9593b2/",
+      "price": 40599,
+      "title": "2024 Lexus NX 350 Base",
+      "year": 2024,
+      "dealer": "Land Rover Cherry Hill"
+    },
+    {
+      "id": "2add4f15-7bd6-40dc-9fbb-840910c7a2a3",
+      "url": "https://www.cars.com/vehicledetail/2add4f15-7bd6-40dc-9fbb-840910c7a2a3/",
+      "price": 49889,
+      "title": "2023 Lexus RX 350 Luxury",
+      "year": 2023,
+      "dealer": "Excel Auto Lounge"
+    },
+    {
+      "id": "67014785-c75e-41cf-a702-cad450752709",
+      "url": "https://www.cars.com/vehicledetail/67014785-c75e-41cf-a702-cad450752709/",
+      "price": 43541,
+      "title": "2024 Lexus RX 350 Premium",
+      "year": 2024,
+      "dealer": "DARCARS Lexus of Mt. Kisco"
+    },
+    {
+      "id": "4e23457d-a608-4c95-abc1-e5afb1bdb6c7",
+      "url": "https://www.cars.com/vehicledetail/4e23457d-a608-4c95-abc1-e5afb1bdb6c7/",
+      "price": 39992,
+      "title": "2024 Lexus ES 350 Base",
+      "year": 2024,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "2e90ca7b-3f7b-4a8d-b853-626e602e3fe1",
+      "url": "https://www.cars.com/vehicledetail/2e90ca7b-3f7b-4a8d-b853-626e602e3fe1/",
+      "price": 35357,
+      "title": "2020 Lexus RX 350 F SPORT Performance",
+      "year": 2020,
+      "dealer": "Prestige Lexus of Ramsey"
+    },
+    {
+      "id": "feb5efd1-95d6-448c-9217-44d236bcf458",
+      "url": "https://www.cars.com/vehicledetail/feb5efd1-95d6-448c-9217-44d236bcf458/",
+      "price": 45995,
+      "title": "2024 Lexus RX 350 Premium",
+      "year": 2024,
+      "dealer": "DARCARS Lexus of Englewood"
+    },
+    {
+      "id": "eeaabdfa-31d7-49ed-b6d3-a528ce31bf8b",
+      "url": "https://www.cars.com/vehicledetail/eeaabdfa-31d7-49ed-b6d3-a528ce31bf8b/",
+      "price": 32094,
+      "title": "2021 Lexus NX 300 F Sport",
+      "year": 2021,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "71083b16-6da8-4571-aa3a-bfa52ab69161",
+      "url": "https://www.cars.com/vehicledetail/71083b16-6da8-4571-aa3a-bfa52ab69161/",
+      "price": 41992,
+      "title": "2023 Lexus RX 350 Premium",
+      "year": 2023,
+      "dealer": "Tri-County Lexus"
+    },
+    {
+      "id": "7d93d2b1-002e-4ded-af4b-70eb81ded615",
+      "url": "https://www.cars.com/vehicledetail/7d93d2b1-002e-4ded-af4b-70eb81ded615/",
+      "price": 54998,
+      "title": "2024 Lexus RX 350 F SPORT Handling",
+      "year": 2024,
+      "dealer": "BMW of Bloomfield"
+    },
+    {
+      "id": "b4ddd17f-a623-4167-b2c1-d976e6a3ef9d",
+      "url": "https://www.cars.com/vehicledetail/b4ddd17f-a623-4167-b2c1-d976e6a3ef9d/",
+      "price": 34998,
+      "title": "2018 Lexus GS 350 F-Sport",
+      "year": 2018,
+      "dealer": "CarMax Warwick"
+    },
+    {
+      "id": "36a39344-1074-44aa-9f8d-da932942e6a5",
+      "url": "https://www.cars.com/vehicledetail/36a39344-1074-44aa-9f8d-da932942e6a5/",
+      "price": 31998,
+      "title": "2019 Lexus GS 350 F-Sport",
+      "year": 2019,
+      "dealer": "CarMax Danvers"
+    }
+  ]
+}

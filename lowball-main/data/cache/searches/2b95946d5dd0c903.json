@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=jeep",
+  "cached_at": 1784398728.859484,
+  "cards": [
+    {
+      "id": "321e58f2-11f3-445c-a3cb-27a554be56ee",
+      "url": "https://www.cars.com/vehicledetail/321e58f2-11f3-445c-a3cb-27a554be56ee/",
+      "price": 31498,
+      "title": "2023 Jeep Grand Cherokee Altitude",
+      "year": 2023,
+      "dealer": "Executive Dodge Jeep RAM"
+    },
+    {
+      "id": "2f5c20ef-489a-498e-8355-745e184aef81",
+      "url": "https://www.cars.com/vehicledetail/2f5c20ef-489a-498e-8355-745e184aef81/",
+      "price": 27722,
+      "title": "2022 Jeep Grand Cherokee Limited",
+      "year": 2022,
+      "dealer": "Precision Chrysler Jeep Dodge Ram"
+    },
+    {
+      "id": "bce17f66-4b23-499a-be5e-a334f776543a",
+      "url": "https://www.cars.com/vehicledetail/bce17f66-4b23-499a-be5e-a334f776543a/",
+      "price": 37234,
+      "title": "2025 Jeep Wrangler Rubicon",
+      "year": 2025,
+      "dealer": "Conicelli Autoplex"
+    },
+    {
+      "id": "18bf0f7d-9859-4f1e-af65-dd98cc669c09",
+      "url": "https://www.cars.com/vehicledetail/18bf0f7d-9859-4f1e-af65-dd98cc669c09/",
+      "price": 40799,
+      "title": "2025 Jeep Grand Cherokee Limited",
+      "year": 2025,
+      "dealer": "Glen Toyota"
+    },
+    {
+      "id": "d977050b-1725-44bc-b5e1-50820486f4eb",
+      "url": "https://www.cars.com/vehicledetail/d977050b-1725-44bc-b5e1-50820486f4eb/",
+      "price": 55990,
+      "title": "2025 Jeep Wrangler Rubicon",
+      "year": 2025,
+      "dealer": "Edison Nissan"
+    },
+    {
+      "id": "6f0346f7-7266-4da3-9350-77a656c62929",
+      "url": "https://www.cars.com/vehicledetail/6f0346f7-7266-4da3-9350-77a656c62929/",
+      "price": 30485,
+      "title": "2023 Jeep Wrangler Sahara",
+      "year": 2023,
+      "dealer": "Audi Warrington"
+    },
+    {
+      "id": "cb8f2ea8-5339-48bf-be8c-9937698d2f5b",
+      "url": "https://www.cars.com/vehicledetail/cb8f2ea8-5339-48bf-be8c-9937698d2f5b/",
+      "price": 42164,
+      "title": "2025 Jeep Wrangler Rubicon",
+      "year": 2025,
+      "dealer": "Mercedes-Benz of Fort Washington"
+    },
+    {
+      "id": "786a0959-106d-4735-a5dc-65efb8a11536",
+      "url": "https://www.cars.com/vehicledetail/786a0959-106d-4735-a5dc-65efb8a11536/",
+      "price": 62999,
+      "title": "2024 Jeep Wagoneer L Series II Carbide 4x4",
+      "year": 2024,
+      "dealer": "Spirit Chrysler Dodge Jeep RAM"
+    },
+    {
+      "id": "02810d7f-113b-4468-88dd-a2aba9aac5f5",
+      "url": "https://www.cars.com/vehicledetail/02810d7f-113b-4468-88dd-a2aba9aac5f5/",
+      "price": 29799,
+      "title": "2022 Jeep Wrangler Willys",
+      "year": 2022,
+      "dealer": "Shaker's Chrysler Dodge Jeep Ram"
+    },
+    {
+      "id": "5bcf531e-90af-46d3-9d64-e9fa7c101ff9",
+      "url": "https://www.cars.com/vehicledetail/5bcf531e-90af-46d3-9d64-e9fa7c101ff9/",
+      "price": 44686,
+      "title": "2025 Jeep Wrangler 4-Door Sahara 4x4",
+      "year": 2025,
+      "dealer": "Lester Glenn Chrysler Dodge Jeep RAM"
+    },
+    {
+      "id": "850695d1-fe81-4f1b-9ea9-86fd20a39a61",
+      "url": "https://www.cars.com/vehicledetail/850695d1-fe81-4f1b-9ea9-86fd20a39a61/",
+      "price": 29298,
+      "title": "2023 Jeep Wrangler Sport",
+      "year": 2023,
+      "dealer": "Town & Country Jeep Chrysler Dodge Ram"
+    },
+    {
+      "id": "3d2a1889-e66b-456e-bcfd-146641652023",
+      "url": "https://www.cars.com/vehicledetail/3d2a1889-e66b-456e-bcfd-146641652023/",
+      "price": 39796,
+      "title": "2023 Jeep Wrangler Rubicon",
+      "year": 2023,
+      "dealer": "Circle Chrysler Dodge Jeep Ram"
+    },
+    {
+      "id": "2b4e0868-4dab-4a8d-b96c-02f572e72cce",
+      "url": "https://www.cars.com/vehicledetail/2b4e0868-4dab-4a8d-b96c-02f572e72cce/",
+      "price": 43675,
+      "title": "2023 Jeep Wrangler High Altitude 4 Door 4x4",
+      "year": 2023,
+      "dealer": "Security Dodge Chrysler Jeep RAM"
+    },
+    {
+      "id": "618eaf42-9402-48d8-8e73-5e1f9c68ffc1",
+      "url": "https://www.cars.com/vehicledetail/618eaf42-9402-48d8-8e73-5e1f9c68ffc1/",
+      "price": 37679,
+      "title": "2024 Jeep Wagoneer S Launch Edition",
+      "year": 2024,
+      "dealer": "Executive Jeep"
+    },
+    {
+      "id": "adbefa67-8e47-4553-9d51-861e16fbdb45",
+      "url": "https://www.cars.com/vehicledetail/adbefa67-8e47-4553-9d51-861e16fbdb45/",
+      "price": 41913,
+      "title": "2025 Jeep Wrangler 4-Door Sahara 4x4",
+      "year": 2025,
+      "dealer": "DCH Academy Honda"
+    },
+    {
+      "id": "0a66b264-9174-4f97-a5e1-c512ae1d2e21",
+      "url": "https://www.cars.com/vehicledetail/0a66b264-9174-4f97-a5e1-c512ae1d2e21/",
+      "price": 31494,
+      "title": "2025 Jeep Wrangler Sport S",
+      "year": 2025,
+      "dealer": "Stamford Ford Lincoln"
+    },
+    {
+      "id": "bf1a87b7-605d-49b5-8d30-176b92e7d347",
+      "url": "https://www.cars.com/vehicledetail/bf1a87b7-605d-49b5-8d30-176b92e7d347/",
+      "price": 38989,
+      "title": "2023 Jeep Grand Cherokee Summit",
+      "year": 2023,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "25cae6ff-ac83-4516-b822-d139f022b492",
+      "url": "https://www.cars.com/vehicledetail/25cae6ff-ac83-4516-b822-d139f022b492/",
+      "price": 17304,
+      "title": "2017 Jeep Wrangler Sport",
+      "year": 2017,
+      "dealer": "Planet Honda"
+    },
+    {
+      "id": "5f8f1ea6-b956-4930-a912-a0c95e925cc2",
+      "url": "https://www.cars.com/vehicledetail/5f8f1ea6-b956-4930-a912-a0c95e925cc2/",
+      "price": 30599,
+      "title": "2023 Jeep Wrangler 4-Door Sahara 4x4",
+      "year": 2023,
+      "dealer": "Hudson Toyota"
+    },
+    {
+      "id": "b174f1ee-86f6-4c22-a396-ef497b5be1e8",
+      "url": "https://www.cars.com/vehicledetail/b174f1ee-86f6-4c22-a396-ef497b5be1e8/",
+      "price": 33989,
+      "title": "2023 Jeep Grand Cherokee Altitude",
+      "year": 2023,
+      "dealer": "Reedman-Toll Chevrolet"
+    },
+    {
+      "id": "c57dbe67-d75f-4a87-85fd-a0b855ca2592",
+      "url": "https://www.cars.com/vehicledetail/c57dbe67-d75f-4a87-85fd-a0b855ca2592/",
+      "price": 33900,
+      "title": "2024 Jeep Grand Cherokee Limited",
+      "year": 2024,
+      "dealer": "Power Motors East"
+    },
+    {
+      "id": "b100457e-3c05-4dc5-800d-57405fccd0e2",
+      "url": "https://www.cars.com/vehicledetail/b100457e-3c05-4dc5-800d-57405fccd0e2/",
+      "price": 53919,
+      "title": "2024 Jeep Grand Cherokee Summit",
+      "year": 2024,
+      "dealer": "Videon Chrysler Dodge Jeep RAM"
+    },
+    {
+      "id": "aa24aee3-ebf8-470e-a750-6c77beac2080",
+      "url": "https://www.cars.com/vehicledetail/aa24aee3-ebf8-470e-a750-6c77beac2080/",
+      "price": 50998,
+      "title": "2023 Jeep Grand Wagoneer Series II",
+      "year": 2023,
+      "dealer": "CarMax West Broad"
+    },
+    {
+      "id": "8e62ae1a-9a18-490a-ad6f-785f502ecd02",
+      "url": "https://www.cars.com/vehicledetail/8e62ae1a-9a18-490a-ad6f-785f502ecd02/",
+      "price": 31998,
+      "title": "2022 Jeep Wrangler Unlimited Willys",
+      "year": 2022,
+      "dealer": "CarMax Midlothian"
+    }
+  ]
+}

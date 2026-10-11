@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=mazda",
+  "cached_at": 1784398819.491311,
+  "cards": [
+    {
+      "id": "5ed44d5d-c85e-4315-89b9-cbc99911d5c4",
+      "url": "https://www.cars.com/vehicledetail/5ed44d5d-c85e-4315-89b9-cbc99911d5c4/",
+      "price": 23571,
+      "title": "2023 Mazda CX-5 2.5 S",
+      "year": 2023,
+      "dealer": "Mazda of New Rochelle"
+    },
+    {
+      "id": "0a75ba03-a6e3-4272-b22c-69acddca7d7c",
+      "url": "https://www.cars.com/vehicledetail/0a75ba03-a6e3-4272-b22c-69acddca7d7c/",
+      "price": 32659,
+      "title": "2024 Mazda CX-50 2.5 Turbo Premium Package",
+      "year": 2024,
+      "dealer": "Liberty Honda"
+    },
+    {
+      "id": "6d7ac86b-6a8e-49a6-a6e2-df15d3a082b9",
+      "url": "https://www.cars.com/vehicledetail/6d7ac86b-6a8e-49a6-a6e2-df15d3a082b9/",
+      "price": 23998,
+      "title": "2021 Mazda CX-5 Touring",
+      "year": 2021,
+      "dealer": "LUCAS CHEVROLET"
+    },
+    {
+      "id": "c20039d1-ce28-471e-9e58-bba346ec9e32",
+      "url": "https://www.cars.com/vehicledetail/c20039d1-ce28-471e-9e58-bba346ec9e32/",
+      "price": 25019,
+      "title": "2025 Mazda Mazda3 FWD w/Preferred Package",
+      "year": 2025,
+      "dealer": "Mazda of New Rochelle"
+    },
+    {
+      "id": "99f6cbd5-6155-4a0d-ae03-e8902fb8a349",
+      "url": "https://www.cars.com/vehicledetail/99f6cbd5-6155-4a0d-ae03-e8902fb8a349/",
+      "price": 21995,
+      "title": "2023 Mazda Mazda3 FWD w/Preferred Package",
+      "year": 2023,
+      "dealer": "South Shore Nissan"
+    },
+    {
+      "id": "f1497e05-d3c4-4963-8888-dec3321f7baa",
+      "url": "https://www.cars.com/vehicledetail/f1497e05-d3c4-4963-8888-dec3321f7baa/",
+      "price": 27480,
+      "title": "2026 Mazda Mazda3 FWD w/Select Package",
+      "year": 2026,
+      "dealer": "Pacifico Mazda"
+    },
+    {
+      "id": "c3ce15bf-7c96-4309-bb00-26714a4f6bcd",
+      "url": "https://www.cars.com/vehicledetail/c3ce15bf-7c96-4309-bb00-26714a4f6bcd/",
+      "price": 22489,
+      "title": "2023 Mazda Mazda3 FWD w/Preferred Package",
+      "year": 2023,
+      "dealer": "CarVision of Trooper"
+    },
+    {
+      "id": "5f862687-34de-4b9e-9e5f-d294549ca968",
+      "url": "https://www.cars.com/vehicledetail/5f862687-34de-4b9e-9e5f-d294549ca968/",
+      "price": 25149,
+      "title": "2023 Mazda CX-30 2.5 S Carbon Edition",
+      "year": 2023,
+      "dealer": "Honda of Turnersville"
+    },
+    {
+      "id": "68cde1eb-6c92-4874-9c39-e7302ff0f5cb",
+      "url": "https://www.cars.com/vehicledetail/68cde1eb-6c92-4874-9c39-e7302ff0f5cb/",
+      "price": 28497,
+      "title": "2023 Mazda CX-5 2.5 Turbo Signature",
+      "year": 2023,
+      "dealer": "Hamilton Honda"
+    },
+    {
+      "id": "44a4afd3-7d65-4d8c-8449-5c7c34828348",
+      "url": "https://www.cars.com/vehicledetail/44a4afd3-7d65-4d8c-8449-5c7c34828348/",
+      "price": 28673,
+      "title": "2023 Mazda CX-5 2.5 S Premium Plus Package",
+      "year": 2023,
+      "dealer": "Bright Bay Mazda"
+    },
+    {
+      "id": "68e4e03e-2a9b-4c0b-a554-e7a7c2dad606",
+      "url": "https://www.cars.com/vehicledetail/68e4e03e-2a9b-4c0b-a554-e7a7c2dad606/",
+      "price": 23058,
+      "title": "2021 Mazda Mazda3 AWD w/Premium Package",
+      "year": 2021,
+      "dealer": "Raceway Kia of Freehold"
+    },
+    {
+      "id": "010a67db-4ca9-4a55-80e7-d85d43522368",
+      "url": "https://www.cars.com/vehicledetail/010a67db-4ca9-4a55-80e7-d85d43522368/",
+      "price": 25490,
+      "title": "2023 Mazda CX-5 2.5 S Carbon Edition",
+      "year": 2023,
+      "dealer": "Edison Nissan"
+    },
+    {
+      "id": "9b626740-ec5a-4bf6-a6da-3a107874bc1d",
+      "url": "https://www.cars.com/vehicledetail/9b626740-ec5a-4bf6-a6da-3a107874bc1d/",
+      "price": 29244,
+      "title": "2023 Mazda CX-5 2.5 S Premium Plus Package",
+      "year": 2023,
+      "dealer": "Lester Glenn Hyundai"
+    },
+    {
+      "id": "2175f876-15e4-44d9-b3bd-26c515b43341",
+      "url": "https://www.cars.com/vehicledetail/2175f876-15e4-44d9-b3bd-26c515b43341/",
+      "price": 35294,
+      "title": "2025 Mazda CX-50 Hybrid Premium Plus Package",
+      "year": 2025,
+      "dealer": "Automotive Avenues Sewell"
+    },
+    {
+      "id": "6f7eea81-4118-4b56-b202-b85f6c0d0a74",
+      "url": "https://www.cars.com/vehicledetail/6f7eea81-4118-4b56-b202-b85f6c0d0a74/",
+      "price": 21945,
+      "title": "2021 Mazda CX-5 Carbon Edition Turbo",
+      "year": 2021,
+      "dealer": "Prestige Lexus of Ramsey"
+    },
+    {
+      "id": "9e11ccf2-0de9-40d6-a184-c409b2b81d49",
+      "url": "https://www.cars.com/vehicledetail/9e11ccf2-0de9-40d6-a184-c409b2b81d49/",
+      "price": 26489,
+      "title": "2024 Mazda CX-5 2.5 S Carbon Edition",
+      "year": 2024,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "ad51c7e5-42db-41a0-862d-02437534ee5a",
+      "url": "https://www.cars.com/vehicledetail/ad51c7e5-42db-41a0-862d-02437534ee5a/",
+      "price": 24990,
+      "title": "2023 Mazda CX-5 2.5 S Carbon Edition",
+      "year": 2023,
+      "dealer": "Route 46 Chrysler Jeep Dodge RAM"
+    },
+    {
+      "id": "cac82960-6188-44fb-9050-fed734e62957",
+      "url": "https://www.cars.com/vehicledetail/cac82960-6188-44fb-9050-fed734e62957/",
+      "price": 24531,
+      "title": "2023 Mazda CX-5 2.5 S Select Package",
+      "year": 2023,
+      "dealer": "Bridgewater KIA"
+    },
+    {
+      "id": "72f6ae9f-430c-4fae-8f01-0e04debf70f3",
+      "url": "https://www.cars.com/vehicledetail/72f6ae9f-430c-4fae-8f01-0e04debf70f3/",
+      "price": 26480,
+      "title": "2023 Mazda CX-5 Carbon Edition",
+      "year": 2023,
+      "dealer": "Pacifico Mazda"
+    },
+    {
+      "id": "a678455a-e9f9-417d-8e2d-f1fb050e83c5",
+      "url": "https://www.cars.com/vehicledetail/a678455a-e9f9-417d-8e2d-f1fb050e83c5/",
+      "price": 25986,
+      "title": "2024 Mazda CX-5 Carbon Edition",
+      "year": 2024,
+      "dealer": "Ocean Honda Milford"
+    },
+    {
+      "id": "67962cb5-57fa-4e98-bb39-610db8509150",
+      "url": "https://www.cars.com/vehicledetail/67962cb5-57fa-4e98-bb39-610db8509150/",
+      "price": 24185,
+      "title": "2024 Mazda CX-5 2.5 S Select Package",
+      "year": 2024,
+      "dealer": "Ardmore Toyota"
+    },
+    {
+      "id": "3fb6e692-1a81-49c1-8e1a-03d37f7781b8",
+      "url": "https://www.cars.com/vehicledetail/3fb6e692-1a81-49c1-8e1a-03d37f7781b8/",
+      "price": 30173,
+      "title": "2025 Mazda CX-5 2.5 S Carbon Edition",
+      "year": 2025,
+      "dealer": "Koeppel Hyundai"
+    },
+    {
+      "id": "96dcad21-fb40-492d-84ee-d272b74afb9f",
+      "url": "https://www.cars.com/vehicledetail/96dcad21-fb40-492d-84ee-d272b74afb9f/",
+      "price": 19990,
+      "title": "2018 Mazda MX-5 Miata Grand Touring",
+      "year": 2018,
+      "dealer": "Bob Ruth Ford"
+    },
+    {
+      "id": "3f50e066-9678-43ea-a00f-db86c4304976",
+      "url": "https://www.cars.com/vehicledetail/3f50e066-9678-43ea-a00f-db86c4304976/",
+      "price": 17990,
+      "title": "2019 Mazda CX-3 Touring",
+      "year": 2019,
+      "dealer": "Bob Ruth Ford"
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=chevrolet",
+  "cached_at": 1784398650.087669,
+  "cards": [
+    {
+      "id": "378c47f0-a144-46d9-94aa-94819f5e7050",
+      "url": "https://www.cars.com/vehicledetail/378c47f0-a144-46d9-94aa-94819f5e7050/",
+      "price": 64994,
+      "title": "2021 Chevrolet Corvette Stingray w/3LT",
+      "year": 2021,
+      "dealer": "CarTopia"
+    },
+    {
+      "id": "e5dc9474-0dcf-4247-a969-9cb78ced9d18",
+      "url": "https://www.cars.com/vehicledetail/e5dc9474-0dcf-4247-a969-9cb78ced9d18/",
+      "price": 22270,
+      "title": "2022 Chevrolet Bolt EUV FWD Premier",
+      "year": 2022,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "7e33b122-5fa1-4b88-9846-096258269c43",
+      "url": "https://www.cars.com/vehicledetail/7e33b122-5fa1-4b88-9846-096258269c43/",
+      "price": 71624,
+      "title": "2024 Chevrolet Corvette Stingray w/2LT",
+      "year": 2024,
+      "dealer": "DCH Academy Honda"
+    },
+    {
+      "id": "7c4db552-2789-468a-8dca-d6abbde4b31f",
+      "url": "https://www.cars.com/vehicledetail/7c4db552-2789-468a-8dca-d6abbde4b31f/",
+      "price": 75994,
+      "title": "2023 Chevrolet Corvette Stingray w/3LT",
+      "year": 2023,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "d244ff79-583a-4e1b-a070-98f8866493cd",
+      "url": "https://www.cars.com/vehicledetail/d244ff79-583a-4e1b-a070-98f8866493cd/",
+      "price": 63789,
+      "title": "2022 Chevrolet Corvette Stingray w/1LT",
+      "year": 2022,
+      "dealer": "DCH Ford of Eatontown"
+    },
+    {
+      "id": "fa8e8f05-92c5-4590-a383-ff1f908221e1",
+      "url": "https://www.cars.com/vehicledetail/fa8e8f05-92c5-4590-a383-ff1f908221e1/",
+      "price": 68997,
+      "title": "2020 Chevrolet Corvette Stingray w/3LT",
+      "year": 2020,
+      "dealer": "Ingersoll Auto of Danbury"
+    },
+    {
+      "id": "21fce848-082c-4e1f-b063-db4d0348becc",
+      "url": "https://www.cars.com/vehicledetail/21fce848-082c-4e1f-b063-db4d0348becc/",
+      "price": 72299,
+      "title": "2023 Chevrolet Corvette Stingray w/2LT",
+      "year": 2023,
+      "dealer": "BMW of Ramsey"
+    },
+    {
+      "id": "f82f7232-b95c-41ff-91f6-09b868d6ddfc",
+      "url": "https://www.cars.com/vehicledetail/f82f7232-b95c-41ff-91f6-09b868d6ddfc/",
+      "price": 70796,
+      "title": "2025 Chevrolet Silverado EV RST",
+      "year": 2025,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "c74a3c06-bad4-4b14-bbde-1894f449d57c",
+      "url": "https://www.cars.com/vehicledetail/c74a3c06-bad4-4b14-bbde-1894f449d57c/",
+      "price": 70985,
+      "title": "2017 Chevrolet Corvette Grand Sport",
+      "year": 2017,
+      "dealer": "Autodirect Cars & Corvettes"
+    },
+    {
+      "id": "b9dba266-e13e-4613-b2ed-e0a09479556d",
+      "url": "https://www.cars.com/vehicledetail/b9dba266-e13e-4613-b2ed-e0a09479556d/",
+      "price": 36734,
+      "title": "2024 Chevrolet Silverado 1500 LT",
+      "year": 2024,
+      "dealer": "Olger Motors, Inc."
+    },
+    {
+      "id": "8f544c06-758b-4d22-ad80-2d927d0923f0",
+      "url": "https://www.cars.com/vehicledetail/8f544c06-758b-4d22-ad80-2d927d0923f0/",
+      "price": 36294,
+      "title": "2023 Chevrolet Silverado 1500 Custom Trail Boss",
+      "year": 2023,
+      "dealer": "Automotive Avenues"
+    },
+    {
+      "id": "b150e9a8-592d-4d56-93ba-64980b1cdb9b",
+      "url": "https://www.cars.com/vehicledetail/b150e9a8-592d-4d56-93ba-64980b1cdb9b/",
+      "price": 38744,
+      "title": "2023 Chevrolet Silverado 1500 Custom Trail Boss",
+      "year": 2023,
+      "dealer": "Lester Glenn Chevrolet"
+    },
+    {
+      "id": "8465d051-f3c6-4982-ba04-3658f961c785",
+      "url": "https://www.cars.com/vehicledetail/8465d051-f3c6-4982-ba04-3658f961c785/",
+      "price": 50990,
+      "title": "2023 Chevrolet Silverado 1500 High Country",
+      "year": 2023,
+      "dealer": "Quakertown Mitsubishi"
+    },
+    {
+      "id": "63cbb5e0-047f-4ec8-89fd-8990ef597e2d",
+      "url": "https://www.cars.com/vehicledetail/63cbb5e0-047f-4ec8-89fd-8990ef597e2d/",
+      "price": 40231,
+      "title": "2026 Chevrolet Colorado Trail Boss",
+      "year": 2026,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "5d55e48b-85fa-44ba-b28e-9cdeff262458",
+      "url": "https://www.cars.com/vehicledetail/5d55e48b-85fa-44ba-b28e-9cdeff262458/",
+      "price": 65498,
+      "title": "2024 Chevrolet Silverado 1500 RST",
+      "year": 2024,
+      "dealer": "Elkins Chevrolet"
+    },
+    {
+      "id": "95c3fe9e-09ea-4743-abd1-7ef838ab1f7a",
+      "url": "https://www.cars.com/vehicledetail/95c3fe9e-09ea-4743-abd1-7ef838ab1f7a/",
+      "price": 57989,
+      "title": "2026 Chevrolet Silverado 1500 LT Trail Boss",
+      "year": 2026,
+      "dealer": "Chapman Ford of Northeast Philadelphia"
+    },
+    {
+      "id": "ea5a25a4-3cf4-4724-8594-0f16dfdd32df",
+      "url": "https://www.cars.com/vehicledetail/ea5a25a4-3cf4-4724-8594-0f16dfdd32df/",
+      "price": 49997,
+      "title": "2026 Chevrolet Silverado 1500 Custom Trail Boss",
+      "year": 2026,
+      "dealer": "Ingersoll Auto of Danbury"
+    },
+    {
+      "id": "dae0ee20-fa30-4ecf-b1ae-34a776df1ac0",
+      "url": "https://www.cars.com/vehicledetail/dae0ee20-fa30-4ecf-b1ae-34a776df1ac0/",
+      "price": 38994,
+      "title": "2025 Chevrolet Silverado 1500 LT",
+      "year": 2025,
+      "dealer": "Route 46 Nissan"
+    },
+    {
+      "id": "ac050881-2e3a-4e1a-aab4-c65dd74abc30",
+      "url": "https://www.cars.com/vehicledetail/ac050881-2e3a-4e1a-aab4-c65dd74abc30/",
+      "price": 40678,
+      "title": "2023 Chevrolet Silverado 1500 RST",
+      "year": 2023,
+      "dealer": "Auto Hub"
+    },
+    {
+      "id": "d28211e2-b65e-4056-be02-1a47317542c4",
+      "url": "https://www.cars.com/vehicledetail/d28211e2-b65e-4056-be02-1a47317542c4/",
+      "price": 48445,
+      "title": "2025 Chevrolet Traverse AWD Z71",
+      "year": 2025,
+      "dealer": "Executive Chevrolet"
+    },
+    {
+      "id": "2457b501-13b1-4cb0-91f0-70c379aafbe0",
+      "url": "https://www.cars.com/vehicledetail/2457b501-13b1-4cb0-91f0-70c379aafbe0/",
+      "price": 29637,
+      "title": "2020 Chevrolet Silverado 1500 Custom",
+      "year": 2020,
+      "dealer": "Davis Honda"
+    },
+    {
+      "id": "426f2840-c6ec-432e-8d86-ebbf2f58244b",
+      "url": "https://www.cars.com/vehicledetail/426f2840-c6ec-432e-8d86-ebbf2f58244b/",
+      "price": 56989,
+      "title": "2024 Chevrolet Silverado 1500 High Country",
+      "year": 2024,
+      "dealer": "BMW of Freehold"
+    },
+    {
+      "id": "cb64e2a4-757f-4912-af99-822d62bece47",
+      "url": "https://www.cars.com/vehicledetail/cb64e2a4-757f-4912-af99-822d62bece47/",
+      "price": 43467,
+      "title": "2022 Chevrolet Camaro LT1",
+      "year": 2022,
+      "dealer": "Imperial Chevrolet"
+    },
+    {
+      "id": "0588fe0e-8a50-4322-a2f1-1ccefd00acc0",
+      "url": "https://www.cars.com/vehicledetail/0588fe0e-8a50-4322-a2f1-1ccefd00acc0/",
+      "price": 49998,
+      "title": "2017 Chevrolet SS",
+      "year": 2017,
+      "dealer": "CarMax Buffalo"
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "url": "https://www.cars.com/shopping/results/?stock_type=used&zip=10001&maximum_distance=100&page=1&page_size=50&makes%5B%5D=toyota&models%5B%5D=toyota-corolla",
+  "cached_at": 1784396062.5608268,
+  "cards": [
+    {
+      "id": "2507e440-1e44-4c98-a96d-29579a6aa713",
+      "url": "https://www.cars.com/vehicledetail/2507e440-1e44-4c98-a96d-29579a6aa713/",
+      "price": 23951,
+      "title": "2023 Toyota Corolla SE",
+      "year": 2023,
+      "dealer": "Faulkner Toyota Trevose"
+    },
+    {
+      "id": "637d8323-7181-46b5-8e70-dba18a1a9850",
+      "url": "https://www.cars.com/vehicledetail/637d8323-7181-46b5-8e70-dba18a1a9850/",
+      "price": 22675,
+      "title": "2023 Toyota Corolla LE",
+      "year": 2023,
+      "dealer": "Volkswagen of Springfield"
+    },
+    {
+      "id": "86962ffb-a2cb-4a6f-b001-6cbe70480a6b",
+      "url": "https://www.cars.com/vehicledetail/86962ffb-a2cb-4a6f-b001-6cbe70480a6b/",
+      "price": 9345,
+      "title": "2014 Toyota Corolla S Plus",
+      "year": 2014,
+      "dealer": "Lexus of Orange County"
+    },
+    {
+      "id": "06cf0340-3028-4c11-82b0-4c9669c38d4f",
+      "url": "https://www.cars.com/vehicledetail/06cf0340-3028-4c11-82b0-4c9669c38d4f/",
+      "price": 14795,
+      "title": "2019 Toyota Corolla LE",
+      "year": 2019,
+      "dealer": "Magic Auto Sales"
+    },
+    {
+      "id": "4dcc0f2b-e4d0-4d16-af7d-036a240317a1",
+      "url": "https://www.cars.com/vehicledetail/4dcc0f2b-e4d0-4d16-af7d-036a240317a1/",
+      "price": 9999,
+      "title": "2011 Toyota Corolla LE",
+      "year": 2011,
+      "dealer": "Honda of Mahwah"
+    },
+    {
+      "id": "8869617e-294c-40d4-af0d-5aed0ae3a5aa",
+      "url": "https://www.cars.com/vehicledetail/8869617e-294c-40d4-af0d-5aed0ae3a5aa/",
+      "price": 26999,
+      "title": "2024 Toyota Corolla XSE",
+      "year": 2024,
+      "dealer": "Hudson Toyota"
+    },
+    {
+      "id": "29f12b11-5bea-45f4-a48d-a01dcd14e74e",
+      "url": "https://www.cars.com/vehicledetail/29f12b11-5bea-45f4-a48d-a01dcd14e74e/",
+      "price": 14290,
+      "title": "2017 Toyota Corolla SE",
+      "year": 2017,
+      "dealer": "DCH Wappingers Falls Toyota"
+    },
+    {
+      "id": "198dd2f5-c21e-494f-86ff-9f4716392832",
+      "url": "https://www.cars.com/vehicledetail/198dd2f5-c21e-494f-86ff-9f4716392832/",
+      "price": 23995,
+      "title": "2025 Toyota Corolla LE",
+      "year": 2025,
+      "dealer": "CarsIndex NJ"
+    },
+    {
+      "id": "c8cd490f-4e59-48c6-99ca-deff5dda4d89",
+      "url": "https://www.cars.com/vehicledetail/c8cd490f-4e59-48c6-99ca-deff5dda4d89/",
+      "price": 25424,
+      "title": "2024 Toyota Corolla XSE",
+      "year": 2024,
+      "dealer": "Toyota of Wallingford"
+    },
+    {
+      "id": "21b0fb61-8dc0-420a-ad45-4ac902e7a67a",
+      "url": "https://www.cars.com/vehicledetail/21b0fb61-8dc0-420a-ad45-4ac902e7a67a/",
+      "price": 24358,
+      "title": "2024 Toyota Corolla SE",
+      "year": 2024,
+      "dealer": "Sansone Rt 1 Auto Mall"
+    },
+    {
+      "id": "feee1b42-e4ec-47cb-976e-0dc3b92c4d5c",
+      "url": "https://www.cars.com/vehicledetail/feee1b42-e4ec-47cb-976e-0dc3b92c4d5c/",
+      "price": 22672,
+      "title": "2025 Toyota Corolla LE",
+      "year": 2025,
+      "dealer": "Hillside Toyota"
+    },
+    {
+      "id": "cf1f24cf-3757-4c21-8f93-685eef3236e8",
+      "url": "https://www.cars.com/vehicledetail/cf1f24cf-3757-4c21-8f93-685eef3236e8/",
+      "price": 16555,
+      "title": "2021 Toyota Corolla LE",
+      "year": 2021,
+      "dealer": "Star Auto Mall"
+    },
+    {
+      "id": "e7f1571e-21dd-4f56-8764-bb3370f01a96",
+      "url": "https://www.cars.com/vehicledetail/e7f1571e-21dd-4f56-8764-bb3370f01a96/",
+      "price": 18198,
+      "title": "2024 Toyota Corolla LE",
+      "year": 2024,
+      "dealer": "Metro Honda"
+    },
+    {
+      "id": "27cf6cae-3d33-4dd2-ac98-10c2089eacf4",
+      "url": "https://www.cars.com/vehicledetail/27cf6cae-3d33-4dd2-ac98-10c2089eacf4/",
+      "price": 22999,
+      "title": "2023 Toyota Corolla SE",
+      "year": 2023,
+      "dealer": "CarsIndex NJ"
+    },
+    {
+      "id": "faefab17-315b-474e-80cf-52cacc4c7ad9",
+      "url": "https://www.cars.com/vehicledetail/faefab17-315b-474e-80cf-52cacc4c7ad9/",
+      "price": 19963,
+      "title": "2022 Toyota Corolla LE",
+      "year": 2022,
+      "dealer": "Westbury Toyota"
+    },
+    {
+      "id": "dc3ace9a-c252-4d7f-a4d7-305f13d59e64",
+      "url": "https://www.cars.com/vehicledetail/dc3ace9a-c252-4d7f-a4d7-305f13d59e64/",
+      "price": 27000,
+      "title": "2025 Toyota Corolla FX",
+      "year": 2025,
+      "dealer": "Advantage Toyota Valley Stream"
+    },
+    {
+      "id": "1bffc310-f4dc-4112-811b-a13f0cf31b40",
+      "url": "https://www.cars.com/vehicledetail/1bffc310-f4dc-4112-811b-a13f0cf31b40/",
+      "price": 7878,
+      "title": "2007 Toyota Corolla LE",
+      "year": 2007,
+      "dealer": "Ardmore Toyota"
+    },
+    {
+      "id": "677577b5-3a0c-4931-b6dd-894da33e3304",
+      "url": "https://www.cars.com/vehicledetail/677577b5-3a0c-4931-b6dd-894da33e3304/",
+      "price": 21991,
+      "title": "2024 Toyota Corolla LE",
+      "year": 2024,
+      "dealer": "Toyota of Hackensack"
+    },
+    {
+      "id": "30333932-df06-4a40-888a-b0b4acb16abf",
+      "url": "https://www.cars.com/vehicledetail/30333932-df06-4a40-888a-b0b4acb16abf/",
+      "price": 25168,
+      "title": "2025 Toyota Corolla SE",
+      "year": 2025,
+      "dealer": "City World Hyundai"
+    },
+    {
+      "id": "5a989e06-8215-492c-94ca-cf7bf6419217",
+      "url": "https://www.cars.com/vehicledetail/5a989e06-8215-492c-94ca-cf7bf6419217/",
+      "price": 22999,
+      "title": "2026 Toyota Corolla LE",
+      "year": 2026,
+      "dealer": "CarsIndex NJ"
+    },
+    {
+      "id": "5c019c79-8745-47b3-98a3-f28f4025d47d",
+      "url": "https://www.cars.com/vehicledetail/5c019c79-8745-47b3-98a3-f28f4025d47d/",
+      "price": 19963,
+      "title": "2022 Toyota Corolla LE",
+      "year": 2022,
+      "dealer": "Westchester Toyota"
+    },
+    {
+      "id": "78f5869c-958f-46fe-aac3-e744633b412f",
+      "url": "https://www.cars.com/vehicledetail/78f5869c-958f-46fe-aac3-e744633b412f/",
+      "price": 20999,
+      "title": "2022 Toyota Corolla SE",
+      "year": 2022,
+      "dealer": "Galaxy Toyota"
+    },
+    {
+      "id": "468ea7e3-a5ea-4fd5-9968-fe189f4a20ce",
+      "url": "https://www.cars.com/vehicledetail/468ea7e3-a5ea-4fd5-9968-fe189f4a20ce/",
+      "price": 15998,
+      "title": "2018 Toyota Corolla LE",
+      "year": 2018,
+      "dealer": "CarMax Capital Boulevard"
+    },
+    {
+      "id": "5a5bda93-fce6-4137-b65d-62fe5a45964e",
+      "url": "https://www.cars.com/vehicledetail/5a5bda93-fce6-4137-b65d-62fe5a45964e/",
+      "price": 16998,
+      "title": "2018 Toyota Corolla LE",
+      "year": 2018,
+      "dealer": "CarMax Capital Boulevard"
+    }
+  ]
+}
