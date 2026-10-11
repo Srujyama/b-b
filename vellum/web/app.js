@@ -745,7 +745,8 @@ function initPatient() {
       $("#f-name").value = pt.name ?? "";
       if (pt.householdSize) $("#f-household").value = pt.householdSize;
       if (pt.annualIncome) $("#f-income").value = pt.annualIncome;
-      if (pt.maxPay) $("#f-maxpay").value = pt.maxPay;
+      const maxField = document.getElementById("f-maxpay"); // the field may be hidden from the form
+      if (pt.maxPay && maxField) maxField.value = pt.maxPay;
       $("#f-consent").checked = Boolean(pt.consent);
     }
     if (state.intakeSaved && intakeOk()) {
@@ -813,7 +814,8 @@ function initPatient() {
       name: $("#f-name").value.trim(),
       household_size: num("#f-household"),
       annual_income: num("#f-income"),
-      max_pay: num("#f-maxpay"),
+      // her limit isn't shown on the form any more; keep the case's (still enforced server-side)
+      max_pay: document.getElementById("f-maxpay") ? num("#f-maxpay") : P()?.patient?.maxPay,
       consent: true,
     };
     busy($("#intake-submit"), async () => {
