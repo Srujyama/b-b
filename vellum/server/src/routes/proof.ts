@@ -26,7 +26,7 @@ import { opt } from "../env.js";
 import { requireCase } from "../store.js";
 import type { CasePacket, Receipt } from "../types.js";
 
-export const PROOF_FORMAT = "bangbang-proof/v1";
+export const PROOF_FORMAT = "vellum-proof/v1";
 const PREVIEW = "PREVIEW (dev harness, not live data)";
 const NOT_DEPLOYED = "contract not deployed";
 
@@ -250,7 +250,7 @@ export default async function proofRoutes(app: FastifyInstance) {
         ...(usePreview ? { entriesSource: `${PREVIEW}: local log built from the seeded transcript; never appended on-chain` } : {}),
       });
       if (req.query.download === "1") {
-        reply.header("content-disposition", `attachment; filename="bangbang-proof-${c.id.slice(0, 8)}.json"`);
+        reply.header("content-disposition", `attachment; filename="vellum-proof-${c.id.slice(0, 8)}.json"`);
         reply.type("application/json; charset=utf-8");
         return JSON.stringify(bundle, null, 2);
       }

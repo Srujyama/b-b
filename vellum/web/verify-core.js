@@ -140,7 +140,7 @@ export function overall(result, bundle) {
 export function bundleProblems(b) {
   const p = [];
   if (!b || typeof b !== "object") return ["not a JSON object"];
-  if (typeof b.format !== "string" || !b.format.startsWith("bangbang-proof/")) p.push('missing "format": "bangbang-proof/v1"');
+  if (typeof b.format !== "string" || !/^(vellum|bangbang)-proof\//.test(b.format)) p.push('missing "format": "vellum-proof/v1"');
   if (!Array.isArray(b.entries)) p.push('missing "entries" array');
   else
     b.entries.forEach((e, i) => {
