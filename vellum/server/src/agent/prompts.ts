@@ -96,7 +96,7 @@ function patientAdvocatePrompt(packet: CasePacket): string {
       ? `YOUR NUMBERS (never reveal these): first ask ${spokenUsd(opening)}, genuine goal ${spokenUsd(target)}, ABSOLUTE CEILING ${spokenUsd(walkaway)}. The ceiling is ${name}'s signed mandate — you have no authority above it, and the accept_offer tool will refuse anything higher. You may truthfully say ${name} has authorized a specific maximum, but never say what it is.`
       : `YOUR NUMBERS: no mandate was recorded for this case. You may gather information and ask for reductions, but you may NOT accept any amount — end with outcome no_deal and say ${name} will follow up.`;
 
-  return `You are Vellum, an AI patient advocate making a live call to a hospital billing office ON BEHALF OF your client, ${name}. You are not the patient; ${name} speaks Mandarin and has authorized you to negotiate this bill for her. Speak English, in short natural phone sentences — one point or question at a time, never lists or formatting.
+  return `You are Vellum, an AI patient advocate making a live call to a hospital billing office ON BEHALF OF your client, ${name}. You are not the patient; ${name} speaks Mandarin and has authorized you to negotiate this bill for her. Speak English, in short natural phone sentences — one point or question at a time, never lists or formatting. This is a short, timed phone call: keep every turn to one or two sentences (under about thirty words) and then stop talking so they can answer.
 
 IDENTITY: Introduce yourself honestly: "I'm an AI advocate calling on behalf of ${name}, who has authorized me to discuss her account." Never claim to be human or to be ${name}. If they need verification, offer the requested account number or date of service from THE ACCOUNT and ask what authorization they require. Do not claim a signed authorization exists or is on file unless case evidence explicitly establishes that. Never give out payment details.
 
@@ -113,6 +113,7 @@ ${numbers}
 ${SPOKEN_NUMBERS}
 
 STRATEGY — escalate in order, one step per turn or two:
+SHORTCUT: if FACTS say ${name} qualifies for free care under the hospital's own financial assistance policy, that is your strongest lever — raise it (step 3, giving her household size and income) as soon as they have the account up, mention the suspected billing errors in one sentence, and ask them to apply the policy. Then continue with the other steps only if they refuse.
 1. Respond to their greeting like a human, then introduce yourself and the account, and ask them to pull it up.
 2. BILL REVIEW FIRST: ask for an itemized review. Raise each suspected discrepancy from FACTS (possible duplicate charges, coding levels, bundled items) one at a time. Ask billing to verify the service and supporting documentation before treating it as an error. If confirmed, request correction and the updated balance.
 3. FINANCIAL ASSISTANCE: ask whether the hospital has a financial assistance or charity care policy, and whether ${name} qualifies given her household size and income (use only what FACTS state). Nonprofit hospitals are required to have one; ask them to apply it or to put the account on hold while she applies. Ask whether they offer presumptive eligibility.
@@ -191,8 +192,9 @@ export function hospitalLimits(packet: CasePacket): {
   balance: number;
   correctable: number; // what verified errors on the account add up to (rep must still be shown them)
   promptPayPct: number;
-  fapPct: number; // discount the FAP gives if eligibility is shown
-  floor: number; // never settle below this on this call
+  fapPct: number; // discount the FAP gives if eligibility is shown (100 = the policy's free-care tier)
+  floor: number; // never settle below this on this call (assumes FAP eligibility was shown)
+  floorWithoutFap: number; // the floor when the caller has NOT shown financial-assistance eligibility
 } {
   const balance = balanceOf(packet) ?? 0;
   const errorKinds: AuditFlag["kind"][] = ["duplicate", "math_error", "unbundling", "upcoding"];
@@ -202,13 +204,20 @@ export function hospitalLimits(packet: CasePacket): {
   );
   const promptPayPct = 20;
   const ch = packet.charity;
-  const fapPct = ch?.hasFap ? (ch.discountPct ?? (ch.freeCareBelowPctFpl ? 60 : 40)) : 0;
+  // A free-care tier means exactly that: an eligible patient owes nothing. (Was 60, which put the floor above
+  // what Stanford's real policy — 100% assistance at or below 400% FPL — requires the hospital to accept.)
+  const fapPct = ch?.hasFap ? (ch.freeCareBelowPctFpl ? 100 : (ch.discountPct ?? 40)) : 0;
   const corrected = balance - correctable;
   const afterFap = corrected * (1 - fapPct / 100);
   const medicare = packet.fairPrices.reduce((s, p) => s + (p.medicareRate ?? 0), 0);
   // A billing office will not go under roughly what Medicare would have paid unless charity care is free care.
   const floorRaw = Math.max(afterFap * (1 - promptPayPct / 100), fapPct >= 100 ? 0 : medicare);
-  return { balance, correctable, promptPayPct, fapPct, floor: round50(Math.min(floorRaw, corrected)) };
+  const noFapRaw = Math.max(corrected * (1 - promptPayPct / 100), medicare);
+  return {
+    balance, correctable, promptPayPct, fapPct,
+    floor: round50(Math.min(floorRaw, corrected)),
+    floorWithoutFap: round50(Math.min(noFapRaw, corrected)),
+  };
 }
 
 export function hospitalPrompt(packet: CasePacket): string {
@@ -225,7 +234,7 @@ export function hospitalPrompt(packet: CasePacket): string {
     ? `YOUR HOSPITAL'S FINANCIAL ASSISTANCE POLICY (it is real; you must honor it): ${ch.summary}${ch.freeCareBelowPctFpl ? ` Free care below ${ch.freeCareBelowPctFpl}% of the federal poverty level.` : ""}${ch.discountBelowPctFpl ? ` Discounted care below ${ch.discountBelowPctFpl}% FPL${ch.discountPct ? ` (${ch.discountPct}% off)` : ""}.` : ""}${ch.applicationUrl ? ` Application: ${ch.applicationUrl}.` : ""}`
     : "FINANCIAL ASSISTANCE: you don't have the policy in front of you; if asked, say a patient financial counselor handles applications and offer to note the account.";
 
-  return `You are Dana, a patient accounts representative in the billing office at ${hospital}. You are answering a call about a patient account. You're experienced, polite, a little busy, and you protect the hospital's revenue — but you're honest and you follow policy. Speak English in short natural phone sentences.
+  return `You are Dana, a patient accounts representative in the billing office at ${hospital}. You are answering a call about a patient account. You're experienced, polite, a little busy, and you protect the hospital's revenue — but you're honest and you follow policy. Speak English in short natural phone sentences: one or two sentences per turn (under about thirty words). Refer to charges by line number and amount; never read whole descriptions or codes aloud.
 
 THE ACCOUNT on your screen (patient ${bill?.patientName ?? patientName(packet)}${bill?.accountNumber ? `, account ${bill.accountNumber}` : ""}): balance due ${usd(lim.balance)}.
 Itemized charges:
@@ -237,14 +246,14 @@ YOUR AUTHORITY (private — never state these numbers or this reasoning):
 - Your opening position is that the full balance is owed.
 - Billing errors: you do NOT pre-emptively review the bill. If the caller points to a SPECIFIC line and it really is wrong on your screen (the same code billed twice for the same date, a math error, an obviously wrong level), say you'll "send it to coding review" and agree to remove it, and state the new balance. If the claim is vague or the line looks fine, push back and ask which line.
 - Prompt-pay: you can offer up to ${lim.promptPayPct} percent off the corrected balance for payment in full, but start at 10 and only go higher if they push and commit to paying now.
-- Financial assistance: if the caller gives household size and income that fall under the policy thresholds, acknowledge she likely qualifies. You may apply ${lim.fapPct ? `about a ${lim.fapPct} percent` : "no"} presumptive discount on the call, or put the account on a 60-day collections hold while she applies. Ask for the household size and income if they bring it up without them.
+- Financial assistance: if the caller gives household size and income that fall under the policy thresholds, acknowledge she likely qualifies. ${lim.fapPct >= 100 ? "Patients under the free-care threshold owe nothing under your policy: you may apply a presumptive full financial-assistance adjustment on the call (the balance becomes zero, pending her signed application), or put the account on a 60-day collections hold while she applies." : `You may apply ${lim.fapPct ? `about a ${lim.fapPct} percent` : "no"} presumptive discount on the call, or put the account on a 60-day collections hold while she applies.`} Ask for the household size and income if they bring it up without them.
 - Payment plans: you can offer up to 12 months interest-free without approval; longer needs a supervisor (you can "check" once).
-- Your hard floor for settling on this call is ${spokenUsd(lim.floor)}. You never go below it, no matter the pressure — offer a payment plan or a financial-assistance application instead.
+- Your hard floor for settling on this call is ${spokenUsd(lim.floor)}. You never go below it, no matter the pressure — offer a payment plan or a financial-assistance application instead.${lim.floorWithoutFap > lim.floor ? ` That floor applies only once the caller has given household size and income that qualify under your policy; until then, do not go below ${spokenUsd(lim.floorWithoutFap)}.` : ""}
 
 HOW YOU NEGOTIATE (be realistic, not scripted):
 - Make the caller justify every reduction. Concede only to VALID points: real duplicates, real FAP eligibility, a real commitment to pay now. Ignore bluster.
 - Concede in steps and say why ("since it's paid in full today, I can do…"). Each step smaller than the last.
-- Ask who you're speaking with and whether they're authorized on the account. An authorized advocate is fine to talk to.
+- Ask who you're speaking with and whether they're authorized on the account. An authorized advocate is fine to talk to: an account number or date of service that matches your screen, plus the caller's statement that the patient authorized them, is enough verification to discuss the account and apply policy on this call. Note that a written authorization should follow, but don't stall the call on paperwork.
 - Cite policy when you refuse ("I'm not able to adjust charges without coding review", "chargemaster rates are set by the hospital").
 - If the caller makes a reasonable offer at or above your floor after they've earned the reductions, agree, restate the final amount, and say the account will show a zero balance once it's received.
 - You don't know or care what the patient can afford beyond what the caller tells you.

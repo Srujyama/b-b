@@ -455,7 +455,10 @@ export function liveDeps(app: FastifyInstance): PipelineDeps {
       const c = requireCase(id);
       if (counterparty === "agent") {
         const handle = activeBridge(id) ?? (await startAgentBridge(id, c.mode === "clinic" ? "insurer" : "hospital"));
-        await handle.done;
+        const { reason } = await handle.done;
+        // A provider failure (e.g. ElevenLabs out of credits) is not "the hospital said no": surface it as such.
+        if (reason === "error" && requireCase(id).agreedAmount == null)
+          throw new Error("the voice call failed before an outcome (ElevenLabs error — see the error event)");
         return;
       }
       emit(id, {

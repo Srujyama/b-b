@@ -8,7 +8,7 @@ vi.mock("../src/llm.js", () => ({
 
 import { createCase, subscribe } from "../src/store.js";
 import type { CaseEvent, CasePacket } from "../src/types.js";
-import { startAgentBridge, type WsLike } from "../src/agent/bridge.js";
+import { closeFailure, startAgentBridge, type WsLike } from "../src/agent/bridge.js";
 import { clearTranslateCache } from "../src/agent/translate.js";
 import {
   agentConfig,
@@ -139,6 +139,12 @@ class FakeWs extends EventEmitter implements WsLike {
   open() {
     this.readyState = 1;
     this.emit("open");
+  }
+  /** The server closes the socket with a code + reason (as `ws` reports it: reason is a Buffer). */
+  drop(code: number, reason = "") {
+    this.closed = true;
+    this.readyState = 3;
+    this.emit("close", code, Buffer.from(reason));
   }
   server(msg: unknown) {
     this.emit("message", Buffer.from(JSON.stringify(msg)));
@@ -345,6 +351,58 @@ describe("bridge", () => {
     b2.hosp.close(); // counterparty used the end_call system tool
     expect(b2.adv.closed).toBe(true);
     expect(await b2.handle.done).toEqual({ reason: "hangup" });
+  });
+
+  it("reports an ElevenLabs quota close as an error, not a hang-up", async () => {
+    const c = patientCase();
+    const events = collect(c.id);
+    const { handle, hosp } = await start(c.id);
+    hosp.drop(1002, "This request exceeds your quota limit.");
+    expect(await handle.done).toEqual({ reason: "error" });
+    const err = events.find((e) => e.type === "error") as Extract<CaseEvent, { type: "error" }>;
+    expect(err.message).toMatch(/hospital leg: 1002 This request exceeds your quota limit/);
+    expect(closeFailure(3000, "[quota_exceeded] You've run out of credits.")).toMatch(/^3000/);
+    expect(closeFailure(1000, "")).toBeUndefined();
+    expect(closeFailure(1005, "")).toBeUndefined();
+  });
+
+  it("treats the advocate hanging up after report_outcome as the outcome", async () => {
+    const c = patientCase();
+    const { handle, adv } = await start(c.id);
+    adv.server({
+      type: "client_tool_call",
+      client_tool_call: { tool_name: "report_outcome", tool_call_id: "t9", parameters: { outcome: "no_deal", summary: "hold placed" }, event_id: 9 },
+    });
+    adv.drop(1000); // end_call system tool, before the grace timer fires
+    expect(await handle.done).toEqual({ reason: "outcome" });
+  });
+
+  it("tells the advocate to wrap up before the time limit", async () => {
+    const c = patientCase();
+    const events = collect(c.id);
+    const handle = await startAgentBridge(c.id, "hospital", {
+      connect: (url) => {
+        const ws = new FakeWs(url);
+        sockets.push(ws);
+        return ws;
+      },
+      signedUrl: async (id) => `wss://signed/${id}`,
+      timeoutMs: 60_000,
+      wrapUpMs: 10_000,
+    });
+    const [adv, hosp] = sockets;
+    adv.open();
+    hosp.open();
+    await vi.advanceTimersByTimeAsync(49_000);
+    expect(adv.sent.some((m) => m.type === "contextual_update")).toBe(false);
+    await vi.advanceTimersByTimeAsync(1_000);
+    const nudge = adv.sent.find((m) => m.type === "contextual_update");
+    expect(nudge.text).toMatch(/under 10 seconds remain/);
+    expect(nudge.text).toContain("report_outcome");
+    expect(hosp.sent.some((m) => m.type === "contextual_update")).toBe(false); // the hospital is not told
+    expect(events.some((e) => e.type === "log" && /wrap up/.test(e.message))).toBe(true);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(await handle.done).toEqual({ reason: "timeout" });
   });
 
   it("stops at the timeout and answers pings", async () => {

@@ -15,7 +15,7 @@ import { emit, requireCase, updateCase } from "../store.js";
 import type { TranscriptLine } from "../types.js";
 import { handleTool, type ToolResult } from "./tools.js";
 import { translateLine } from "./translate.js";
-import { agentIdFor, conversationInit, getSignedUrl, internalToolName, pcmRate, resamplePcm16, type VoiceRole } from "./elevenlabs.js";
+import { OUTCOME_TOOL, agentIdFor, conversationInit, getSignedUrl, internalToolName, pcmRate, resamplePcm16, type VoiceRole } from "./elevenlabs.js";
 
 type Who = "advocate" | "hospital" | "insurer";
 
@@ -26,7 +26,7 @@ export interface WsLike {
   close(): void;
   on(event: "open", cb: () => void): unknown;
   on(event: "message", cb: (data: unknown) => void): unknown;
-  on(event: "close", cb: () => void): unknown;
+  on(event: "close", cb: (code?: number, reason?: unknown) => void): unknown;
   on(event: "error", cb: (err: Error) => void): unknown;
 }
 
@@ -37,6 +37,7 @@ export type BridgeOptions = {
   tickMs?: number; // mic frame length (default 100ms)
   timeoutMs?: number; // hard stop (default 4 min)
   graceMs?: number; // let the goodbye play after the outcome (default 6s)
+  wrapUpMs?: number; // tell the advocate to close out this long before the hard stop (default 45s)
 };
 
 export type StopReason = "outcome" | "hangup" | "timeout" | "error" | "stopped";
@@ -69,6 +70,18 @@ export function notifyToolResult(caseId: string, name: string, result: ToolResul
   bridges.get(caseId)?.onTool(internalToolName(name), result);
 }
 
+/**
+ * A provider-side failure behind a WebSocket close, or undefined for an ordinary hang-up. ElevenLabs closes
+ * with 1000 (normal) when an agent uses end_call; quota/auth/policy failures arrive as 1002/1008/1011 or the
+ * 3000+ application range with a reason string. 1005/1006 carry no reason and are treated as a hang-up.
+ */
+export function closeFailure(code: number | undefined, reason: string): string | undefined {
+  const bad = (code != null && (code === 1002 || code === 1008 || code === 1011 || code >= 3000)) ||
+    /quota|credit|limit|unauthori[sz]ed|invalid|error/i.test(reason);
+  if (!bad) return undefined;
+  return `${code ?? "?"}${reason ? ` ${reason.slice(0, 200)}` : ""}`;
+}
+
 function toText(data: unknown): string {
   if (typeof data === "string") return data;
   if (Buffer.isBuffer(data)) return data.toString("utf8");
@@ -93,6 +106,8 @@ export async function startAgentBridge(
   const tickMs = opts.tickMs ?? 100;
   const timeoutMs = opts.timeoutMs ?? 4 * 60_000;
   const graceMs = opts.graceMs ?? 6000;
+  const wrapUpMs = Math.min(opts.wrapUpMs ?? 45_000, timeoutMs / 2);
+  const debug = opt("VELLUM_BRIDGE_DEBUG") === "1";
 
   // Resolve config + signed URLs BEFORE touching state, so a missing key fails loudly with nothing half-open.
   const roles: [VoiceRole, VoiceRole] = ["advocate", counterparty];
@@ -146,8 +161,12 @@ export async function startAgentBridge(
     if (!stopped) timers.push(setTimeout(() => stop(reason), graceMs));
   };
 
+  let outcomeReported = false;
   const onTool = (name: string, r: ToolResult) => {
-    if (name === "end_call" && r.ok) wrapUp("outcome");
+    if (name === "end_call" && r.ok) {
+      outcomeReported = true;
+      wrapUp("outcome");
+    }
   };
 
   const handle = { caseId, counterparty, stop, done, onTool };
@@ -181,6 +200,8 @@ export async function startAgentBridge(
     } catch {
       return;
     }
+    if (debug && m?.type !== "audio" && m?.type !== "ping" && m?.type !== "vad_score")
+      console.error(`[bridge ${l.who}] ${JSON.stringify(m).slice(0, 400)}`);
     switch (m?.type) {
       case "conversation_initiation_metadata": {
         const md = m.conversation_initiation_metadata_event ?? {};
@@ -239,7 +260,21 @@ export async function startAgentBridge(
   for (const [i, l] of legs.entries()) {
     l.ws.on("open", () => send(l, inits[i]));
     l.ws.on("message", (d) => onMessage(l, d));
-    l.ws.on("close", () => stop("hangup"));
+    l.ws.on("close", (code?: number, reason?: unknown) => {
+      if (stopped) return;
+      const why = reason == null ? "" : toText(reason).trim();
+      const failure = closeFailure(code, why);
+      if (failure) {
+        // e.g. 3000 "[quota_exceeded] You've run out of credits" or 1002 "exceeds your quota limit" mid-call:
+        // that is a provider failure, not the other side hanging up — say so instead of a silent "hangup".
+        emit(caseId, { type: "error", message: `ElevenLabs ended the ${l.who} leg: ${failure}` });
+        return stop("error");
+      }
+      // The advocate hangs up (end_call system tool) right after report_outcome: that is the outcome, not a drop.
+      if (outcomeReported) return stop("outcome");
+      emit(caseId, { type: "log", message: `The ${l.who} side hung up${code ? ` (${code})` : ""}` });
+      stop("hangup");
+    });
     l.ws.on("error", (err) => {
       if (stopped) return;
       emit(caseId, { type: "error", message: `ElevenLabs ${l.who} connection error: ${err.message}` });
@@ -266,6 +301,18 @@ export async function startAgentBridge(
     }
   }, tickMs);
 
+  // Near the limit, tell the advocate (silently: a contextual update is context, not a user turn) to close out,
+  // so the call ends with a recorded deal or an honest no_deal instead of being cut off mid-sentence.
+  timers.push(
+    setTimeout(() => {
+      if (stopped || outcomeReported) return;
+      send(adv, {
+        type: "contextual_update",
+        text: `TIME CHECK: under ${Math.round(wrapUpMs / 1000)} seconds remain on this call. Wrap up now: if they have offered an amount at or below your ceiling, accept it with accept_offer and confirm it; otherwise ask for a collections hold while she applies for financial assistance. Then call ${OUTCOME_TOOL} and say goodbye.`,
+      });
+      emit(caseId, { type: "log", message: "Asked the advocate to wrap up before the time limit" });
+    }, timeoutMs - wrapUpMs),
+  );
   timers.push(
     setTimeout(() => {
       emit(caseId, { type: "log", message: "Negotiation call hit the time limit", messageZh: "谈判通话已达到时间上限" });

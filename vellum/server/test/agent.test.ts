@@ -100,7 +100,22 @@ describe("prompts", () => {
     expect(a).toEqual(b);
     expect(a.correctable).toBe(3120);
     expect(a.floor).toBeLessThan(14210 - 3120);
-    expect(a.floor).toBeGreaterThanOrEqual(180); // not below Medicare
+    // Without shown eligibility the rep still won't go under Medicare; this policy's free-care tier means an
+    // eligible patient owes nothing, so the floor with eligibility is zero (it was 60% off, above a real mandate).
+    expect(a.floorWithoutFap).toBeGreaterThanOrEqual(180);
+    expect(a.fapPct).toBe(100);
+    expect(a.floor).toBe(0);
+    const h = hospitalPrompt(createCase(patientInit()));
+    expect(h).toMatch(/presumptive full financial-assistance adjustment/);
+    expect(h).toMatch(/That floor applies only once the caller has given household size and income/);
+  });
+
+  it("a discount-only policy keeps its percentage and the Medicare floor", () => {
+    const init = patientInit();
+    const lim = hospitalLimits(createCase({ ...init, charity: { ...init.charity!, freeCareBelowPctFpl: undefined, discountBelowPctFpl: 300, discountPct: 50 } }));
+    expect(lim.fapPct).toBe(50);
+    expect(lim.floor).toBeGreaterThanOrEqual(180);
+    expect(lim.floor).toBeLessThanOrEqual(lim.floorWithoutFap);
   });
 
   it("clinic advocate argues criteria; insurer prompt has the policy", () => {
