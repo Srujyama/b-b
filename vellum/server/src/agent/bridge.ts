@@ -131,7 +131,7 @@ export async function startVoiceBridge(
   if (hospitalAgent) inits[1] = hospitalDemoInit(packet);
   const urls = await Promise.all(roles.map((r) => signed(r === "advocate" && browserAgent ? browserAgent
     : r === "hospital" && hospitalAgent ? hospitalAgent : agentIdFor(r))));
-  updateCase(caseId, { voiceSimulation: true });
+  updateCase(caseId, { voiceSimulation: true, negotiationChannel: "voice" });
 
   let stopped = false;
   let resolveDone!: (v: { reason: StopReason }) => void;
@@ -400,6 +400,7 @@ export async function startAgentBridge(
 
   const runText = (why: string | undefined, prior: TextOptions["prior"]) => {
     handle.channel = "text";
+    updateCase(caseId, { negotiationChannel: "text" });
     emit(caseId, why
       ? { type: "log", message: `Voice unavailable (ElevenLabs: ${why}) — continuing as a live text negotiation`, messageZh: "语音通话暂时不可用，改为实时文字谈判" }
       : { type: "log", message: "Running a live text negotiation (voice not requested)", messageZh: "正在进行实时文字谈判" });

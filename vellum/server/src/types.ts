@@ -132,12 +132,31 @@ export type CaseStatus =
   | "settled"
   | "failed";
 
+export type ActivityStage = "review" | "research" | "plan" | "call" | "outcome";
+export type CaseActivity = {
+  id: string;
+  at: string;
+  stage: ActivityStage;
+  kind: "update" | "error" | "offer" | "result";
+  message: string;
+};
+
+export type IntakeProgress = {
+  state: "running" | "needs_bill" | "done" | "failed";
+  message: string;
+  request: string;
+  fileName?: string;
+};
+
 export type CasePacket = {
   id: string;
   mode: "patient" | "clinic";
   status: CaseStatus;
   /** Browser / AI-counterparty rehearsal; any negotiated outcome is simulated. */
   voiceSimulation?: boolean;
+  negotiationChannel?: "voice" | "text";
+  intake?: IntakeProgress;
+  activity?: CaseActivity[];
   patient?: Patient;
   bill?: Bill;
   flags: AuditFlag[];
@@ -159,6 +178,7 @@ export type CasePacket = {
 
 // Events pushed over WS /ws?case=<id>
 export type CaseEvent =
+  | { type: "activity"; entry: CaseActivity }
   | { type: "status"; status: CaseStatus }
   | { type: "transcript"; line: TranscriptLine }
   | { type: "offer"; offer: Offer }

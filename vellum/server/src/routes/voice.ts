@@ -50,7 +50,7 @@ export default async function voiceRoutes(app: FastifyInstance) {
       if (browserAgent && packet.mode === "patient" && packet.patient?.consent !== true)
         return reply.code(409).send({ error: "the demo patient must consent before the rehearsal" });
       const advocateSignedUrl = await getSignedUrl(browserAgent ?? agentIdFor("advocate"));
-      updateCase(packet.id, { voiceSimulation: true,
+      updateCase(packet.id, { voiceSimulation: true, negotiationChannel: "voice",
         ...(packet.agreedAmount == null ? { status: "negotiating" as const } : {}) });
       return { mode, simulated: true, advocateSignedUrl,
         transcriptToken: browserTranscripts.start(packet.id),

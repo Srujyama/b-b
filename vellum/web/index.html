@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/agent.css" />
 </head>
 <body>
 <header class="masthead">
@@ -31,21 +32,38 @@
     <div class="hero">
       <h1 id="home-title">Vellum <span class="accent">negotiates</span> your hospital bill.</h1>
       <p class="hero-sub">Finds the billing errors and talks the price down for you.</p>
-      <div class="hero-actions">
-        <button id="demo-btn" class="primary" type="button">Try the demo bill</button>
-        <a class="secondary" href="#how">How it works</a>
+      <div id="home-composer">
+        <form id="message-form" class="message-composer">
+          <label class="sr-only" for="message-input">How can Vellum help with your bill?</label>
+          <textarea id="message-input" rows="3" maxlength="30000" placeholder="Tell us about your bill, or drop it here…" aria-describedby="composer-hint"></textarea>
+          <div id="attachment" class="attachment" hidden>
+            <span class="attachment-icon" aria-hidden="true">↳</span><span id="file-name"></span>
+            <button id="remove-file" type="button" aria-label="Remove attachment">×</button>
+          </div>
+          <div class="composer-toolbar">
+            <button id="attach-btn" class="attach-btn" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m8 12 6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l8-8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              <span>Attach a bill</span>
+            </button>
+            <input id="bill-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain" hidden />
+            <span class="composer-formats">PDF, image or text</span>
+            <button id="send-btn" class="send-btn" type="submit" aria-label="Send message" disabled>
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </form>
       </div>
-      <p class="hero-own"><a href="#own-bill" id="own-bill-link">Or use your own bill</a></p>
+      <p id="composer-hint" class="composer-hint">Enter to send <span>·</span> Shift + Enter for a new line</p>
     </div>
 
     <div id="how" class="how">
       <h2>How it works</h2>
       <ol class="how-steps">
-        <li><b>Mrs. Lin's bill</b><span>Errors marked.</span></li>
-        <li><b>Her information</b><span>Income and her limit.</span></li>
+        <li><b>Your bill</b><span>Every charge checked.</span></li>
+        <li><b>Your preferences</b><span>You set the limit.</span></li>
         <li><b>Research</b><span>Fair prices, with sources.</span></li>
         <li><b>The call</b><span>Two AI agents negotiate.</span></li>
-        <li><b>Summary</b><span>What she saved.</span></li>
+        <li><b>Your outcome</b><span>A clear next step.</span></li>
       </ol>
       <h3>Built with</h3>
       <ul class="tracks" aria-label="Sponsor tracks">
@@ -61,40 +79,28 @@
   </section>
 
 
-  <nav class="progress" aria-label="progress">
-    <ol id="steps">
-      <li data-step="bill"></li><li data-step="intake"></li><li data-step="research"></li>
-      <li data-step="room"></li><li data-step="summary"></li>
-    </ol>
-    <p id="step-label" class="step-label"></p>
-  </nav>
+  <section id="agent-workspace" class="agent-workspace" aria-labelledby="agent-title" hidden>
+    <div class="agent-topline"><a class="agent-back" href="/">← New conversation</a><span id="agent-connection" class="connection-state">Connecting</span></div>
+    <div class="agent-heading"><div><p class="eyebrow">YOUR PERSONAL ADVOCATE</p><h1 id="agent-title" tabindex="-1">Let’s work on your bill.</h1><p id="agent-subtitle">Follow every step, from the first charge to the final conversation.</p></div><span class="agent-brand-mark" aria-hidden="true">v.</span></div>
+    <p id="agent-preview" class="preview-banner" hidden>Preview data · fictional patient and simulated activity</p>
+    <div id="request-card" class="request-card" hidden><span class="request-avatar" aria-hidden="true">You</span><p id="request-text"></p><span id="request-file" class="request-file"></span></div>
+    <nav class="journey" aria-label="Agent progress"><ol id="agent-timeline"></ol></nav>
+  </section>
 
   <div id="error" class="error" role="alert" hidden>
     <p id="error-text"></p>
     <button id="error-close" type="button">Dismiss</button>
   </div>
 
-  <main>
-    <!-- your own bill (secondary; the demo is the main path) -->
-    <section class="screen screen-upload" data-screen="upload" id="screen-upload">
-      <details id="own-bill" class="own-bill">
-        <summary>Use your own bill</summary>
-        <p class="what">Upload a photo or PDF.</p>
-        <div id="upload-doc" class="doc upload-doc">
-          <form id="upload-form" class="stack">
-            <label class="dropzone" for="bill-file">
-              <input id="bill-file" name="bill" type="file" accept="image/*,application/pdf" capture="environment" />
-              <span class="dz-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h4l2-3h4l2 3h4v12H4z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-              </span>
-              <span id="file-name" class="dz-text">Take a photo or choose a file</span>
-            </label>
-            <label class="field"><span>Your name</span>
-              <input id="patient-name" name="name" autocomplete="name" placeholder="As it appears on the bill" /></label>
-            <div><button id="upload-btn" class="secondary" type="submit">Read my bill</button></div>
-          </form>
-        </div>
-      </details>
+  <div class="agent-body">
+  <main id="agent-content">
+    <section class="screen analysis-screen" data-screen="analysis" id="screen-analysis" hidden>
+      <div class="analysis-symbol" aria-hidden="true"><span class="mark"></span></div>
+      <p class="eyebrow">VELLUM</p>
+      <h2 id="analysis-title">Reviewing your request</h2>
+      <p id="analysis-message">I’ll check your bill, look for fair prices, and help you prepare for the conversation.</p>
+      <div id="agent-composer"></div>
+      <button id="retry-analysis" class="secondary" type="button" hidden>Retry analysis</button>
     </section>
 
     <!-- 1 the bill -->
@@ -108,19 +114,20 @@
       <div id="bill-summary" class="summary"></div>
       <h2>Every line on the bill</h2>
       <ol id="bill-lines" class="lines"></ol>
-      <div class="step-foot"><button id="to-intake" class="primary" type="button">Next</button></div>
+      <div class="step-foot"><button id="to-intake" class="primary" type="button">Set your preferences <span aria-hidden="true">→</span></button></div>
     </section>
 
     <!-- 2 her information -->
     <section class="screen" data-screen="intake" id="screen-intake" hidden>
-      <h1>Her information</h1>
-      <p class="what">Prefilled. Edit anything.</p>
+      <h1>Your preferences</h1>
+      <p class="what">Confirm your details before your advocate gets to work.</p>
       <form id="intake-form" class="stack doc">
         <label class="field"><span>Name</span><input name="name" id="f-name" required /></label>
         <div class="row">
           <label class="field"><span>People in the household</span><input name="household_size" id="f-household" type="number" min="1" inputmode="numeric" /></label>
           <label class="field"><span>Household income per year (USD)</span><input name="annual_income" id="f-income" type="number" min="0" inputmode="numeric" /></label>
         </div>
+        <label id="new-case-limit" class="field" hidden><span>Your negotiation limit (USD)</span><input name="max_pay" id="f-maxpay" type="number" min="1" step="0.01" inputmode="decimal" /></label>
         <label class="consent"><input id="f-consent" name="consent" type="checkbox" />
           <span>Vellum may negotiate up to my limit.</span></label>
       </form>
@@ -137,7 +144,7 @@
           <ol id="intake-transcript" class="chat" aria-live="polite"></ol>
         </div>
       </details>
-      <div class="step-foot"><button id="intake-submit" class="primary" type="submit" form="intake-form">Next</button></div>
+      <div class="step-foot"><button id="intake-submit" class="primary" type="submit" form="intake-form">Find fair prices <span aria-hidden="true">→</span></button></div>
     </section>
 
     <!-- 3 research -->
@@ -172,7 +179,7 @@
           <span id="deal-text"></span>
           <button id="to-summary" class="primary" type="button">See summary</button>
         </div>
-        <p class="limit-guard">Never above her limit.</p>
+        <p class="limit-guard">Always within your limit.</p>
         <div class="voices">
           <span class="voice" id="v-advocate"><i></i><span>Vellum</span></span>
           <span class="voice" id="v-hospital"><i></i><span>Hospital</span></span>
@@ -244,6 +251,15 @@
       </details>
     </section>
   </main>
+  <aside id="activity-panel" class="activity-panel" aria-label="Live agent activity" hidden>
+    <div class="activity-heading"><div><span class="activity-spark" aria-hidden="true">✳</span><b>Agent activity</b></div><span id="activity-state" class="activity-state">Working</span></div>
+    <p id="activity-summary" class="activity-summary" role="status">Connecting to your advocate…</p>
+    <ol id="activity-feed" class="activity-feed" role="log" aria-label="Agent updates" aria-live="polite" aria-relevant="additions"></ol>
+    <div id="activity-empty" class="activity-empty">Your agent’s updates will appear here as work happens.</div>
+    <div class="activity-footer"><span id="activity-count">0 updates</span><span>Updates as they happen</span></div>
+    <div id="agent-case-facts" class="agent-case-facts"></div>
+  </aside>
+  </div>
 </div>
 <footer class="colophon">Test networks only. No real money moves.</footer>
 <script type="module" src="/app.js"></script>
