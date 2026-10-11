@@ -31,6 +31,9 @@ export type Bill = {
   insurancePaid?: number;
   adjustments?: number;
   patientBalance: number; // what the hospital says she owes
+  // How the statement was read. Set to "builtin" only when the keyless demo used the deterministic parseStatementText
+  // (no ANTHROPIC_API_KEY, so no descriptionZh); absent = read by the LLM, as before.
+  reader?: "builtin";
 };
 
 export type AuditFlagKind =
