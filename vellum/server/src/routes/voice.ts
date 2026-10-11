@@ -12,7 +12,9 @@ import type { TranscriptLine } from "../types.js";
 
 // Voice routes (see docs/API.md):
 //   GET  /api/intake/signed-url[?case=]   → {signedUrl, init}  browser opens the Mandarin intake agent
-//   POST /api/cases/:id/negotiate          {counterparty:"agent"|"human"} → {mode, advocateSignedUrl?, advocateInit?}
+//   POST /api/cases/:id/negotiate          {counterparty:"agent"|"human"|"text"} → {mode, channel?, advocateSignedUrl?, advocateInit?}
+//                                          "agent" = ElevenLabs voice call, falling back to a live text negotiation
+//                                          when voice can't run; "text" = the live text negotiation directly
 //   POST /api/eleven/tools/:name           ElevenLabs webhook tools AND browser-forwarded client tools
 // `init` = the conversation_initiation_client_data the browser must send first (per-case prompt overrides +
 // dynamic_variables {case_id}).
@@ -35,10 +37,10 @@ export default async function voiceRoutes(app: FastifyInstance) {
     return { signedUrl, init: conversationInit("intake", packet, caseId) };
   });
 
-  app.post<{ Params: { id: string }; Body: { counterparty?: "agent" | "human" } }>("/api/cases/:id/negotiate", async (req, reply) => {
+  app.post<{ Params: { id: string }; Body: { counterparty?: "agent" | "human" | "text" } }>("/api/cases/:id/negotiate", async (req, reply) => {
     const packet = requireCase(req.params.id);
     const mode = req.body?.counterparty ?? "agent";
-    if (mode !== "agent" && mode !== "human") return reply.code(400).send({ error: "counterparty must be 'agent' or 'human'" });
+    if (mode !== "agent" && mode !== "human" && mode !== "text") return reply.code(400).send({ error: "counterparty must be 'agent', 'human' or 'text'" });
     if (packet.mode === "patient" && packet.patient?.consent !== true)
       return reply.code(409).send({ error: "the patient has not consented — Vellum will not negotiate" });
 
@@ -56,8 +58,8 @@ export default async function voiceRoutes(app: FastifyInstance) {
     }
 
     if (activeBridge(packet.id)) return reply.code(409).send({ error: "a negotiation call is already running for this case" });
-    const handle = await startAgentBridge(packet.id, packet.mode === "clinic" ? "insurer" : "hospital");
-    return { mode, counterparty: handle.counterparty };
+    const handle = await startAgentBridge(packet.id, packet.mode === "clinic" ? "insurer" : "hospital", mode === "text" ? { channel: "text" } : {});
+    return { mode, counterparty: handle.counterparty, channel: handle.channel };
   });
 
   app.post<{ Params: { id: string }; Body: TranscriptLine }>("/api/cases/:id/voice/transcript", {

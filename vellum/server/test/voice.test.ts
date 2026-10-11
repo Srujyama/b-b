@@ -8,7 +8,7 @@ vi.mock("../src/llm.js", () => ({
 
 import { createCase, subscribe } from "../src/store.js";
 import type { CaseEvent, CasePacket } from "../src/types.js";
-import { closeFailure, startAgentBridge, type WsLike } from "../src/agent/bridge.js";
+import { closeFailure, startVoiceBridge, type WsLike } from "../src/agent/bridge.js";
 import { clearTranslateCache } from "../src/agent/translate.js";
 import {
   agentConfig,
@@ -211,7 +211,7 @@ describe("bridge", () => {
   });
 
   async function start(caseId: string) {
-    const handle = await startAgentBridge(caseId, "hospital", {
+    const handle = await startVoiceBridge(caseId, "hospital", {
       connect: (url) => {
         const ws = new FakeWs(url);
         sockets.push(ws);
@@ -380,7 +380,7 @@ describe("bridge", () => {
   it("tells the advocate to wrap up before the time limit", async () => {
     const c = patientCase();
     const events = collect(c.id);
-    const handle = await startAgentBridge(c.id, "hospital", {
+    const handle = await startVoiceBridge(c.id, "hospital", {
       connect: (url) => {
         const ws = new FakeWs(url);
         sockets.push(ws);
@@ -407,7 +407,7 @@ describe("bridge", () => {
 
   it("stops at the timeout and answers pings", async () => {
     const c = patientCase();
-    const handle = await startAgentBridge(c.id, "hospital", {
+    const handle = await startVoiceBridge(c.id, "hospital", {
       connect: (url) => {
         const ws = new FakeWs(url);
         sockets.push(ws);
@@ -426,7 +426,7 @@ describe("bridge", () => {
   it("fails loudly when an agent id is missing", async () => {
     delete process.env.ELEVENLABS_HOSPITAL_AGENT_ID;
     const c = patientCase();
-    await expect(startAgentBridge(c.id, "hospital", { signedUrl: async () => "x", connect: () => new FakeWs("x") })).rejects.toThrow(
+    await expect(startVoiceBridge(c.id, "hospital", { signedUrl: async () => "x", connect: () => new FakeWs("x") })).rejects.toThrow(
       /ELEVENLABS_HOSPITAL_AGENT_ID is not configured/,
     );
   });

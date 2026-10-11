@@ -110,6 +110,15 @@ describe("prompts", () => {
     expect(h).toMatch(/That floor applies only once the caller has given household size and income/);
   });
 
+  it("a patient above the charity cutoff can still be settled for a lump sum far under chargemaster", () => {
+    const lim = hospitalLimits(createCase(patientInit()));
+    const corrected = lim.balance - lim.correctable;
+    expect(lim.selfPayPct).toBe(75);
+    expect(lim.floorWithoutFap).toBeLessThanOrEqual(Math.round((corrected * 0.25) / 50) * 50 + 50); // not 80% of it anymore
+    expect(lim.floorWithoutFap).toBeLessThan(corrected * 0.5);
+    expect(hospitalPrompt(createCase(patientInit()))).toMatch(/Self-pay settlement: if she does not qualify/);
+  });
+
   it("a discount-only policy keeps its percentage and the Medicare floor", () => {
     const init = patientInit();
     const lim = hospitalLimits(createCase({ ...init, charity: { ...init.charity!, freeCareBelowPctFpl: undefined, discountBelowPctFpl: 300, discountPct: 50 } }));

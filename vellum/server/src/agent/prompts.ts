@@ -192,6 +192,7 @@ export function hospitalLimits(packet: CasePacket): {
   balance: number;
   correctable: number; // what verified errors on the account add up to (rep must still be shown them)
   promptPayPct: number;
+  selfPayPct: number; // most a lump-sum self-pay settlement can take off the corrected balance (supervisor check)
   fapPct: number; // discount the FAP gives if eligibility is shown (100 = the policy's free-care tier)
   floor: number; // never settle below this on this call (assumes FAP eligibility was shown)
   floorWithoutFap: number; // the floor when the caller has NOT shown financial-assistance eligibility
@@ -203,6 +204,7 @@ export function hospitalLimits(packet: CasePacket): {
     packet.flags.filter((f) => errorKinds.includes(f.kind)).reduce((s, f) => s + (f.amountAtStake || 0), 0),
   );
   const promptPayPct = 20;
+  const selfPayPct = 75;
   const ch = packet.charity;
   // A free-care tier means exactly that: an eligible patient owes nothing. (Was 60, which put the floor above
   // what Stanford's real policy — 100% assistance at or below 400% FPL — requires the hospital to accept.)
@@ -212,11 +214,16 @@ export function hospitalLimits(packet: CasePacket): {
   const medicare = packet.fairPrices.reduce((s, p) => s + (p.medicareRate ?? 0), 0);
   // A billing office will not go under roughly what Medicare would have paid unless charity care is free care.
   const floorRaw = Math.max(afterFap * (1 - promptPayPct / 100), fapPct >= 100 ? 0 : medicare);
-  const noFapRaw = Math.max(corrected * (1 - promptPayPct / 100), medicare);
+  // An uninsured self-pay account that does NOT qualify for assistance can still be settled for a lump sum well
+  // under chargemaster (one supervisor check): down to a quarter of the corrected balance, never under twice
+  // what Medicare pays. Without this the rep's only tool was 20% prompt-pay, so a patient just above the
+  // charity cutoff could never reach a realistic settlement (the demo's paid-settlement story).
+  const noFapRaw = Math.max(corrected * (1 - selfPayPct / 100), medicare * 2);
+  const floorWithoutFap = round50(Math.min(noFapRaw, corrected));
   return {
-    balance, correctable, promptPayPct, fapPct,
-    floor: round50(Math.min(floorRaw, corrected)),
-    floorWithoutFap: round50(Math.min(noFapRaw, corrected)),
+    balance, correctable, promptPayPct, selfPayPct, fapPct,
+    floor: Math.min(round50(Math.min(floorRaw, corrected)), floorWithoutFap),
+    floorWithoutFap,
   };
 }
 
@@ -247,6 +254,7 @@ YOUR AUTHORITY (private — never state these numbers or this reasoning):
 - Billing errors: you do NOT pre-emptively review the bill. If the caller points to a SPECIFIC line and it really is wrong on your screen (the same code billed twice for the same date, a math error, an obviously wrong level), say you'll "send it to coding review" and agree to remove it, and state the new balance. If the claim is vague or the line looks fine, push back and ask which line.
 - Prompt-pay: you can offer up to ${lim.promptPayPct} percent off the corrected balance for payment in full, but start at 10 and only go higher if they push and commit to paying now.
 - Financial assistance: if the caller gives household size and income that fall under the policy thresholds, acknowledge she likely qualifies. ${lim.fapPct >= 100 ? "Patients under the free-care threshold owe nothing under your policy: you may apply a presumptive full financial-assistance adjustment on the call (the balance becomes zero, pending her signed application), or put the account on a 60-day collections hold while she applies." : `You may apply ${lim.fapPct ? `about a ${lim.fapPct} percent` : "no"} presumptive discount on the call, or put the account on a 60-day collections hold while she applies.`} Ask for the household size and income if they bring it up without them.
+- Self-pay settlement: if she does not qualify for financial assistance but the caller commits to paying a lump sum now, you can "check with your supervisor" once and settle the corrected balance far below chargemaster, conceding in steps toward your floor below. Never offer this first; it has to be earned with pressure (fair-price comparisons, a firm lump-sum offer).
 - Payment plans: you can offer up to 12 months interest-free without approval; longer needs a supervisor (you can "check" once).
 - Your hard floor for settling on this call is ${spokenUsd(lim.floor)}. You never go below it, no matter the pressure — offer a payment plan or a financial-assistance application instead.${lim.floorWithoutFap > lim.floor ? ` That floor applies only once the caller has given household size and income that qualify under your policy; until then, do not go below ${spokenUsd(lim.floorWithoutFap)}.` : ""}
 
