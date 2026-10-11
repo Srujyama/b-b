@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/llm.js", () => ({ llmJson: vi.fn(), llmText: vi.fn() }));
 import { llmJson } from "../src/llm.js";
-import { buildScrapeBody, buildSearchBody, mapUrls, scrape, search, answer, brand, CONTEXT_DEV_BASE } from "../src/research/contextdev.js";
+import { buildScrapeBody, buildSearchBody, mapUrls, scrape, search, answer, brand, CONTEXT_DEV_BASE, CONTEXT_DEV_BUSY, parseRetryAfter } from "../src/research/contextdev.js";
 import { lookupFairPrice, numberAppearsIn } from "../src/research/fairprice.js";
 import { MEDICARE_SOURCE_DOMAINS, trustOf } from "../src/research/trust.js";
 import { findCharityPolicy, fplPercent, povertyLine } from "../src/research/charity.js";
@@ -103,6 +103,79 @@ describe("contextdev client", () => {
     expect(out).toEqual([[], [], []]);
     expect(maxInFlight).toBe(1);
     expect(n).toBe(4); // 3 searches + 1 retry
+  });
+
+  // Context.dev allows one in-flight request per ORGANISATION, so other processes sharing the key
+  // cause 429s that can last as long as a slow scrape. These run on fake timers.
+  describe("backoff on 429 / 5xx", () => {
+    const rateLimited = (headers: Record<string, string> = {}) =>
+      new Response(JSON.stringify({ error_code: "RATE_LIMITED", message: "Organization concurrency limit exceeded" }), { status: 429, headers });
+    /** fetch that replies with `responses` in order, recording the fake-clock time of each call */
+    function scripted(responses: (() => Response)[]) {
+      const at: number[] = [];
+      const f = vi.fn(async () => {
+        at.push(Date.now());
+        return (responses[at.length - 1] ?? responses[responses.length - 1])();
+      });
+      vi.stubGlobal("fetch", f);
+      return { f, at };
+    }
+    beforeEach(() => vi.useFakeTimers({ now: 0 }));
+    afterEach(() => {
+      vi.useRealTimers();
+      delete process.env.CONTEXT_DEV_RETRY_BUDGET_MS;
+    });
+
+    it("retries through several 429s with growing waits, then succeeds", async () => {
+      const ok = () => new Response(JSON.stringify({ results: [] }));
+      const { f, at } = scripted([rateLimited, rateLimited, rateLimited, rateLimited, rateLimited, ok]);
+      const p = search("q");
+      await vi.runAllTimersAsync();
+      await expect(p).resolves.toEqual([]);
+      expect(f).toHaveBeenCalledTimes(6); // the old client gave up after 3
+      const gaps = at.slice(1).map((t, i) => t - at[i]);
+      // equal jitter: attempt n waits between half and all of 500ms * 2^(n-1)
+      gaps.forEach((g, i) => {
+        expect(g).toBeGreaterThanOrEqual(250 * 2 ** i);
+        expect(g).toBeLessThanOrEqual(500 * 2 ** i);
+      });
+    });
+
+    it("waits at least Retry-After (delta-seconds and HTTP-date forms)", async () => {
+      const ok = () => new Response(JSON.stringify({ results: [] }));
+      const { at } = scripted([() => rateLimited({ "retry-after": "12" }), () => rateLimited({ "retry-after": new Date(30_000).toUTCString() }), ok]);
+      const p = search("q");
+      await vi.runAllTimersAsync();
+      await p;
+      expect(at[1] - at[0]).toBeGreaterThanOrEqual(12_000);
+      expect(at[1] - at[0]).toBeLessThan(13_000);
+      expect(at[2]).toBeGreaterThanOrEqual(30_000);
+      expect(parseRetryAfter("2")).toBe(2000);
+      expect(parseRetryAfter("garbage")).toBeUndefined();
+      expect(parseRetryAfter(null)).toBeUndefined();
+    });
+
+    it("gives up with a 503 'busy' error once the retry budget is spent", async () => {
+      process.env.CONTEXT_DEV_RETRY_BUDGET_MS = "20000";
+      const { f, at } = scripted([rateLimited]);
+      const p = search("q");
+      const settled = expect(p).rejects.toMatchObject({ statusCode: 503, errorCode: "RATE_LIMITED", message: CONTEXT_DEV_BUSY });
+      await vi.runAllTimersAsync();
+      await settled;
+      expect(f.mock.calls.length).toBeGreaterThan(3);
+      expect(at[at.length - 1]).toBeLessThanOrEqual(20_000); // never sleeps past the budget
+    });
+
+    it("never retries a 400 or 401", async () => {
+      for (const status of [400, 401]) {
+        const { f } = scripted([() => new Response(JSON.stringify({ error_code: "BAD", message: "nope" }), { status })]);
+        const p = search("q");
+        const settled = expect(p).rejects.toThrow(new RegExp(`HTTP ${status}`));
+        await vi.runAllTimersAsync();
+        await settled;
+        expect(f).toHaveBeenCalledTimes(1);
+      }
+    });
   });
 
   it("fails loudly without a key and on HTTP errors", async () => {
