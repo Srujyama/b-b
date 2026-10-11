@@ -86,8 +86,8 @@ export default async function voiceRoutes(app: FastifyInstance) {
     // so a same-origin browser call is exempt: browsers set Sec-Fetch-Site themselves and page JS cannot forge it.
     // This is a guard against blind webhook spoofing, not auth — the case UUID is the capability either way.
     const sameOrigin = req.headers["sec-fetch-site"] === "same-origin";
-    // x-vellum-secret: ElevenLabs agents configured before the Vellum rename still send the old header name.
-    const sent = req.headers["x-vellum-secret"] ?? req.headers["x-vellum-secret"];
+    // x-bangbang-secret: ElevenLabs agents configured before the Vellum rename still send the old header name.
+    const sent = req.headers["x-vellum-secret"] ?? req.headers["x-bangbang-secret"];
     if (secret && !sameOrigin && sent !== secret) return reply.code(401).send({ error: "bad tool secret" });
     const body = (req.body ?? {}) as Record<string, unknown>;
     const { case_id, ...args } = body;

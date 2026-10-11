@@ -19,10 +19,11 @@ needed by Branch A. Do not deploy this feature branch directly.
 - The default app LLM remains Opus 5.5; the voice model is Haiku 5.5. The supporting intake and fake
   hospital agents use ElevenLabs' native model configuration. No Twilio transport is used.
 
-Both public `/health` endpoints returned 200 during verification. At that checkpoint the deployed
-app reported `anthropic:false`, `contextDev:false`, `elevenlabs:false`: hosting works, but the hosted
-AI flow still needs the secrets below. Local live API tests used real provider requests and synthetic
-patient data; this does not establish that the deployed version has passed a live conversation.
+Both public `/health` endpoints returned 200 during verification. The founder has now imported the
+AI settings: Fly reports `anthropic:true`, `contextDev:true`, `elevenlabs:true`. The temporary tunnel
+is being retired in favor of the Fly endpoint. The code in this PR still needs the normal reviewed
+main release before hosted transcript/context verification can pass. Local live tests used real
+provider requests and synthetic patient data; configuration health is not a full hosted call test.
 
 ## Founder: import voice settings, then point ElevenLabs at Fly
 
@@ -100,7 +101,8 @@ Live results on this Mac, October 11:
 - Context.dev research: six codes checked, one returned a verified numeric price, sourced hospital
   assistance policy found; about 74.6 seconds. Missing prices remain absent, not invented.
 - Full synthetic speech path: recognized input, Haiku reply, v4 PCM audio, two saved/translated lines.
-  First audio after the input ended: 1.63 seconds, then 1.65 seconds on a second run.
+  First audio after the input ended: 1.63 seconds, then 1.65 seconds; the final memory-placement
+  regression run also passed at 1.65 seconds.
 - Mandarin outcome TTS: 200, 442,244 bytes of MP3.
 - Browser reload: bilingual transcript survived and the simulated-call label remained visible.
 - Rehearsal replies were longer than the requested 35-word target despite prompt tuning. Treat brevity
@@ -111,6 +113,8 @@ Live results on this Mac, October 11:
 - Fix the ElevenLabs custom-LLM base URL (both browser and future phone agent).
 - Apply the formerly separate browser adapter patch: case metadata + supported voice overrides reach
   SDK 1.25.0. Model selection remains at provisioning because that SDK does not serialize `modelId`.
+- Put fresh shared case memory in an uncached internal system reference, so it no longer replaces
+  the hospital's last conversational turn or prompts the advocate to discuss internal notes.
 - Persist human-mode transcript lines with a five-minute per-case random session capability, consent
   checks, input bounds, duplicate suppression and a 240-line limit. English saves immediately;
   translations update the case without duplicating BNB transcript-log entries.
@@ -126,6 +130,20 @@ Live results on this Mac, October 11:
 This is a cross-stream integration PR: minimal edits to `web/`, shared `types.ts`, outcome summaries
 and their tests are included for D to review alongside the A-owned voice code. No wallet, payment,
 Fly workflow, package, lockfile or shared LLM-helper changes are made.
+
+## Full-pipeline findings
+
+A real four-minute AI-versus-AI run reached the conversation and exchanged bilingual turns, but ended
+without a deal. No settlement was claimed. Use the chosen teammate-led mode for the stage demo; the
+automated hospital backup still needs concession/turn-taking tuning. The run exposed the internal
+case-note response issue fixed by the uncached system-reference change above.
+
+The same run reported a concrete integration bug: `routes/markets.ts` chooses a research target of
+zero, then treats it as a missing balance. A zero target is valid when research recommends applying
+for full assistance; financing should be skipped or handle it explicitly. This is left for the
+research/product owner rather than silently substituting a different debt amount. BNB mandate and
+XRPL credential steps reported missing local wallet configuration, and later payment steps were
+not reached. These are not claimed as passed.
 
 ## Remaining end-to-end checks
 
