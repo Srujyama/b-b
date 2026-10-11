@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // LLM and Context.dev (fetch) are mocked at the boundary: these tests need NO API keys.
 vi.mock("../src/llm.js", () => ({ llmJson: vi.fn(), llmText: vi.fn() }));
 import { llmJson } from "../src/llm.js";
-import { buildAppealLetter, claimFacts, draftAppeal, mapCriteria, quoteInNotes, validateClaim } from "../src/claims/appeal.js";
-import { cleanCriteria, findPayerPolicy, payerDomains, rankPolicyHits } from "../src/claims/policy.js";
+import { buildAppealLetter, claimFacts, draftAppeal, evaluateCoverage, mapCriteria, quoteInNotes, validateClaim } from "../src/claims/appeal.js";
+import { cleanCriteria, cleanGroups, findPayerPolicy, metaLogic, payerDomains, policyGroups, rankPolicyHits } from "../src/claims/policy.js";
 import type { SearchHit } from "../src/research/contextdev.js";
 import type { ClaimCase } from "../src/types.js";
 
@@ -276,5 +276,117 @@ describe("routes", () => {
     expect(res.statusCode).toBe(503);
     expect(res.json().error).toMatch(/CONTEXT_DEV_API_KEY/);
     await app.close();
+  });
+});
+
+describe("policy structure: any-of indications vs all-of requirements", () => {
+  const META = "Any one of the following indications is met (criteria are alternatives, not all required)";
+  const IND = [
+    "Radiculopathy persisting after at least 6 weeks of conservative therapy",
+    "Suspected cauda equina syndrome",
+    "Suspected spinal infection or malignancy",
+    "Progressive neurological deficit",
+  ];
+  const anyPolicy = { title: POLICY_TITLE, url: POLICY_URL, criteria: IND, groups: [{ logic: "any" as const, label: "Indications for lumbar MRI", criteria: IND }] };
+  const res = (metIdx: number[]) =>
+    IND.map((criterion, i) => ({ criterion, met: metIdx.includes(i), evidence: metIdx.includes(i) ? `"evidence ${i}"` : "No documentation of this criterion in the chart." }));
+
+  it("never emits a meta-statement as a criterion, and reads it as any-of logic", () => {
+    expect(metaLogic(META)).toBe("any");
+    expect(metaLogic("All of the following criteria are met:")).toBe("all");
+    expect(metaLogic("At least one of the following:")).toBe("any");
+    expect(metaLogic(IND[0])).toBeNull();
+    expect(metaLogic("At least 6 weeks of failed conservative therapy")).toBeNull();
+    expect(metaLogic("At least one of the following red flags: fever, weight loss")).toBeNull(); // has real content
+    expect(cleanCriteria([META, ...IND])).toEqual(IND);
+    // a list that smuggles in the meta-criterion becomes an any-of group without it
+    expect(cleanGroups({ groups: [{ logic: "all", label: null, criteria: [META, ...IND] }] })).toEqual([{ logic: "any", criteria: IND }]);
+    expect(cleanGroups({ criteria: [META, ...IND] })).toEqual([{ logic: "any", criteria: IND }]);
+  });
+
+  it("findPayerPolicy keeps the group structure and cites the scraped url", async () => {
+    mockContextDev();
+    llm.mockResolvedValue({
+      applies: true,
+      title: POLICY_TITLE,
+      sourceUrl: POLICY_URL,
+      groups: [{ logic: "any", label: "Indications for lumbar MRI", criteria: [META, ...IND] }],
+    } as never);
+    const p = await findPayerPolicy("Aetna", "72148", "MRI lumbar spine without contrast");
+    expect(p.url).toBe(POLICY_URL);
+    expect(p.criteria).toEqual(IND);
+    expect(p.criteria.join("\n")).not.toMatch(/any one of the following/i);
+    expect(p.groups).toEqual([{ logic: "any", label: "Indications for lumbar MRI", criteria: IND }]);
+  });
+
+  it("any-of is satisfied by 1 of N verified indications", () => {
+    const cov = evaluateCoverage(anyPolicy, res([0]));
+    expect(cov.satisfied).toBe(true);
+    expect(cov.groups[0].met.map((r) => r.criterion)).toEqual([IND[0]]);
+  });
+
+  it("any-of with no verified indication is not satisfied", () => {
+    expect(evaluateCoverage(anyPolicy, res([])).satisfied).toBe(false);
+  });
+
+  it("all-of with one missing is not satisfied; nested all-of + any-of needs both", () => {
+    expect(evaluateCoverage({ criteria: IND }, res([0, 1, 2])).satisfied).toBe(false);
+    expect(evaluateCoverage({ criteria: IND }, res([0, 1, 2, 3])).satisfied).toBe(true);
+    const mixed = { criteria: IND, groups: [{ logic: "all" as const, criteria: [IND[0]] }, { logic: "any" as const, criteria: IND.slice(1) }] };
+    expect(evaluateCoverage(mixed, res([0])).satisfied).toBe(false);
+    expect(evaluateCoverage(mixed, res([0, 3])).satisfied).toBe(true);
+    expect(evaluateCoverage(mixed, res([3])).satisfied).toBe(false);
+  });
+
+  it("ignores groups that don't partition the criteria (falls back to all-required)", () => {
+    expect(policyGroups({ criteria: IND, groups: [{ logic: "any", criteria: [IND[0], "Invented criterion"] }] })).toEqual([{ logic: "all", criteria: IND }]);
+  });
+
+  it("a quote not in the chart cannot satisfy an any-of group", () => {
+    const results = mapCriteria(IND, [{ index: 1, met: true, quotes: ["Patient reports saddle anesthesia"] }], notes);
+    expect(evaluateCoverage(anyPolicy, results).satisfied).toBe(false);
+  });
+
+  it("letter: satisfied any-of says so plainly and omits the unmet alternatives", () => {
+    const letter = buildAppealLetter(claim, anyPolicy, res([0]), new Date("2026-10-11"));
+    expect(letter).toContain(
+      "Aetna's policy covers this service when any one of the listed indications (Indications for lumbar MRI) is present; the record documents the following indication:",
+    );
+    expect(letter).toContain(IND[0]);
+    expect(letter).toContain('"evidence 0"');
+    for (const alt of IND.slice(1)) expect(letter).not.toContain(alt);
+    expect(letter).not.toMatch(/not explicitly documented|of 4/);
+    expect(letter).toMatch(/satisfy the criteria of Aetna's policy/);
+  });
+
+  it("letter: unsatisfied any-of never claims the policy is met and doesn't list the alternatives", () => {
+    const letter = buildAppealLetter(claim, anyPolicy, res([]), new Date("2026-10-11"));
+    expect(letter).not.toMatch(/satisf/i);
+    expect(letter).toMatch(/do not explicitly document any one of the 4 alternative indications/);
+    for (const alt of IND) expect(letter).not.toContain(alt);
+    expect(letter).toMatch(/reverse the denial/);
+  });
+
+  it("letter: all-of with one missing lists that gap honestly and does not claim satisfaction", () => {
+    const letter = buildAppealLetter(claim, { title: POLICY_TITLE, url: POLICY_URL, criteria: IND }, res([0, 1, 2]), new Date("2026-10-11"));
+    expect(letter).toMatch(/documents 3 of the 4 required criteria/);
+    expect(letter).toMatch(/required criteria are not explicitly documented[^]*- Progressive neurological deficit/);
+    expect(letter).not.toMatch(/satisf/i);
+  });
+
+  it("draftAppeal end to end with an any-of policy: criteriaMet populated, coverage satisfied, no misleading count", async () => {
+    llm.mockImplementation(async (system: string) => {
+      if (system.includes("utilization-review nurse"))
+        return { results: [{ index: 0, met: true, quotes: ["persisting after more than 6 weeks of conservative therapy"] }, { index: 1, met: false, quotes: [] }] } as never;
+      throw new Error("unexpected llm call");
+    });
+    const out = await draftAppeal({ ...claim, policy: anyPolicy });
+    expect(out.criteriaMet).toHaveLength(4);
+    expect(out.criteriaMet!.map((c) => c.met)).toEqual([true, false, false, false]);
+    expect(out.coverage.satisfied).toBe(true);
+    expect(out.appealLetter).not.toContain(IND[1]);
+    const facts = claimFacts(out);
+    expect(facts.join("\n")).not.toMatch(/of 4 criteria/);
+    expect(facts).toContain("The chart satisfies Aetna's policy for this service.");
   });
 });

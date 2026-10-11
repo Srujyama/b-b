@@ -3,7 +3,7 @@
 // a criterion is only ever "met" if the chart literally says so.
 import type { ClaimCase } from "../types.js";
 import { llmJson } from "../llm.js";
-import { findPayerPolicy, type PayerPolicy, type PolicyProgress } from "./policy.js";
+import { findPayerPolicy, policyGroups, type CriteriaGroup, type PayerPolicy, type PolicyProgress } from "./policy.js";
 
 export type CriterionResult = NonNullable<ClaimCase["criteriaMet"]>[number];
 
@@ -99,10 +99,29 @@ Return {"results":[{"index":number,"met":boolean,"quotes":string[]}]} with one e
   return mapCriteria(criteria, out?.results, claim.clinicalNotes);
 }
 
+// ---------- coverage decision (pure) ----------
+export type GroupResult = { logic: CriteriaGroup["logic"]; label?: string; satisfied: boolean; met: CriterionResult[]; unmet: CriterionResult[] };
+/** Whether the chart satisfies the policy as a whole: every all-of group fully met, every any-of group met at least once. */
+export type Coverage = { satisfied: boolean; groups: GroupResult[] };
+
+/**
+ * Decide satisfaction from the per-criterion results (already quote-verified by mapCriteria). A criterion with no
+ * result counts as not met. A policy with no criteria is never satisfied.
+ */
+export function evaluateCoverage(policy: Pick<PayerPolicy, "criteria" | "groups">, results: CriterionResult[]): Coverage {
+  const byText = new Map(results.map((r) => [r.criterion, r]));
+  const groups = policyGroups(policy).map((g): GroupResult => {
+    const rs = g.criteria.map((c) => byText.get(c) ?? { criterion: c, met: false, evidence: "Not evaluated." });
+    const met = rs.filter((r) => r.met);
+    const unmet = rs.filter((r) => !r.met);
+    const satisfied = g.logic === "any" ? met.length > 0 : unmet.length === 0;
+    return { logic: g.logic, ...(g.label ? { label: g.label } : {}), satisfied, met, unmet };
+  });
+  return { satisfied: groups.length > 0 && groups.every((g) => g.satisfied), groups };
+}
+
 // ---------- letter (pure, deterministic: every claim in it comes from the policy or the chart) ----------
 export function buildAppealLetter(claim: ClaimCase & ClaimMeta, policy: PayerPolicy, results: CriterionResult[], today = new Date()): string {
-  const met = results.filter((r) => r.met);
-  const unmet = results.filter((r) => !r.met);
   const p = claim.provider ?? {};
   const date = today.toISOString().slice(0, 10);
   const dx = claim.diagnoses.map((d) => `${d.code} (${d.description})`).join("; ") || "see attached records";
@@ -129,21 +148,62 @@ export function buildAppealLetter(claim: ClaimCase & ClaimMeta, policy: PayerPol
     "",
     `On behalf of ${p.name ?? "the treating provider's office"}${p.physician ? ` and the treating physician, ${p.physician}` : ""}, we request reconsideration and reversal of the denial of CPT ${claim.procedure.code} (${claim.procedure.description}). The denial states: "${claim.denialReason}"`,
     "",
-    `${claim.payer}'s own medical policy, "${policy.title}" (${policy.url}), sets out the criteria for this service. The patient's medical record documents ${met.length === results.length && results.length ? "every one of them" : `${met.length} of ${results.length} of them`}, as follows:`,
-    "",
   ];
-  met.forEach((r, i) => {
-    lines.push(`${i + 1}. Criterion: ${r.criterion}`);
-    lines.push(`   MET. Documentation in the medical record: ${r.evidence}`);
-    lines.push("");
-  });
-  if (unmet.length) {
-    lines.push("The following criteria are not explicitly documented in the enclosed notes; we ask that the reviewer consider the clinical picture as a whole, and we will supply further records on request:");
-    unmet.forEach((r) => lines.push(`   - ${r.criterion}`));
+  const cov = evaluateCoverage(policy, results);
+  const policyRef = `${claim.payer}'s own medical policy, "${policy.title}" (${policy.url})`;
+  let n = 0;
+  const listMet = (rs: CriterionResult[], word: "Criterion" | "Indication") =>
+    rs.forEach((r) => {
+      lines.push(`${++n}. ${word}: ${r.criterion}`);
+      lines.push(`   MET. Documentation in the medical record: ${r.evidence}`);
+      lines.push("");
+    });
+  const flat = cov.groups.length === 1 && cov.groups[0].logic === "all";
+
+  if (flat) {
+    // A plain list of requirements: every one must be met.
+    const g = cov.groups[0];
+    const total = g.met.length + g.unmet.length;
+    lines.push(`${policyRef}, sets out the criteria for this service. The patient's medical record documents ${g.satisfied ? "every one of them" : `${g.met.length} of the ${total} required criteria`}, as follows:`, "");
+    listMet(g.met, "Criterion");
+  } else {
+    lines.push(`${policyRef}, sets out when this service is covered.${cov.satisfied ? " The patient's medical record satisfies it:" : ""}`, "");
+    for (const g of cov.groups) {
+      const label = g.label ? ` (${g.label})` : "";
+      if (g.logic === "any") {
+        if (!g.met.length) continue; // reported below as a gap, without listing the alternatives
+        const s = g.met.length > 1 ? "s" : "";
+        lines.push(`${claim.payer}'s policy covers this service when any one of the listed indications${label} is present; the record documents the following indication${s}:`, "");
+        listMet(g.met, "Indication");
+      } else {
+        if (!g.met.length) continue;
+        lines.push(g.satisfied ? `The policy also requires all of the following${label}, and the record documents each one:` : `The policy also requires all of the following${label}; the record documents these:`, "");
+        listMet(g.met, "Criterion");
+      }
+    }
+  }
+
+  // Gaps: only unmet members of all-of groups are real gaps. Unmet alternatives in a satisfied any-of group are not.
+  const required = cov.groups.filter((g) => g.logic === "all").flatMap((g) => g.unmet);
+  const emptyAny = cov.groups.filter((g) => g.logic === "any" && !g.satisfied);
+  if (required.length) {
+    lines.push("The following required criteria are not explicitly documented in the enclosed notes:");
+    required.forEach((r) => lines.push(`   - ${r.criterion}`));
     lines.push("");
   }
+  for (const g of emptyAny)
+    lines.push(`The enclosed notes do not explicitly document any one of the ${g.unmet.length} alternative indications in ${claim.payer}'s policy${g.label ? ` (${g.label})` : ""}.`, "");
+
+  if (cov.satisfied) {
+    lines.push(
+      `Because the documented clinical findings satisfy the criteria of ${claim.payer}'s policy, this service was medically necessary and the denial should be overturned. We request that ${claim.payer} reverse the denial and reprocess the claim for payment.`,
+    );
+  } else {
+    lines.push(
+      `We ask that the reviewer consider the clinical picture as a whole, and we will supply further records on request. On the documentation above, we request that ${claim.payer} reconsider the medical necessity of this service, reverse the denial and reprocess the claim for payment.`,
+    );
+  }
   lines.push(
-    `Because the documented clinical findings satisfy the criteria of ${claim.payer}'s policy, this service was medically necessary and the denial should be overturned. We request that ${claim.payer} reverse the denial and reprocess the claim for payment.`,
     "",
     `If the reviewer is not prepared to overturn the denial on the written record, we request a peer-to-peer review between the treating physician and the plan's medical director before any final adverse determination, and a copy of the specific criteria and clinical rationale relied on, as required for adverse benefit determinations under 29 CFR 2560.503-1.`,
     "",
@@ -165,29 +225,47 @@ export function buildAppealLetter(claim: ClaimCase & ClaimMeta, policy: PayerPol
 /** Facts the voice advocate may state on the call with the insurer (English, all sourced). */
 export function claimFacts(claim: ClaimCase): string[] {
   const facts: string[] = [`The claim is for CPT ${claim.procedure.code} (${claim.procedure.description}), denied as: "${claim.denialReason}".`];
-  if (claim.policy) facts.push(`${claim.payer}'s own medical policy for this service is "${claim.policy.title}" (${claim.policy.url}).`);
+  const policy = claim.policy as PayerPolicy | undefined;
+  if (policy) facts.push(`${claim.payer}'s own medical policy for this service is "${policy.title}" (${policy.url}).`);
   for (const r of claim.criteriaMet ?? []) {
     if (r.met) facts.push(`Policy criterion "${r.criterion}" is met; the chart documents: ${r.evidence}.`);
   }
   const all = claim.criteriaMet ?? [];
-  if (all.length) facts.push(`${all.filter((r) => r.met).length} of ${all.length} criteria in the payer's policy are documented in the chart.`);
+  const cov = policy && all.length ? evaluateCoverage(policy, all) : undefined;
+  if (cov && !(cov.groups.length === 1 && cov.groups[0].logic === "all")) {
+    // Structured policy: never a raw "x of N" count, which misreads alternatives as missing requirements.
+    for (const g of cov.groups) {
+      if (g.logic === "any" && g.satisfied)
+        facts.push(`${claim.payer}'s policy covers this service when any one of its listed indications is present; the chart documents: ${g.met.map((r) => r.criterion).join("; ")}.`);
+      if (g.logic === "all" && g.met.length)
+        facts.push(`${g.met.length} of ${g.met.length + g.unmet.length} required criteria${g.label ? ` (${g.label})` : ""} are documented in the chart.`);
+    }
+    if (cov.satisfied) facts.push(`The chart satisfies ${claim.payer}'s policy for this service.`);
+  } else if (all.length) facts.push(`${all.filter((r) => r.met).length} of ${all.length} criteria in the payer's policy are documented in the chart.`);
   if (claim.appealLetter) facts.push("A formal written appeal letter citing the policy criterion by criterion has been prepared.");
   return facts;
 }
 
 export type DraftOpts = { onProgress?: PolicyProgress };
 
-/** Policy lookup (if not supplied) -> criteria check -> appeal letter. Signature kept for the x402 route. */
-export async function draftAppeal(claim: ClaimCase, opts: DraftOpts = {}): Promise<ClaimCase> {
+/**
+ * Policy lookup (if not supplied) -> criteria check -> coverage decision -> appeal letter. Signature kept for the
+ * x402 route. `coverage` is an extra, recomputed-every-time property (types.ts has no slot for it).
+ */
+export async function draftAppeal(claim: ClaimCase, opts: DraftOpts = {}): Promise<ClaimCase & { coverage: Coverage }> {
   const c = validateClaim(claim);
   const log = opts.onProgress ?? (() => {});
-  const policy =
+  const policy: PayerPolicy =
     c.policy?.criteria?.length && c.policy.url
-      ? c.policy
+      ? (c.policy as PayerPolicy)
       : await findPayerPolicy(c.payer, c.procedure.code, c.procedure.description, log);
   log(`Checking ${policy.criteria.length} policy criteria against the clinical notes`);
   const criteriaMet = await evaluateCriteria(policy.criteria, c);
-  log(`${criteriaMet.filter((r) => r.met).length} of ${criteriaMet.length} criteria documented in the chart`);
+  const coverage = evaluateCoverage(policy, criteriaMet);
+  const shape = coverage.groups
+    .map((g) => `${g.logic === "any" ? "any one of" : "all of"} ${g.met.length + g.unmet.length}: ${g.met.length} documented`)
+    .join("; ");
+  log(`Policy ${coverage.satisfied ? "satisfied" : "NOT satisfied"} by the chart (${shape})`);
   const appealLetter = buildAppealLetter(c as ClaimCase & ClaimMeta, policy, criteriaMet);
-  return { ...c, policy, criteriaMet, appealLetter };
+  return { ...c, policy, criteriaMet, coverage, appealLetter };
 }
