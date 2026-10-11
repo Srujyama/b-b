@@ -69,7 +69,7 @@ The demo moment lives here: two AI agents arguing out loud while Mrs. Lin reads 
 
 ## C: Research & Intelligence (Context.dev, Gemini, bill)
 
-1. `CONTEXT_DEV_API_KEY` + `OPENAI_API_KEY` → `npm run live:research`. Make Stanford's real financial-assistance
+1. `CONTEXT_DEV_API_KEY` + `ANTHROPIC_API_KEY` → `npm run live:research`. Make Stanford's real financial-assistance
    policy and real Medicare rates come back **with source URLs**. Tune queries/extraction where they miss.
 2. **Bill photo**: photograph the printed `fixtures/lin-er-bill.html` with a phone and upload it in the UI. Fix parsing misses.
    (PDF upload needs a change in `llm.ts`. Ask D.)

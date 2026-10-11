@@ -163,7 +163,7 @@ npm run dev                 # http://localhost:8787  (web UI + API)
 
 | What | Env vars | How |
 |---|---|---|
-| LLM (parse, Chinese, translation, appeals) | `OPENAI_API_KEY` | OpenAI key |
+| LLM: Claude (parse, Chinese, translation, appeals, phone agent) | `ANTHROPIC_API_KEY` | Anthropic key |
 | Research | `CONTEXT_DEV_API_KEY` | context.dev |
 | Voice | `ELEVENLABS_API_KEY`, then the agent ids | `npm run setup:agents` writes/prints `ELEVENLABS_*_AGENT_ID` |
 | EVM wallets | `BSC_PRIVATE_KEY`, `AGENT_EVM_PRIVATE_KEY`, `PAYEE_EVM_PRIVATE_KEY` (optional `PATIENT_EVM_PRIVATE_KEY`) | `npm run setup:wallets` fills blank keys and prints addresses + faucet links |

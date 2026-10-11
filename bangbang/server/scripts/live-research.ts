@@ -1,6 +1,6 @@
 // Live proof for the research module against real Context.dev + OpenAI.
 //   npx tsx scripts/live-research.ts [code] [description] [hospital]
-// Needs CONTEXT_DEV_API_KEY and OPENAI_API_KEY in bangbang/server/.env. Defaults are DEMO SEED inputs only.
+// Needs CONTEXT_DEV_API_KEY and ANTHROPIC_API_KEY in bangbang/server/.env. Defaults are DEMO SEED inputs only.
 import "dotenv/config";
 import { brand, search } from "../src/research/contextdev.js";
 import { lookupFairPrice } from "../src/research/fairprice.js";
@@ -8,7 +8,7 @@ import { findCharityPolicy, fplPercent } from "../src/research/charity.js";
 
 const [code = "99285", description = "Emergency department visit, high severity", hospital = "Stanford Health Care"] = process.argv.slice(2);
 
-for (const k of ["CONTEXT_DEV_API_KEY", "OPENAI_API_KEY"]) {
+for (const k of ["CONTEXT_DEV_API_KEY", "ANTHROPIC_API_KEY"]) {
   if (!process.env[k]) {
     console.error(`${k} is not configured — set it in bangbang/server/.env`);
     process.exit(1);

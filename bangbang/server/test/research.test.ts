@@ -247,7 +247,7 @@ describe("POST /api/cases/:id/research", () => {
   });
 
   it("researches, builds the ladder and marks the case researched", async () => {
-    process.env.OPENAI_API_KEY ||= "test-openai";
+    process.env.ANTHROPIC_API_KEY ||= "test-anthropic";
     mockFetch((r) => {
       if (r.url.includes("/web/search")) {
         const code = r.body.query.includes("99285") ? "99285" : "74177";

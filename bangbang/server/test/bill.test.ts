@@ -196,12 +196,12 @@ describe("routes (llm mocked)", () => {
 
   it("returns 503 with a clear message when OpenAI is not configured", async () => {
     mocked.mockReset();
-    mocked.mockRejectedValue(new Error("OPENAI_API_KEY is not configured — set it in bangbang/server/.env (see .env.example)"));
+    mocked.mockRejectedValue(new Error("ANTHROPIC_API_KEY is not configured — set it in bangbang/server/.env (see .env.example)"));
     const { buildApp } = await import("../src/index.js");
     const app = await buildApp();
     const res = await app.inject({ method: "POST", url: "/api/cases/demo", payload: {} });
     expect(res.statusCode).toBe(503);
-    expect(res.json().error).toMatch(/OPENAI_API_KEY is not configured/);
+    expect(res.json().error).toMatch(/ANTHROPIC_API_KEY is not configured/);
     await app.close();
   });
 });
