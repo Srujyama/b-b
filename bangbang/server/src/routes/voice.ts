@@ -4,6 +4,8 @@ import { getCase, requireCase, updateCase } from "../store.js";
 import { activeBridge, notifyToolResult, startAgentBridge } from "../agent/bridge.js";
 import { advocateInitForHuman, agentIdFor, conversationInit, getSignedUrl, internalToolName } from "../agent/elevenlabs.js";
 import { handleTool } from "../agent/tools.js";
+import { haikuRoutes } from "../agent/haiku.js";
+import { callRoutes } from "../agent/calls.js";
 
 // Voice routes (see docs/API.md):
 //   GET  /api/intake/signed-url[?case=]   → {signedUrl, init}  browser opens the Mandarin intake agent
@@ -17,6 +19,9 @@ export default async function voiceRoutes(app: FastifyInstance) {
     const code = e.statusCode ?? (/is not configured/i.test(e.message) ? 503 : 502);
     reply.code(code).send({ error: e.message });
   });
+
+  await app.register(haikuRoutes);
+  await app.register(callRoutes);
 
   app.get<{ Querystring: { case?: string } }>("/api/intake/signed-url", async (req) => {
     const caseId = req.query.case;
