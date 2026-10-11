@@ -10,7 +10,7 @@ import "dotenv/config";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Client, Wallet } from "xrpl";
-import { networkUrl, setupToken, type XrplCtx } from "../src/chain/xrpl.js";
+import { networkUrl, setupToken, submitTx, usd, USD, type XrplCtx } from "../src/chain/xrpl.js";
 import { createCommunityFund } from "../src/chain/xrplFund.js";
 
 const ENV_PATH = fileURLToPath(new URL("../.env", import.meta.url));
@@ -45,12 +45,16 @@ async function main() {
   try {
     console.log(`funding wallets on ${network} ...`);
     const fund = async () => (await client.fundWallet(null)).wallet as Wallet;
-    const [issuer, patient, hospital, clinic, advocate] = await Promise.all([fund(), fund(), fund(), fund(), fund()]);
+    const [issuer, patient, hospital, clinic, advocate, donor] = await Promise.all([fund(), fund(), fund(), fund(), fund(), fund()]);
     const ctx: XrplCtx = { client, network, actors: { issuer, patient, hospital, clinic, advocate } };
     for (const [k, w] of Object.entries(ctx.actors)) console.log(`  ${k.padEnd(9)} ${w.address}`);
 
     const receipts = await setupToken(ctx, [{ wallet: patient, amount: PATIENT_USD }]);
-    const f = await createCommunityFund(ctx, { owner: issuer, donor: issuer, donation: FUND_DONATION, investAfterSec: 20, termYears: 6 });
+    // a separate, vetted donor: the fund vault is private to holders of the fund's VerifiedDonor credential
+    await submitTx(ctx, { TransactionType: "TrustSet", Account: donor.address, LimitAmount: { currency: USD, issuer: issuer.address, value: "1000000000" } }, donor);
+    await submitTx(ctx, { TransactionType: "Payment", Account: issuer.address, Destination: donor.address, Amount: usd(issuer.address, FUND_DONATION) }, issuer);
+    console.log(`  donor     ${donor.address}`);
+    const f = await createCommunityFund(ctx, { owner: issuer, donor, donation: FUND_DONATION, investAfterSec: 20, termYears: 6 });
     receipts.push(...f.receipts);
     for (const r of receipts) console.log(`  ✓ ${r.kind.padEnd(14)} ${r.explorerUrl}`);
 
@@ -66,9 +70,10 @@ async function main() {
         XRPL_ADVOCATE_SEED: advocate.seed!,
         XRPL_VAULT_ID: f.vaultId,
         XRPL_LOAN_BROKER_ID: f.loanBrokerId,
+        XRPL_DONOR_DOMAIN_ID: f.domainId ?? "",
       }),
     );
-    console.log(`\nwrote XRPL_* to ${ENV_PATH}\nvault ${f.vaultId}\nbroker ${f.loanBrokerId}`);
+    console.log(`\nwrote XRPL_* to ${ENV_PATH}\ndomain ${f.domainId}\nvault ${f.vaultId} (private: VerifiedDonor only)\nbroker ${f.loanBrokerId}`);
     console.log("note: loans can originate ~20 s after setup (closed-ended vault subscription window).");
   } finally {
     await client.disconnect();

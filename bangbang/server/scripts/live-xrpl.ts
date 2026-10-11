@@ -1,10 +1,11 @@
 // Live end-to-end proof on XRPL DEVNET with fresh faucet wallets (no .env needed):
-//   token setup -> hardship credential -> community fund (closed vault + broker) -> 0% loan ->
+//   token setup -> hardship credential -> community fund (donor-only Permissioned Domain + PRIVATE closed
+//   vault + broker; a non-credentialed depositor must be rejected with tecNO_AUTH) -> 0% loan ->
 //   conditional escrow of the agreed amount -> Batch release (EscrowFinish + advocate fee) -> LoanPay.
 // Prints an explorer link for every tx. Exits non-zero on any non-tesSUCCESS.
 //   npx tsx scripts/live-xrpl.ts
 import { Client, Wallet } from "xrpl";
-import { assertTestNetwork, DEVNET_URL, issueHardshipCredential, createSettlementEscrow, releaseOnZeroBalance, setupToken, usdBalance, type XrplCtx } from "../src/chain/xrpl.js";
+import { assertTestNetwork, DEVNET_URL, issueHardshipCredential, createSettlementEscrow, releaseOnZeroBalance, setupToken, submitTx, usd, usdBalance, USD, type XrplCtx } from "../src/chain/xrpl.js";
 import { createCommunityFund, openZeroInterestLoan, payInstallment } from "../src/chain/xrplFund.js";
 import type { Receipt } from "../src/types.js";
 
@@ -16,24 +17,38 @@ async function main() {
   const client = new Client(network);
   await client.connect();
   try {
-    step(`funding 5 fresh wallets from the faucet on ${network}`);
+    step(`funding 7 fresh wallets from the faucet on ${network}`);
     const fund = async () => (await client.fundWallet(null)).wallet as Wallet;
-    const [issuer, patient, hospital, clinic, advocate] = await Promise.all([fund(), fund(), fund(), fund(), fund()]);
+    const [issuer, patient, hospital, clinic, advocate, donor, stranger] = await Promise.all([fund(), fund(), fund(), fund(), fund(), fund(), fund()]);
     const ctx: XrplCtx = { client, network, actors: { issuer, patient, hospital, clinic, advocate } };
     for (const [k, w] of Object.entries(ctx.actors)) console.log(`  ${k.padEnd(9)} ${w.address}`);
 
     step("USD token: issuer flags (DefaultRipple, AllowTrustLineLocking), trust lines, mint");
     show(await setupToken(ctx, [{ wallet: patient, amount: 1000 }]));
+    for (const w of [donor, stranger]) {
+      await submitTx(ctx, { TransactionType: "TrustSet", Account: w.address, LimitAmount: { currency: USD, issuer: issuer.address, value: "1000000000" } }, w);
+      await submitTx(ctx, { TransactionType: "Payment", Account: issuer.address, Destination: w.address, Amount: usd(issuer.address, 20000) }, issuer);
+    }
+    console.log(`  donor     ${donor.address}\n  stranger  ${stranger.address}  (both hold 20000 USD)`);
 
     const caseId = `live-${Date.now()}`;
     step("hardship credential: clinic social worker issues FinancialHardship, patient accepts");
     show(await issueHardshipCredential(caseId, ctx));
 
-    step("community fund: closed-ended vault (USD) + donation + loan broker");
-    const investAfterSec = 20;
-    const f = await createCommunityFund(ctx, { owner: issuer, donor: issuer, donation: 10000, investAfterSec, termYears: 6 });
+    step("community fund: donor-only Permissioned Domain -> VerifiedDonor credential -> PRIVATE closed vault -> donation -> loan broker");
+    const investAfterSec = 30;
+    const f = await createCommunityFund(ctx, { owner: issuer, donor, donation: 10000, investAfterSec, termYears: 6 });
     show(f.receipts);
-    console.log(`  vault ${f.vaultId}\n  broker ${f.loanBrokerId}`);
+    console.log(`  domain ${f.domainId}\n  vault  ${f.vaultId}\n  broker ${f.loanBrokerId}`);
+
+    step("ledger-enforced gate: a depositor WITHOUT the VerifiedDonor credential must be rejected");
+    const gate = await client.submitAndWait(
+      { TransactionType: "VaultDeposit", Account: stranger.address, VaultID: f.vaultId, Amount: usd(issuer.address, 100) },
+      { wallet: stranger, autofill: true },
+    );
+    const gateResult = (gate.result.meta as { TransactionResult?: string })?.TransactionResult;
+    console.log(`  stranger deposit -> ${gateResult}  ${ctx.network.includes("devnet") ? "https://devnet.xrpl.org/transactions/" : ""}${gate.result.hash}`);
+    if (gateResult !== "tecNO_AUTH") throw new Error(`expected tecNO_AUTH for a non-credentialed depositor, got ${gateResult}`);
     // loans may only originate once the subscription window closes; ledger close time lags wall clock a bit
     await new Promise((r) => setTimeout(r, (investAfterSec + 15) * 1000));
 
