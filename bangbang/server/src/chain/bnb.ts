@@ -21,6 +21,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { bscTestnet } from "viem/chains";
 import { need, opt } from "../env.js";
+import { persistedMap } from "../persist.js";
 import { requireCase, addReceipt, emit } from "../store.js";
 import type { CasePacket, Receipt, TranscriptLine } from "../types.js";
 import { explorer } from "./explorers.js";
@@ -283,11 +284,16 @@ export async function openMandate(caseId: string): Promise<Receipt> {
   });
   addReceipt(caseId, r);
   logs.set(caseId, logs.get(caseId) ?? []);
+  logStore.save();
   return r;
 }
 
 // off-chain entry bodies per case (the chain stores only hashes + head)
-const logs = new Map<string, LedgerEntry[]>();
+// Persisted to DATA_DIR/bnb-logs.json so verifyChain still works after a restart.
+const logStore = persistedMap<LedgerEntry[]>("bnb-logs");
+const logs = logStore.map;
+/** Test/ops hook: re-read off-chain log bodies from DATA_DIR (restart simulation). */
+export const _reloadLogs = () => logStore.load();
 export const getEntries = (caseId: string): LedgerEntry[] => logs.get(caseId) ?? [];
 
 /** Hash one offer/transcript turn and append it to the on-chain chain. */
@@ -304,6 +310,7 @@ export async function appendLog(caseId: string, body: Omit<LedgerEntryBody, "seq
     const txHash = await sendNow("appendLog", [caseKey(caseId), entryHash]);
     const e: LedgerEntry = { ...entry, entryHash, head, txHash };
     list.push(e);
+    logStore.save();
     return e;
   });
   const entry = stored;

@@ -33,6 +33,7 @@ import {
   type TxResponse,
 } from "xrpl";
 import { need, opt } from "../env.js";
+import { persistedMap } from "../persist.js";
 import { explorer } from "./explorers.js";
 import type { Receipt } from "../types.js";
 
@@ -332,7 +333,17 @@ type EscrowRecord = {
   cancelAfter: number;
   txHash: string;
 };
-const escrows = new Map<string, EscrowRecord>();
+// Persisted to DATA_DIR/escrows.json (mode 0600, contents never logged) so a restart between
+// /settle and /confirm-zero-balance can still release the escrow.
+const escrowStore = persistedMap<EscrowRecord>("escrows", { secret: true, debounceMs: 0 });
+const escrows = escrowStore.map;
+/** Test/ops hook: re-read escrow records from DATA_DIR (restart simulation). */
+export const _reloadEscrows = () => escrowStore.load();
+/** Escrow changes are written synchronously, not debounced: losing a fulfillment strands funds. */
+function writeEscrows() {
+  escrowStore.save();
+  escrowStore.flush();
+}
 
 /** Public view of a case's escrow (no fulfillment). */
 export function escrowFor(caseId: string): Omit<EscrowRecord, "fulfillment"> | undefined {
@@ -365,6 +376,7 @@ export async function createSettlementEscrow(
   const res = await submitTx(ctx, tx, patient);
   const offerSequence = Number((res.result.tx_json as { Sequence?: number }).Sequence);
   escrows.set(caseId, { owner: patient.address, destination: hospital.address, offerSequence, condition, fulfillment, amount, cancelAfter, txHash: res.result.hash });
+  writeEscrows(); // the release key is on disk before we acknowledge the lock
   return {
     condition,
     offerSequence,
@@ -406,6 +418,7 @@ export async function releaseOnZeroBalance(caseId: string, ctx?: XrplCtx): Promi
   const still = await ledgerEntry(ctx, { escrow: { owner: e.owner, seq: e.offerSequence } });
   if (still) throw new Error(`XRPL Batch ${res.result.hash} validated but the escrow is still open — inner EscrowFinish did not apply`);
   escrows.delete(caseId);
+  writeEscrows();
   const inner = prepared.RawTransactions.map((r) => hashes.hashSignedTx(r.RawTransaction));
   return [
     receiptFor(ctx.network, "Batch", res.result.hash, { mode: "AllOrNothing", inner, confirmedBy: hospital.address }),
@@ -417,5 +430,6 @@ export async function releaseOnZeroBalance(caseId: string, ctx?: XrplCtx): Promi
 /** Test hook: drop in-memory escrow state. */
 export function _resetEscrows() {
   escrows.clear();
+  writeEscrows();
 }
 
