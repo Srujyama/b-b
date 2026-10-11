@@ -74,7 +74,7 @@ describe("web: clinic page", () => {
   it("serves clinic.html with the appeal flow and the shared room", async () => {
     const html = (await get("/clinic.html")).body;
     for (const id of [
-      "clinic-app", "claim-demo-btn", "claim-form", "criteria", "appeal-letter", "copy-letter", "insurer-room",
+      "clinic-app", "claim-demo-btn", "claim-demo-sleep-btn", "claim-form", "criteria", "appeal-letter", "copy-letter", "insurer-room",
       "call-insurer-btn", "transcript", "tk-current", "error",
     ]) {
       expect(html, id).toContain(`id="${id}"`);
@@ -125,6 +125,27 @@ describe("web: app.js logic in node (DOM stubbed)", () => {
       overrides: { agent: { prompt: { prompt: "P" }, firstMessage: "你好", language: "zh" } },
     });
     expect(initToSessionOptions(undefined, "c2")).toEqual({ dynamicVariables: { case_id: "c2" } });
+  });
+
+  it("has a Chinese and English label for every receipt kind the server emits", async () => {
+    const { readFileSync, readdirSync, statSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const srcDir = new URL("../src/", import.meta.url).pathname;
+    const files: string[] = [];
+    const walk = (d: string) => readdirSync(d).forEach((f) => (statSync(join(d, f)).isDirectory() ? (f !== "dev" && walk(join(d, f))) : f.endsWith(".ts") && files.push(join(d, f))));
+    walk(srcDir);
+    const kinds = new Set<string>();
+    for (const f of files) {
+      const src = readFileSync(f, "utf8");
+      for (const m of src.matchAll(/receiptFor\([^,]+,\s*"([\w-]+)"/g)) kinds.add(m[1]); // XRPL
+      for (const m of src.matchAll(/TransactionType:\s*"(\w+)"/g)) kinds.add(m[1]); // XRPL receipts keyed by tx type
+      for (const m of src.matchAll(/\breceipt\("([\w-]+)"/g)) kinds.add(m[1]); // BNB
+      for (const m of src.matchAll(/kind:\s*"([\w-]+)"[^\n]*\n?[^\n]*(?:txHash|explorerUrl)/g)) kinds.add(m[1]); // inline Receipt objects
+    }
+    for (const k of ["x402-payment", "prediction-hedge-order", "openMandate", "recordDeal", "logEntry", "EscrowCreate", "Batch"]) expect(kinds, `scanner should find ${k}`).toContain(k);
+    const { I18N } = await load();
+    const missing = [...kinds].filter((k) => !I18N.zh.kinds[k] || !I18N.en.kinds[k]);
+    expect(missing, "add these to I18N.{zh,en}.kinds in web/app.js").toEqual([]);
   });
 
   it("merges CaseEvents without duplicating lines, offers or receipts", async () => {

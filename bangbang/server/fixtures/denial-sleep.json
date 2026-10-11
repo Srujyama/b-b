@@ -1,0 +1,42 @@
+{
+  "_note": "DEMO SEED DATA — a fictional, de-identified denied claim for the clinic-mode demo (second scenario: 'try the cheaper test first' denial). The payer policy and criteria are NOT stored here; they are looked up live from the payer's site via Context.dev.",
+  "claim": {
+    "payer": "UnitedHealthcare",
+    "denialReason": "Not medically necessary. In-laboratory attended polysomnography is not medically necessary because the member has not first completed an unattended home sleep apnea test (HSAT). Coverage criteria for attended polysomnography were not met.",
+    "procedure": {
+      "code": "95810",
+      "description": "Polysomnography, attended in a sleep laboratory, age 6 years or older, 4 or more parameters of sleep"
+    },
+    "diagnoses": [
+      {
+        "code": "G47.33",
+        "description": "Obstructive sleep apnea (suspected)"
+      },
+      {
+        "code": "I50.22",
+        "description": "Chronic systolic (congestive) heart failure"
+      },
+      {
+        "code": "J44.9",
+        "description": "Chronic obstructive pulmonary disease, unspecified"
+      },
+      {
+        "code": "Z99.81",
+        "description": "Dependence on supplemental oxygen"
+      }
+    ],
+    "claimNumber": "EXAMPLE-2026-1002-7731",
+    "memberId": "U00000000 (redacted)",
+    "patientInitials": "S.W., 71-year-old female (Mandarin-speaking; visit conducted with a certified medical interpreter)",
+    "dateOfService": "2026-10-02",
+    "denialDate": "2026-10-08",
+    "provider": {
+      "name": "Chinatown Community Health Center — Sleep & Pulmonary (demo clinic)",
+      "physician": "Dr. M. Chen, MD (demo)",
+      "npi": "0000000000",
+      "address": "200 Example St, San Francisco, CA 94108",
+      "phone": "(415) 555-0168"
+    },
+    "clinicalNotes": "DATE OF VISIT: 2026-09-24. New patient, sleep medicine consult. Visit conducted in Mandarin with a certified medical interpreter.\nHPI: 71-year-old female referred by cardiology for loud snoring, witnessed apneas reported by her daughter, nocturnal awakenings with gasping, and morning headaches for over 1 year. Epworth Sleepiness Scale 14/24. STOP-BANG score 6.\nCOMORBIDITIES: Chronic systolic heart failure, NYHA class III, ejection fraction 30% on echocardiogram dated 2026-06-11. Moderate-to-severe COPD (FEV1 42% predicted on spirometry 2026-05-20) on continuous home oxygen 2 L/min by nasal cannula. Overnight oximetry on 2026-08-30 showed periodic desaturations with a cyclical pattern; cardiology raised concern for Cheyne-Stokes respiration.\nEXAM: BMI 31. Neck circumference 39 cm. Mallampati class IV. Bilateral lower-extremity edema 1+. Lungs with diffuse expiratory wheeze.\nASSESSMENT: High pretest probability of obstructive sleep apnea, with suspected coexisting central sleep apnea (Cheyne-Stokes pattern) in the setting of heart failure with reduced ejection fraction. Significant cardiopulmonary disease (CHF, moderate-to-severe COPD on supplemental oxygen) makes an unattended home sleep apnea test inappropriate: HSAT cannot reliably detect central apneas, cannot titrate oxygen, and may underestimate disease in patients with chronic hypoxemia.\nPLAN: Attended in-laboratory polysomnography (CPT 95810) to characterize obstructive versus central events and guide therapy (CPAP versus adaptive servo-ventilation is contraindicated with EF of 30% or less, so accurate characterization is required). Home sleep apnea test is not appropriate for this patient."
+  }
+}

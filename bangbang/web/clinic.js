@@ -9,7 +9,7 @@ Object.assign(I18N.en, {
   clinicBrand: "Clinic appeals",
   clinicTitle: "Appeal a denied claim",
   clinicLede: "Enter the denial and the clinical notes. BangBang pulls the payer's medical policy, checks each criterion against the chart, and drafts the appeal.",
-  useDemoClaim: "Load the demo denial", ownClaim: "Or enter your own denial",
+  useDemoClaim: "Demo: denied lumbar MRI (Aetna)", useDemoSleep: "Demo: denied sleep study (UnitedHealthcare)", ownClaim: "Or enter your own denial",
   payer: "Payer", denialReason: "Denial reason as written", procCode: "Procedure code", procDesc: "Procedure",
   diagnoses: "Diagnoses, one per line: code then description", notes: "Clinical notes", buildAppeal: "Build the appeal",
   building: "Pulling the payer policy and drafting the appeal…",
@@ -27,7 +27,7 @@ Object.assign(I18N.zh, {
   clinicBrand: "诊所申诉",
   clinicTitle: "申诉被拒的理赔",
   clinicLede: "输入拒赔理由和病历。帮帮会找到保险公司的医疗政策，逐条对照病历，并写好申诉信。",
-  useDemoClaim: "载入示范拒赔", ownClaim: "或者输入您自己的拒赔",
+  useDemoClaim: "示范：腰椎核磁共振被拒（Aetna）", useDemoSleep: "示范：睡眠检查被拒（UnitedHealthcare）", ownClaim: "或者输入您自己的拒赔",
   payer: "保险公司", denialReason: "拒赔理由（原文）", procCode: "项目代码", procDesc: "检查/治疗项目",
   diagnoses: "诊断，每行一个：代码 + 描述", notes: "病历记录", buildAppeal: "生成申诉",
   building: "正在找保险政策并写申诉信……",
@@ -125,14 +125,16 @@ function render() {
   room.render();
 }
 
-$("#claim-demo-btn").addEventListener("click", (e) =>
-  busy(e.currentTarget, async () => {
-    $("#room-status").textContent = t("building");
-    adopt(await api("/api/claims/demo", { method: "POST", body: {} }));
-    $("#room-status").textContent = "";
-    $("#claim-result").scrollIntoView({ behavior: "smooth" });
-  }),
-);
+for (const [id, fixture] of [["#claim-demo-btn", "mri"], ["#claim-demo-sleep-btn", "sleep"]]) {
+  $(id).addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      $("#room-status").textContent = t("building");
+      adopt(await api("/api/claims/demo", { method: "POST", body: { fixture } }));
+      $("#room-status").textContent = "";
+      $("#claim-result").scrollIntoView({ behavior: "smooth" });
+    }),
+  );
+}
 
 $("#claim-form").addEventListener("submit", (e) => {
   e.preventDefault();

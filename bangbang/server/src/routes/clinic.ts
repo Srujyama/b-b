@@ -5,7 +5,13 @@ import { claimFacts, draftAppeal, validateClaim, type ClaimMeta } from "../claim
 import { createCase, emit, updateCase } from "../store.js";
 import type { CasePacket, ClaimCase, Patient } from "../types.js";
 
-const FIXTURE = fileURLToPath(new URL("../../fixtures/denial-mri.json", import.meta.url));
+// Demo seed denials, keyed by the name the UI sends. Each one still goes through the live policy lookup.
+export const DEMO_DENIALS = {
+  mri: "denial-mri.json", // lumbar MRI, "not enough conservative therapy" (Aetna)
+  sleep: "denial-sleep.json", // in-lab sleep study, "do the home test first" (UnitedHealthcare)
+} as const;
+export type DemoDenial = keyof typeof DEMO_DENIALS;
+const fixturePath = (name: DemoDenial) => fileURLToPath(new URL(`../../fixtures/${DEMO_DENIALS[name]}`, import.meta.url));
 
 function sendError(reply: FastifyReply, err: unknown) {
   const e = err as Error & { statusCode?: number };
@@ -44,8 +50,8 @@ export async function clinicCase(raw: unknown, seed?: string): Promise<CasePacke
   }
 }
 
-export async function loadDemoClaim(): Promise<ClaimCase & ClaimMeta> {
-  const fx = JSON.parse(await readFile(FIXTURE, "utf8")) as { claim: ClaimCase & ClaimMeta };
+export async function loadDemoClaim(name: DemoDenial = "mri"): Promise<ClaimCase & ClaimMeta> {
+  const fx = JSON.parse(await readFile(fixturePath(name), "utf8")) as { claim: ClaimCase & ClaimMeta };
   return fx.claim;
 }
 
@@ -60,9 +66,13 @@ export default async function clinicRoutes(app: FastifyInstance) {
   });
 
   // Demo seed: a de-identified denied claim; it goes through the same live policy lookup + criteria check.
-  app.post("/api/claims/demo", async (_req, reply) => {
+  app.post<{ Body: { fixture?: string } | undefined }>("/api/claims/demo", async (req, reply) => {
+    const name = (req.body?.fixture ?? "mri") as DemoDenial;
+    if (!Object.hasOwn(DEMO_DENIALS, name)) {
+      return reply.code(400).send({ error: `unknown demo denial "${name}" — use one of: ${Object.keys(DEMO_DENIALS).join(", ")}` });
+    }
     try {
-      return await clinicCase(await loadDemoClaim(), "demo seed denial (fixtures/denial-mri.json)");
+      return await clinicCase(await loadDemoClaim(name), `demo seed denial (fixtures/${DEMO_DENIALS[name]})`);
     } catch (err) {
       return sendError(reply, err);
     }
