@@ -24,10 +24,34 @@ export function contextDevKey(): string {
 
 type Method = "GET" | "POST";
 
-// The free plan runs one request at a time (a second concurrent one gets 429), so calls queue here.
+// The plan runs ONE request at a time across the whole organisation (a second concurrent one gets 429).
+// Calls queue here so this process never competes with itself, but other processes sharing the key
+// (the Fly app, dev servers, live scripts, teammates) still can, and a scrape may hold the slot for
+// 10s+. So a 429 (or 408/5xx) is retried with exponential backoff + jitter, honouring Retry-After,
+// until a total retry budget runs out; then we give up with a 503 ("busy, try again"), never a 502.
 const MAX_CONCURRENT = 1;
-const MAX_ATTEMPTS = 3;
-const MAX_RETRY_WAIT_MS = 10_000;
+const DEFAULT_RETRY_BUDGET_MS = 90_000;
+const BACKOFF_BASE_MS = 500;
+const BACKOFF_CAP_MS = 15_000;
+export const CONTEXT_DEV_BUSY = "Context.dev is busy (one request at a time on this plan); try again shortly";
+function retryBudgetMs(): number {
+  const v = Number(process.env.CONTEXT_DEV_RETRY_BUDGET_MS);
+  return Number.isFinite(v) && v >= 0 && process.env.CONTEXT_DEV_RETRY_BUDGET_MS !== "" ? v : DEFAULT_RETRY_BUDGET_MS;
+}
+/** Retry-After is either delta-seconds ("2", "0.5") or an HTTP date; returns ms, or undefined if absent/garbled. */
+export function parseRetryAfter(h: string | null, now = Date.now()): number | undefined {
+  if (!h) return undefined;
+  const secs = Number(h);
+  if (h.trim() !== "" && Number.isFinite(secs)) return Math.max(0, secs * 1000);
+  const at = Date.parse(h);
+  return Number.isNaN(at) ? undefined : Math.max(0, at - now);
+}
+/** Exponential backoff with "equal jitter" (half fixed, half random) so competing processes spread out. */
+function backoffMs(attempt: number): number {
+  const exp = Math.min(BACKOFF_CAP_MS, BACKOFF_BASE_MS * 2 ** (attempt - 1));
+  return exp / 2 + Math.random() * (exp / 2);
+}
+const retryable = (status: number) => status === 429 || status === 408 || status >= 500;
 let active = 0;
 const waiting: (() => void)[] = [];
 async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
@@ -48,16 +72,23 @@ async function call<T>(method: Method, path: string, body?: unknown, query?: Rec
   const url = new URL(CONTEXT_DEV_BASE + path);
   for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined) url.searchParams.set(k, String(v));
   return withSlot(async () => {
+    const deadline = Date.now() + retryBudgetMs();
     for (let attempt = 1; ; attempt++) {
       const res = await fetch(url.toString(), {
         method,
         headers: { Authorization: `Bearer ${key}`, ...(body ? { "Content-Type": "application/json" } : {}), Accept: "application/json" },
         body: body ? JSON.stringify(body) : undefined,
       });
-      // rate limits and transient server errors are retried (bounded); validation errors never are
-      if ((res.status === 429 || res.status === 408 || res.status >= 500) && attempt < MAX_ATTEMPTS) {
-        const retryAfter = Number(res.headers.get("retry-after"));
-        await sleep(Math.min(MAX_RETRY_WAIT_MS, retryAfter > 0 ? retryAfter * 1000 : 1000 * attempt));
+      // rate limits and transient server errors are retried within the budget; 4xx validation/auth errors never are
+      if (retryable(res.status)) {
+        // wait at least what the server asked for, and at least our own backoff
+        const wait = Math.max(parseRetryAfter(res.headers.get("retry-after")) ?? 0, backoffMs(attempt));
+        await res.body?.cancel().catch(() => {}); // free the connection; we won't read this body
+        if (Date.now() + wait > deadline) {
+          const why = res.status === 429 ? CONTEXT_DEV_BUSY : `Context.dev is unavailable (HTTP ${res.status} on ${path}); try again shortly`;
+          throw new ContextDevError(why, 503, res.status === 429 ? "RATE_LIMITED" : undefined);
+        }
+        await sleep(wait);
         continue;
       }
       const text = await res.text();
