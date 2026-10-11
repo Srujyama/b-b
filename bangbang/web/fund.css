@@ -1,0 +1,79 @@
+/* Community fund dashboard. Loaded after styles.css; uses its tokens only (works in light + dark). */
+
+.fund-hero { margin: 8px 0 18px; }
+.fund-hero h1 { margin: 4px 0 8px; }
+.fund-hero .lede { margin-bottom: 10px; }
+.ledger-line {
+  display: inline-block; margin: 0; padding: 4px 12px; border-radius: 999px;
+  background: var(--sunk); color: var(--ink-2); font-size: 14px; font-variant-numeric: tabular-nums;
+}
+.ledger-line:empty { display: none; }
+
+.fund .stat.total { border-top-color: var(--ink-2); }
+.fund .stat.avail { border-top-color: var(--jade); }
+.fund .stat.avail .stat-value { color: var(--jade); }
+.fund .stat.lent { border-top-color: var(--brass); }
+.fund .stat.count { border-top-color: var(--seal); }
+
+.section-h { margin: 22px 0 10px; }
+.roles { display: grid; gap: 12px; }
+.role { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.role-head { display: flex; align-items: center; gap: 10px; }
+.role-head h3 { margin: 0; font: 600 20px/1.3 var(--serif); }
+.role-num {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  font: 900 16px/1 var(--serif); color: #fff; background: var(--ink-2);
+}
+.role-broker .role-num { background: var(--jade); }
+.role-depositor .role-num { background: var(--brass); }
+.role-borrower .role-num { background: var(--seal); }
+.role-what { margin: 0 0 4px; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+
+.facts { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 6px 14px; margin: 6px 0 0; font-size: 15px; }
+.facts dt { color: var(--ink-2); }
+.facts dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
+.facts dd.warn { grid-column: 1 / -1; text-align: left; color: var(--seal); }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.92em; overflow-wrap: anywhere; }
+
+.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.person { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg); min-width: 0; }
+.person-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.person-meta { margin: 4px 0 0; font-size: 14px; color: var(--ink-2); overflow-wrap: anywhere; line-height: 1.45; }
+.people .empty, .loans .empty, .fund-history .empty { color: var(--ink-2); font-size: 16px; line-height: 1.5; }
+.role .fine { font-size: 13px; line-height: 1.45; }
+
+.deposit-note { background: var(--jade-soft); border-radius: var(--r-md); padding: 12px 14px; margin: 0 0 12px; }
+.deposit-note p { margin: 0; font-size: 16px; line-height: 1.55; }
+.deposit-note .fine { margin-top: 8px; }
+
+.loans { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.loan { border: 1px solid var(--line); border-left: 5px solid var(--jade); border-radius: var(--r-md); padding: 12px 14px; background: var(--bg); min-width: 0; }
+.loan.paid { border-left-color: var(--ink-2); }
+.loan.impaired, .loan.defaulted { border-left-color: var(--seal); }
+.loan-top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.loan-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 10px 0 8px; }
+.loan-nums dt { font-size: 13px; color: var(--ink-2); }
+.loan-nums dd { margin: 0; font: 900 19px/1.2 var(--serif); font-variant-numeric: tabular-nums; }
+.loan-bar { height: 8px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
+.loan-bar i { display: block; height: 100%; background: var(--jade); }
+.loan .pay { min-height: 50px; font-size: 18px; margin-top: 12px; }
+.loans .note { margin: 0; font-size: 15px; }
+
+.fund-history { margin-top: 4px; }
+.fh-item { position: relative; display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 6px 0; }
+.fh-dot { width: 12px; height: 12px; margin: 7px 0 0 5px; border-radius: 50%; background: var(--jade); box-shadow: 0 0 0 4px var(--jade-soft); position: relative; z-index: 1; }
+.fund-history.timeline::before { left: 10px; }
+.fh-body { min-width: 0; }
+.fh-body .r-title { font-size: 16px; }
+
+.refresh { max-width: 320px; margin: 20px auto 0; }
+.fund .dash-cols { margin-top: 16px; display: grid; gap: 16px; }
+
+@media (min-width: 720px) {
+  .roles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .loan-nums { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 880px) {
+  .fund .dash-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: start; }
+}
+.fund .roles .card { margin: 0; }
