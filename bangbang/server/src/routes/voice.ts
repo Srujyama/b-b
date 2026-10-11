@@ -12,6 +12,12 @@ import { handleTool } from "../agent/tools.js";
 // `init` = the conversation_initiation_client_data the browser must send first (per-case prompt overrides +
 // dynamic_variables {case_id}).
 export default async function voiceRoutes(app: FastifyInstance) {
+  // missing config -> 503 {error}, explicit statusCode (404/409) as-is, upstream (ElevenLabs) failure -> 502
+  app.setErrorHandler((e: Error & { statusCode?: number }, _req, reply) => {
+    const code = e.statusCode ?? (/is not configured/i.test(e.message) ? 503 : 502);
+    reply.code(code).send({ error: e.message });
+  });
+
   app.get<{ Querystring: { case?: string } }>("/api/intake/signed-url", async (req) => {
     const caseId = req.query.case;
     const packet = caseId ? requireCase(caseId) : undefined;
