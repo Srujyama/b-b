@@ -57,7 +57,7 @@ export const I18N = {
       deal: "成交记录上链", recordDeal: "成交记录上链", "x402-payment": "帮帮付数据费", odds: "美联储利率概率",
       "fed-odds": "美联储利率概率", "prediction-hedge-order": "用预测市场对冲利率风险", Payment: "帮帮服务费",
       LoanPay: "按时还了一期", VaultCreate: "社区医疗基金成立", LoanBrokerSet: "基金开始放贷",
-      CredentialDelete: "旧资格证明作废", AccountSet: "账户设置", TrustSet: "开通美元额度",
+      CredentialDelete: "旧资格证明作废", PermissionedDomainSet: "只许审核过的捐款人存钱", AccountSet: "账户设置", TrustSet: "开通美元额度",
     },
   },
   en: {
@@ -111,7 +111,7 @@ export const I18N = {
       deal: "Deal recorded", recordDeal: "Deal recorded", "x402-payment": "Data fee paid (x402)", odds: "Fed-decision odds",
       "fed-odds": "Fed-decision odds", "prediction-hedge-order": "Rate-risk hedge (prediction market)", Payment: "Advocate fee",
       LoanPay: "Loan installment paid", VaultCreate: "Community medical fund created", LoanBrokerSet: "Fund opened for lending",
-      CredentialDelete: "Old credential revoked", AccountSet: "Account settings", TrustSet: "USD trust line opened",
+      CredentialDelete: "Old credential revoked", PermissionedDomainSet: "Fund limited to verified donors", AccountSet: "Account settings", TrustSet: "USD trust line opened",
     },
   },
 };
