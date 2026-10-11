@@ -24,6 +24,9 @@ export type Stage = (typeof STAGES)[number];
 
 const FIXTURE = fileURLToPath(new URL("../../fixtures/lin-er-bill.json", import.meta.url));
 const PREVIEW = "PREVIEW (dev harness, not live data)";
+// Seeded into packet.facts at EVERY stage (even stage=bill, before any receipts or research exist) so the UI can
+// always tell a seeded case from a real one. dashboard.js isPreview() looks for a fact starting with "PREVIEW".
+const PREVIEW_FACT = `${PREVIEW}: this case was seeded by the design harness; nothing here is a real patient or call.`;
 
 // Plain-Mandarin explanations a parent would understand (normally written by the LLM in explainZh).
 const ZH: Record<string, string> = {
@@ -100,12 +103,14 @@ export async function seedPreview(stage: Stage, stepMs = 900): Promise<CasePacke
 
   const later: (() => void)[] = [];
   const log = (message: string, messageZh: string) => later.push(() => emit(c.id, { type: "log", message, messageZh }));
+  updateCase(c.id, { facts: [PREVIEW_FACT] });
+  log(`${PREVIEW}: seeded case, not live data`, `【预览】这是设计用的示例个案，不是真实数据`);
 
   if (stage !== "bill") {
     const fairPrices = previewFairPrices();
     const charity = previewCharity();
     const ladder = buildNegotiation({ bill, flags, fairPrices, charity, patient });
-    updateCase(c.id, { fairPrices, charity, facts: ladder.facts, target: ladder.target, opening: ladder.opening, walkaway: ladder.walkaway, status: "researched" });
+    updateCase(c.id, { fairPrices, charity, facts: [...ladder.facts, PREVIEW_FACT], target: ladder.target, opening: ladder.opening, walkaway: ladder.walkaway, status: "researched" });
     const fpl = fplPercent(patient.annualIncome ?? 0, patient.householdSize ?? 1);
     log(`[${PREVIEW}] Found Stanford Health Care's financial assistance policy`, `【预览】找到了斯坦福医院的财务援助政策`);
     log(`[${PREVIEW}] Medicare pays $391 for the CT you were billed $6,245 for`, `【预览】同样的CT，联邦医保只付391美元，您被收了6,245美元`);

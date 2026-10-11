@@ -322,6 +322,7 @@ body.clinic { font-size: 17px; }
 .dash .card.subtle { background: transparent; }
 .dash .card.subtle p { margin: 0; font-size: 17px; color: var(--ink-2); }
 .dash .card.subtle .text { padding-bottom: 0; }
+.dash #case-picker .primary { max-width: 360px; }
 .card-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .dash .card-title h2 { margin: 0; }
 .eyebrow { margin: 0; font-size: 14px; font-weight: 700; color: var(--jade); letter-spacing: 0.08em; }
@@ -354,13 +355,13 @@ body.clinic { font-size: 17px; }
 .stat.bill { border-top-color: var(--ink-2); }
 .stat.issues { border-top-color: var(--brass); }
 .stat.limit { border-top-color: var(--jade); }
-.stat.deal { border-top-color: var(--seal); }
+.stat.deal { border-top-color: var(--jade); }
 .stat-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
 .stat-top .pill { font-size: 12px; padding: 1px 8px; }
 .stat-label { font-size: 15px; color: var(--ink-2); font-weight: 600; }
 .stat-value { font: 900 clamp(22px, 6.4vw, 30px)/1.15 var(--serif); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .stat.issues .stat-value { color: var(--brass); }
-.stat.deal .stat-value { color: var(--seal); }
+.stat.deal .stat-value { color: var(--jade); }
 .stat.deal.pending .stat-value { color: var(--ink-2); }
 .stat-foot { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
 

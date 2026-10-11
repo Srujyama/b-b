@@ -19,7 +19,11 @@ const zh = () => getLang() === "zh";
 
 const stakeOf = (p) => (p.flags ?? []).reduce((a, f) => a + (Number(f.amountAtStake) || 0), 0);
 const hasMandate = (p) => p.receipts.some((r) => r.chain === "bsc" && /mandate/i.test(r.kind));
+// A real (non-preview) BNB Chain mandate receipt: the only case where we say the limit is on-chain.
+const hasRealMandate = (p) =>
+  p.receipts.some((r) => r.chain === "bsc" && r.kind === "openMandate" && !/PREVIEW/.test(String(r.txHash)));
 const isPreview = (p) =>
+  (p.facts ?? []).some((f) => /^PREVIEW/.test(String(f))) ||
   p.receipts.some((r) => /PREVIEW/.test(String(r.txHash)) || /PREVIEW/.test(String(r.detail?.note ?? ""))) ||
   /PREVIEW/.test(p.charity?.summary ?? "") ||
   p.fairPrices.some((f) => (f.sources ?? []).some((s) => /PREVIEW/.test(s.title ?? "")));
@@ -162,7 +166,7 @@ function renderRoom(p) {
   const max = p.patient?.maxPay;
   $("#limit-guard").replaceChildren(
     max > 0 ? t("guardLimit", usd(max)) : t("guardUnset"),
-    max > 0 && hasMandate(p) ? h("span", { class: "onchain" }, ` ${t("guardOnChain")}`) : "",
+    max > 0 && hasRealMandate(p) ? h("span", { class: "onchain" }, ` ${t("guardOnChain")}`) : "",
   );
   $("#limit-guard").classList.toggle("unset", !(max > 0));
 
