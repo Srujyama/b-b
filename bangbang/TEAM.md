@@ -41,7 +41,7 @@ the unit tests stub the outside service; it has not yet run against the real one
 | XRPL credentials, escrow, batch | Ripple | `src/chain/xrpl.ts`, `src/routes/xrpl.ts` | ✅ merged, **LIVE-verified on devnet** (`npm run live:xrpl`) | nothing; hospital $0 confirm is simulated in the demo by design |
 | XRPL Permissioned Domain + private vault + 0% loan | Ripple | `src/chain/xrplFund.ts` | ✅ merged, **LIVE-verified**: non-credentialed deposit rejected `tecNO_AUTH` | nothing |
 | BNB mandate + tamper-evident log | YZi | `contracts/AdvocateLedger.sol`, `src/chain/bnb.ts`, `src/routes/bnb.ts` | ✅ merged, mock-tested only, **not deployed** | tBNB in `BSC_PRIVATE_KEY`, then `npm run deploy:ledger` → `ADVOCATE_LEDGER_ADDRESS` |
-| x402 paid APIs in AUSD | Agora | `src/chain/ausd.ts`, `x402.ts`, `src/routes/x402.ts` | ✅ merged. Live: EIP-712 domain read on Base Sepolia. **No real payment yet** (wallets hold 0) | AUSD for the agent wallet, Base Sepolia ETH for the payee, then `npm run live:ausd` |
+| x402 paid APIs in AUSD | Agora | `src/chain/ausd.ts`, `x402.ts`, `src/routes/x402.ts` | ✅ merged. The EIP-712 domain was checked by hand once against the on-chain `DOMAIN_SEPARATOR` (comment in `ausd.ts`); `npm run live:ausd` has not passed. **No real payment yet** (wallets hold 0) | AUSD for the agent wallet, Base Sepolia ETH for the payee, then `npm run live:ausd` |
 | Fed odds → financing advice | Gemini | `src/markets/gemini.ts`, `src/routes/markets.ts` | ✅ merged, odds **LIVE-verified** (`npm run live:gemini`); sandbox hedge mock-tested only | `GEMINI_API_KEY`/`GEMINI_API_SECRET` for the sandbox hedge |
 | Clinic denial appeals | core | `src/claims/*`, `src/routes/clinic.ts`, `fixtures/denial-*.json` | ✅ merged, mock-tested only | Anthropic + Context.dev keys, then `npm run live:clinic` |
 | Web UI (Mandarin-first) | all | `web/*` | ✅ merged (patient `/`, clinic `/clinic.html`); every screen renders via `/dev/preview` | a full run with keys |
@@ -55,7 +55,7 @@ the unit tests stub the outside service; it has not yet run against the real one
    tBNB (BSC faucet) → `npm run deploy:ledger`; Base Sepolia ETH for the payee; AUSD faucet for the agent wallet.
    XRPL devnet funds itself: `npm run setup:xrpl`.
 3. **Live-check a module** with keys: `npm run live:research`, `live:clinic`, `live:ausd` (only `live:xrpl` and
-   `live:gemini` have passed so far, plus the AUSD domain read). Report anything that breaks.
+   `live:gemini` have passed so far; the AUSD EIP-712 domain was checked once by hand, but `live:ausd` has not passed). Report anything that breaks.
 4. **Demo assets:** print `server/fixtures/lin-er-bill.html` and photograph it (the "Mom takes a photo" shot);
    write the 2-min video script; find a teammate to voice or play the hospital billing rep.
 5. **Social proof:** the judges weigh traction. Post progress clips.

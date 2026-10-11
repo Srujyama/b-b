@@ -9,8 +9,11 @@ confirmation is simulated, and the log says so (see [What's live vs. mocked](#wh
 帮帮 (bāngbāng) means "help". Mode 2 uses the same agent for doctors' offices: it appeals insurance denials on
 medical necessity and argues the appeal with the insurer's agent.
 
-Every LLM call goes through one helper, [`server/src/llm.ts`](server/src/llm.ts), which uses Claude
-(`@anthropic-ai/sdk`, default model `claude-opus-5-5`, overridable with `ANTHROPIC_MODEL`).
+Every server-side Claude call (bill parsing, Chinese explanations, call translation, research extraction, appeals)
+goes through one helper, [`server/src/llm.ts`](server/src/llm.ts) (`@anthropic-ai/sdk`, default model
+`claude-opus-5-5`, overridable with `ANTHROPIC_MODEL`). The phone agent streams Claude Haiku from its own endpoint
+([`server/src/agent/haiku.ts`](server/src/agent/haiku.ts)). The ElevenLabs conversational agents use the LLM
+ElevenLabs hosts (`ELEVENLABS_LLM`, default `gpt-4o`).
 
 ## The problem
 
@@ -21,6 +24,10 @@ of that money back takes hours on the phone, in English, with someone who knows 
 speak English mostly just pay, or don't and get sent to collections.
 
 ## Mrs. Lin's story (the demo)
+
+This is the designed flow. Today the bill audit, the XRPL settlement and fund, and the Gemini odds run live; the
+voice, research, AUSD payment and BNB steps are built and unit-tested but have not yet run against the real services
+(see [What's live vs. mocked](#whats-live-vs-mocked)).
 
 Mrs. Lin speaks Mandarin and no English. Her household of 3 lives on $41,000 a year (about 150% of the federal
 poverty line). After an evening in the Stanford Health Care emergency department she gets an itemized self-pay
@@ -59,7 +66,7 @@ The 2-minute shot list is in [`docs/DEMO.md`](docs/DEMO.md). Ready-to-paste subm
    ┌──────────────────────────────────────────────────────────────┐   │  offers, receipts, PCM audio)
    │  Fastify server (server/src)                                 │───┘
    │                                                              │
-   │  llm.ts  one Claude helper for every LLM call                │──► Anthropic (Claude)
+   │  llm.ts  Claude helper for server-side LLM calls             │──► Anthropic (Claude)
    │  bill/  parse (Claude vision) → explain zh → deterministic audit
    │  research/  Context.dev search/scrape → fair prices,         │──► Context.dev
    │             501(r) charity policy → facts + price ladder     │
@@ -97,7 +104,7 @@ Checked against testnets and real services, as of this commit:
 | XRPL devnet: Credential, token escrow, Batch release, Permissioned Domain, private Vault, LoanSet, LoanPay | **Live-verified** | `npm run live:xrpl` runs 7 fresh faucet wallets through every step and ends "ALL XRPL DEVNET STEPS tesSUCCESS" |
 | XRPL vault gate: a deposit from a wallet without the `VerifiedDonor` credential | **Live-verified** rejected with `tecNO_AUTH` | same script; it throws unless the result is `tecNO_AUTH` |
 | Gemini public Fed-decision odds + FRED policy rate | **Live-verified** | `npm run live:gemini` |
-| AUSD on Base Sepolia: reading the token's EIP-712 domain | **Live-verified** | `npm run live:ausd` (domain read only) |
+| AUSD on Base Sepolia: the token's EIP-712 domain ("Agora Dollar" / "1", chainId 84532) | **Live-verified** once by hand against the on-chain `DOMAIN_SEPARATOR` | comment in [`server/src/chain/ausd.ts`](server/src/chain/ausd.ts); `npm run live:ausd` is the full payment check and has not passed yet |
 | AUSD x402 payment (`transferWithAuthorization`) | Not live: the EVM wallets hold 0, so no real AUSD payment has happened | unit tests (`test/ausd.test.ts`) |
 | BNB `AdvocateLedger` contract | Not deployed: the BSC wallet holds 0 and `ADVOCATE_LEDGER_ADDRESS` is unset | unit tests (`test/bnb.test.ts`) |
 | Gemini sandbox hedge | Not live: no sandbox key | unit tests |
@@ -132,7 +139,7 @@ can pay into.
 - `npm run setup:xrpl` faucet-funds wallets, issues `USD`, creates the domain, vault and broker, and writes
   `XRPL_*` (including `XRPL_DONOR_DOMAIN_ID`) to `.env`. Tests: `server/test/xrpl.test.ts`.
 
-### Agora: AUSD on Base Sepolia (x402). Built; only the domain read is live
+### Agora: AUSD on Base Sepolia (x402). Built; domain checked by hand, no real payment yet
 The agent pays for its own data, per call, in a stablecoin.
 - Paywalled agent APIs `GET /x402/fair-price` (0.05 AUSD) and `POST /x402/appeal` (0.50 AUSD), x402 v2 "exact"
   scheme, plus `GET /api/x402/payments`: [`server/src/routes/x402.ts`](server/src/routes/x402.ts),
@@ -143,8 +150,9 @@ The agent pays for its own data, per call, in a stablecoin.
 - The advocate is the paying client: `paidFetch`, used by the pipeline for every fair-price lookup
   (`paidFairPrice` in [`pipeline.ts`](server/src/routes/pipeline.ts)). Receipts land on the case. With no agent
   wallet configured, lookups run unpaid and the log says so.
-- `npm run live:ausd` reads the live AUSD EIP-712 domain on Base Sepolia. Our wallets hold 0 AUSD, so no real
-  payment has been made yet. Tests: `server/test/ausd.test.ts`.
+- The AUSD EIP-712 domain was checked by hand against the token's on-chain `DOMAIN_SEPARATOR` (see `ausd.ts`).
+  `npm run live:ausd` runs a real paid x402 round trip; it stops early because our wallets hold 0 AUSD and 0 Base
+  Sepolia ETH, so no real payment has been made yet. Tests: `server/test/ausd.test.ts`.
 
 ### Gemini: prediction markets. Odds live-verified; hedge sandbox-only and not run
 Live Fed-decision odds that bear on a real household decision.
@@ -174,16 +182,18 @@ Authorization the agent can't exceed, and a negotiation record nobody can quietl
 ### ElevenLabs: voice. Built, mock-tested (no key yet)
 There are two separate voice systems.
 1. **Intake and agent-vs-agent negotiation (used by the pipeline).**
-   - Conversational AI agents (Mandarin intake, English advocate, hospital-billing persona, plus an insurer persona
-     for clinic mode), created idempotently by `npm run setup:agents`:
-     [`server/src/agent/elevenlabs.ts`](server/src/agent/elevenlabs.ts). Voices use `eleven_flash_v2` /
+   - Three Conversational AI agents (Mandarin intake, English advocate, hospital-billing persona), created
+     idempotently by `npm run setup:agents`: [`server/src/agent/elevenlabs.ts`](server/src/agent/elevenlabs.ts). In
+     clinic mode the hospital agent runs with an insurer prompt override, or a dedicated
+     `ELEVENLABS_INSURER_AGENT_ID` if set. Voices use `eleven_flash_v2` /
      `eleven_flash_v2_5`. These agents' conversational LLM is the one ElevenLabs hosts (`ELEVENLABS_LLM`, default
      `gpt-4o`); our server-side translation and reasoning use Claude.
    - **Bridge:** two ElevenLabs WebSockets, each agent's audio resampled and paced in real time into the other's
      microphone, both voices streamed to the browser, each turn translated to Chinese:
      [`server/src/agent/bridge.ts`](server/src/agent/bridge.ts), [`translate.ts`](server/src/agent/translate.ts).
-   - Tools (`log_offer`, `accept_offer`, `report_outcome`, `submit_intake`) enforce the mandate in code: an accept
-     above her cap is refused: [`server/src/agent/tools.ts`](server/src/agent/tools.ts). Prompts:
+   - Tools (`log_offer`, `accept_offer`, `end_call` (exposed to ElevenLabs as `report_outcome`, because `end_call`
+     clashes with the platform's built-in hang-up tool; the webhook maps it back), `submit_intake`) enforce the
+     mandate in code: an accept above her cap is refused: [`server/src/agent/tools.ts`](server/src/agent/tools.ts). Prompts:
      [`server/src/agent/prompts.ts`](server/src/agent/prompts.ts).
    - Routes in [`server/src/routes/voice.ts`](server/src/routes/voice.ts): `GET /api/intake/signed-url`,
      `POST /api/cases/:id/negotiate`, `POST /api/cases/:id/negotiate/stop`, `POST /api/eleven/tools/:name`.
@@ -252,8 +262,8 @@ answers **503 "X is not configured — set Y"**. Real routes never fall back to 
 | XRPL | `XRPL_*` seeds, `XRPL_VAULT_ID`, `XRPL_LOAN_BROKER_ID`, `XRPL_DONOR_DOMAIN_ID` | `npm run setup:xrpl` faucet-funds devnet wallets, issues USD, creates the domain + fund, writes `.env` |
 | Gemini | none for odds; `GEMINI_API_KEY`/`GEMINI_API_SECRET` for the sandbox hedge | sandbox account |
 
-Live checks against real services (each prints explorer links): `npm run live:xrpl` and `live:gemini` have passed;
-`live:ausd` passes its domain read but cannot pay until the agent wallet holds AUSD; `live:research` and
+Live checks against real services: `npm run live:xrpl` and `live:gemini` have passed; `live:ausd` (a real x402
+payment) cannot run until the payee holds Base Sepolia ETH and the agent holds AUSD; `live:research` and
 `live:clinic` need Context.dev and Anthropic keys and have not been run.
 
 Run the demo: open http://localhost:8787 → "用示范账单试试" (demo bill) → intake → research screen →
@@ -266,7 +276,7 @@ curl -s localhost:8787/api/cases/$ID/run | jq '.steps'
 ```
 
 Deploy: [`Dockerfile`](Dockerfile) + [`render.yaml`](render.yaml) (Render Blueprint, or any Docker host). Single
-instance only, because state is in memory. Not deployed yet. CI: `.github/workflows/ci.yml`.
+instance only, because state is in memory. Not deployed yet. CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 
 ## What is seed data, and other honest limitations
 

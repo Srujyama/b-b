@@ -27,6 +27,10 @@ Mrs. Lin speaks only Mandarin. Her household of three earns $41,000 a year, abou
 After an evening in the Stanford Health Care emergency department she receives an itemized self-pay bill for
 $14,296. (The bill and patient are seed data we wrote; the hospital and its published policy are real.)
 
+This is the designed flow. Today the bill audit, the XRPL settlement and fund, and the Gemini odds run live; the
+voice, research, AUSD payment and BNB steps are built and unit-tested but have not yet run against the real services
+(see What's live vs. mocked in the [README](../README.md#whats-live-vs-mocked)).
+
 1. She uploads a photo or PDF of the bill. BangBang reads each line and explains it in plain Chinese. A
    deterministic audit flags a duplicated IV push, an ER visit billed at level 5 that fits level 4, and lab tests
    unbundled from a panel billed the same day: $2,230.60 of likely errors.
@@ -53,9 +57,11 @@ policy, checks the criteria against the chart, and drafts the appeal letter.
 
 - Server: Fastify and TypeScript. Web client: plain HTML, CSS and JavaScript modules with no build step,
   Mandarin-first for the patient flow, with a separate clinic page.
-- LLM: Claude, through one shared helper (`server/src/llm.ts`, Anthropic SDK, default `claude-opus-5-5`). It reads
-  bill images and PDFs, writes the Chinese explanations, translates the call, extracts quoted prices, and drafts
-  appeals.
+- LLM: every server-side Claude call goes through one shared helper (`server/src/llm.ts`, Anthropic SDK, default
+  `claude-opus-5-5`). It reads bill images and PDFs, writes the Chinese explanations, translates the call, extracts
+  quoted prices, and drafts appeals. The phone agent streams Claude Haiku from its own endpoint
+  (`server/src/agent/haiku.ts`), and the ElevenLabs conversational agents use the LLM ElevenLabs hosts
+  (`ELEVENLABS_LLM`, default `gpt-4o`).
 - The bill audit is deterministic code, not an LLM, so its findings are repeatable.
 - `POST /api/cases/:id/run` runs the whole flow in order: research, financing advice, BNB mandate, XRPL credential,
   the negotiation, the optional loan, the escrow, the on-chain deal record and the release. Each step logs in English
@@ -66,7 +72,7 @@ policy, checks the criteria against the chart, and drafts the appeal letter.
 ## Ripple (XRPL)
 
 All of this runs on XRPL devnet and has passed end to end against the live ledger (`npm run live:xrpl`, 7 fresh
-faucet wallets, every transaction `tesSUCCESS`). A clinic social worker issues the patient a `FinancialHardship`
+faucet wallets; every step succeeds, and the one deposit that must fail is rejected with `tecNO_AUTH`). A clinic social worker issues the patient a `FinancialHardship`
 Credential (XLS-70), which she accepts. The settlement is a token escrow (XLS-85) in an issued `USD` token, locked
 with a PREIMAGE-SHA-256 crypto-condition. When the hospital confirms a $0 balance, one AllOrNothing Batch (XLS-56)
 finishes the escrow and pays the advocate fee together. For payment plans we built a community lending fund: a
@@ -82,8 +88,9 @@ BangBang's agent pays for its own research in AUSD. We built two x402 v2 paid en
 0.05 AUSD and an appeal at 0.50 AUSD, and a client (`paidFetch`) that the pipeline uses for every price lookup.
 Payment is a gasless EIP-3009 `transferWithAuthorization` on Base Sepolia, signed by the agent and submitted by the
 payee. The server verifies the payment, does the work, then settles, so a failed lookup is never charged. Status:
-reading AUSD's EIP-712 domain from Base Sepolia works live. Our wallets hold no AUSD yet, so no real payment has
-been made; the payment path is covered by unit tests.
+the token's EIP-712 domain ("Agora Dollar" / "1", chainId 84532) was checked once by hand against its on-chain
+`DOMAIN_SEPARATOR`. The full paid round trip (`npm run live:ausd`) has not passed: our wallets hold 0 AUSD and 0
+Base Sepolia ETH, so no real payment has been made. The payment path is covered by unit tests.
 
 ## Gemini (prediction markets)
 
@@ -104,10 +111,12 @@ unit-tested. The contract is not deployed yet because our BSC testnet wallet has
 
 ## ElevenLabs
 
-We use ElevenLabs Conversational AI agents for a Mandarin intake interview, an English advocate, a hospital billing
-persona, and an insurer persona for clinic appeals. A bridge connects two agents over WebSockets, resampling and
+We use three ElevenLabs Conversational AI agents: a Mandarin intake interviewer, an English advocate and a hospital
+billing persona. In clinic mode the hospital agent runs with an insurer prompt override (or a dedicated insurer
+agent, if one is configured). A bridge connects two agents over WebSockets, resampling and
 pacing each one's audio into the other's input in real time, streaming both voices to the browser and translating
-each turn to Chinese. The agents' tools enforce the mandate in code: an accept above the patient's cap is refused.
+each turn to Chinese. The agents' tools (`log_offer`, `accept_offer`, `end_call` (exposed to ElevenLabs as `report_outcome`),
+`submit_intake`) enforce the mandate in code: an accept above the patient's cap is refused.
 Separately, an outbound phone agent can place a real call through Twilio, using an ElevenLabs Flash voice with
 Claude Haiku as its language model. It is off by default and only dials numbers on an explicit allowlist. Status:
 all voice code is unit-tested with mocks. We have not run it against ElevenLabs yet because we don't have the API
@@ -118,7 +127,8 @@ key.
 Context.dev is the research layer. BangBang searches and scrapes for Medicare rates and the hospital's published
 prices, then keeps a price only if it is quoted word for word in the cited page. It also finds the hospital's 501(r)
 financial-assistance policy and its income thresholds, and in clinic mode it finds the insurer's medical-policy
-criteria. Status: unit-tested with mocks; the live check is ready to run once we have a key.
+criteria. Status: unit-tested with mocks. The live check (`npm run live:research`) needs Context.dev and Anthropic keys and
+has not been run.
 
 ## Challenges
 
