@@ -6,12 +6,14 @@ import { need, opt } from "../env.js";
 import { checkBearer, voiceError, voiceModel } from "./haiku.js";
 import { callInitiation, publicVoiceUrl, validateVoicePlan, voicePlanSchema, type VoicePlan } from "./call-plan.js";
 import { hasSharedVoiceContext, publishVoiceResult, readVoiceMemory, resolveVoiceTask, type VoiceTaskRef } from "./shared-context.js";
+import { resolveSpeechProfile, speechOptions, speechInstructions, validateSpeechSelection, type SpeechProfile } from "./speech.js";
 
 export type CallJob = {
   version: "1"; jobId: string; planId: string; stepId: string; caseId: string;
   status: "dispatching" | "submitted" | "in_progress" | "completed" | "failed" | "unknown";
   fingerprint: string; createdAt: string; updatedAt: string;
   agentId: string; conversationId?: string; callSid?: string; error?: string;
+  speech?: SpeechProfile; // Optional only for journals written before selectable v4 speech.
   result?: {
     requiresReview: true; summary: string; proposal?: string; blockers?: string; nextSteps?: string;
     transcript: { role: string; text: string; timeInCallSecs?: number }[];
@@ -65,10 +67,12 @@ const required = ["ELEVENLABS_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_OUTBOUN
 export function callReadiness() {
   const missing = required.filter((key) => !opt(key));
   const errors: string[] = [];
+  let speech: SpeechProfile | undefined;
+  try { speech = resolveSpeechProfile(); } catch (e) { errors.push((e as Error).message); }
   if (opt("PUBLIC_URL")) try { publicVoiceUrl(); } catch (e) { errors.push((e as Error).message); }
   if (opt("VOICE_JOB_DIR") && !isAbsolute(opt("VOICE_JOB_DIR")!)) errors.push("VOICE_JOB_DIR must be absolute");
   return { configured: missing.length === 0 && !errors.length, liveCallsEnabled: opt("VOICE_CALLS_ENABLED") === "true",
-    missing, errors, provider: "elevenlabs_twilio", model: voiceModel(), tts: "eleven_flash_v2_5", liveVerified: false,
+    missing, errors, provider: "elevenlabs_twilio", model: voiceModel(), tts: speech?.model, speech, liveVerified: false,
     sharedMemoryConnected: hasSharedVoiceContext() };
 }
 
@@ -106,8 +110,9 @@ export async function dispatchCall(plan: VoicePlan, store: CallJobStore): Promis
   if (store.all().some((j) => j.caseId === plan.caseId && !terminal(j)))
     throw voiceError("This case has an active or uncertain call; reconcile it before submitting another job", 409);
   const now = new Date().toISOString();
+  const speech = resolveSpeechProfile(plan.speech);
   const job: CallJob = { version: "1", jobId: plan.jobId, planId: plan.planId, stepId: plan.stepId, caseId: plan.caseId,
-    fingerprint: hash, agentId: need("ELEVENLABS_OUTBOUND_AGENT_ID"), status: "dispatching", createdAt: now, updatedAt: now };
+    fingerprint: hash, agentId: need("ELEVENLABS_OUTBOUND_AGENT_ID"), speech, status: "dispatching", createdAt: now, updatedAt: now };
   const reserved = store.reserve(job);
   if (reserved !== job) {
     if (reserved.fingerprint !== hash) throw voiceError("jobId is already used for a different plan", 409);
@@ -116,7 +121,7 @@ export async function dispatchCall(plan: VoicePlan, store: CallJobStore): Promis
   try {
     const response = await provider("/twilio/outbound-call", { method: "POST", body: JSON.stringify({
       agent_id: job.agentId, agent_phone_number_id: need("ELEVENLABS_PHONE_NUMBER_ID"),
-      to_number: plan.target.phone, call_recording_enabled: false, conversation_initiation_client_data: callInitiation(plan),
+      to_number: plan.target.phone, call_recording_enabled: false, conversation_initiation_client_data: callInitiation(plan, speech),
     }) });
     // A very fast webhook may finish the job before the dial request returns.
     const latest = store.get(job.jobId)!;
@@ -194,11 +199,24 @@ export async function callRoutes(app: FastifyInstance) {
   await app.register(async (scope) => {
     scope.addHook("onRequest", async (req) => checkBearer(req.headers.authorization, "VOICE_ORCHESTRATOR_TOKEN"));
     scope.get("/api/voice/ready", async () => callReadiness());
-    scope.post<{ Body: VoicePlan }>("/api/voice/jobs/preview", { schema: { body: voicePlanSchema }, bodyLimit: 32768 }, async (req) => ({
-      dryRun: true, dialed: false, jobId: req.body.jobId, provider: "elevenlabs_twilio", model: voiceModel(),
-      toNumber: req.body.target.phone, initiation: callInitiation(req.body), readiness: callReadiness(),
-    }));
-    scope.post<{ Body: VoicePlan }>("/api/voice/jobs", { schema: { body: voicePlanSchema }, bodyLimit: 32768 }, async (req, reply) => {
+    scope.get("/api/voice/options", async () => speechOptions());
+    scope.post<{ Body: VoicePlan }>("/api/voice/jobs/preview", {
+      schema: { body: voicePlanSchema }, bodyLimit: 32768,
+      // Fastify's default Ajv removes unknown object properties. Reject unsupported speech
+      // choices before that normalization can silently turn them into the default profile.
+      preValidation: async (req) => validateSpeechSelection(req.body?.speech),
+    }, async (req) => {
+      const speech = resolveSpeechProfile(req.body.speech);
+      return {
+        dryRun: true, dialed: false, jobId: req.body.jobId, provider: "elevenlabs_twilio", model: voiceModel(),
+        speech, deliveryInstructions: speechInstructions(speech),
+        toNumber: req.body.target.phone, initiation: callInitiation(req.body, speech), readiness: callReadiness(),
+      };
+    });
+    scope.post<{ Body: VoicePlan }>("/api/voice/jobs", {
+      schema: { body: voicePlanSchema }, bodyLimit: 32768,
+      preValidation: async (req) => validateSpeechSelection(req.body?.speech),
+    }, async (req, reply) => {
       return reply.code(202).send(await dispatchCall(req.body, store()));
     });
     scope.get<{ Params: { id: string } }>("/api/voice/jobs/:id", async (req) => {

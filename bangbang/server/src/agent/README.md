@@ -5,14 +5,14 @@ agreed architecture, what is implemented, the exact partner-side wiring, and the
 
 The existing Fastify server remains the control plane. The orchestrator owns tasks and case memory;
 the voice worker performs one authorized phone task. Haiku 5.5 produces streamed text and tool calls,
-ElevenLabs Flash v2.5 handles speech, and ElevenLabs' native Twilio integration places the call.
+Eleven v4 Turbo handles speech by default, and ElevenLabs' native Twilio integration places the call.
 The worker identifies itself as the client's AI representative. It gathers information and negotiates
 nonbinding proposals; it does not execute payments or commit the client to a settlement.
 
 The existing `bridge.ts`, browser demos, `CasePacket`, and pipeline still work. Their default GPT-4o
 configuration is unchanged. The separate outbound representative is configured with `--outbound`.
 No new dependencies or shared files are required. Automated provider tests run with mocks. The live
-ElevenLabs API and Flash speech stream have been verified; phone setup, Claude, shared memory, and
+ElevenLabs API, v4 Turbo voice choices, and standard v4 speech have been verified; phone setup, Claude, shared memory, and
 end-to-end call latency still need configuration and a real test call.
 
 ## Same-server integration (the intended path)
@@ -86,7 +86,8 @@ ElevenLabs retains each call's conversational history and supplies it to the gat
   "objective": "Request an itemized bill and a written discount proposal",
   "steps": ["Confirm the billing department", "Ask about the duplicate charge", "Collect next steps"],
   "facts": ["The client reports a duplicate charge; it has not yet been verified by billing."],
-  "constraints": { "maxOfferUsd": 2500, "forbiddenActions": ["Do not agree to a payment plan"] }
+  "constraints": { "maxOfferUsd": 2500, "forbiddenActions": ["Do not agree to a payment plan"] },
+  "speech": { "model": "eleven_v4_turbo", "voice": "bella" }
 }
 ```
 
@@ -98,6 +99,63 @@ No ceiling means the agent must not offer money. Completed calls always return `
 Results include the same job/case/plan/step IDs, provider conversation ID and call SID, call status,
 summary, proposal, blockers, next steps, transcript, duration, and termination reason when available.
 Provider analysis is model-generated evidence, not a validated deal or proof of task success.
+
+## Eleven v4 delivery and voice choices
+
+`speech` is optional, so existing orchestrator plans still work. The defaults are Eleven v4 Turbo and
+Bella. Select choices per task with `speech.model` and `speech.voice`, or set deployment defaults using
+`VOICE_TTS_MODEL` and `VOICE_VOICE_PRESET`. An explicit task voice takes precedence over the existing
+`ELEVENLABS_ADVOCATE_VOICE_ID` custom-voice setting. Unknown selections fail before dialing.
+
+| Model choice | Purpose | Audio tags |
+| --- | --- | --- |
+| `eleven_v4_turbo` | Default for responsive, expressive calls | Yes |
+| `eleven_v4` | Optional higher-fidelity delivery; expect more generation latency | Yes |
+| `eleven_flash_v2_5` | Optional speed comparison | No; punctuation only |
+
+| Voice choice | Delivery | Provider voice ID |
+| --- | --- | --- |
+| `bella` | Professional, bright, warm | `hpp4J3VqNfWAUOO0d1Us` |
+| `river` | Relaxed, neutral, informative | `SAz9YHcvj6GT2YYXdXww` |
+| `eric` | Steady, smooth conversational | `cjVigY5qzO86Huf0OWal` |
+
+`GET /api/voice/options` returns the catalog and current defaults with the orchestrator bearer token;
+`npm run setup:agents -- --options` prints it locally without a key. This is a server/orchestrator API,
+not a new browser picker. Product owners can expose these choices in their UI without sharing the
+orchestrator token with browser clients.
+
+The resolved model and voice ID are persisted in the call journal and sent as ElevenLabs TTS
+overrides. The Haiku gateway reads that same snapshot on every turn, including after restart or a
+deployment-default change. A different selection with the same job ID is rejected. Existing journal
+entries without a speech snapshot are treated as legacy Flash calls, so they do not receive v4 tags.
+Rerun `setup:agents -- --outbound` before using this release: it enables model/voice overrides on the
+provider agent. Do not manually change a running call's model behind the journal's stored profile.
+
+Haiku receives concise delivery instructions for the actual selected engine. On v4 it may use at most
+one internal `[pause]` to separate important information and one `[slow]` before supplied digits or
+an amount. It starts with useful words, uses punctuation for normal breathing, and avoids leading,
+trailing, stacked or long pauses, SSML breaks, laughter and theatrical delivery. Hold time is handled
+by `skip_turn`. Most short responses need no tag. These are model instructions, not deterministic
+limits on spoken delivery; pauses are contextual rather than exact-duration timers.
+
+The gateway still disables thinking, caches its stable prompt, caps output at 512 tokens, and forwards
+text/tool deltas immediately. It never waits for a full sentence to insert a tag or invokes a second
+model to rewrite delivery. Tests verify words are emitted before later fragmented tags arrive.
+Prompts target one or two sentences, usually under 35 spoken words, while preserving important facts.
+
+Live synthetic samples on October 11, 2026:
+
+| Model / voice | First audio bytes | Entire response |
+| --- | --- | --- |
+| v4 Turbo / Bella | 389 ms | 1,455 ms |
+| v4 Turbo / River | 367 ms | 1,429 ms |
+| v4 Turbo / Eric | 352 ms | 1,520 ms |
+| v4 / Bella | 631 ms | 1,810 ms |
+
+Each row is one network-inclusive API observation using a synthetic greeting with `[pause]`, not a
+benchmark or full call latency. These checks verify accepted synthesis and nonempty streamed audio;
+Haiku's live delivery, subjective voice quality, interruption behavior, and pause realization still
+need listening and a real end-to-end test. No phone calls or Claude requests were made.
 
 ## Connect ElevenLabs first (Claude can wait)
 
@@ -113,12 +171,18 @@ npm run setup:agents -- --smoke-test
 
 `--check` only reads the selected voice, agent API, and outbound Twilio number inventory. An API
 connection can pass with zero phone numbers and no configured outbound agent; it is not call readiness.
-`--smoke-test` consumes TTS credits to synthesize one fixed, synthetic representative greeting, saves
+`--smoke-test` consumes TTS credits to synthesize one synthetic representative greeting using the selected model and voice, saves
 an MP3 in the operating system's temporary directory, and reports first-audio-byte and total timings.
 Neither command requires Anthropic credentials, sends client information, or places a phone call.
-Do not combine these modes with setup or `--dry-run`.
+Do not combine these modes with setup or `--dry-run`. Example comparisons:
 
-The advocate default is Bella (`hpp4J3VqNfWAUOO0d1Us`), an included premade voice, with Flash v2.5 for
+```sh
+VOICE_VOICE_PRESET=river npm run setup:agents -- --smoke-test
+VOICE_VOICE_PRESET=eric npm run setup:agents -- --smoke-test
+VOICE_TTS_MODEL=eleven_v4 npm run setup:agents -- --smoke-test
+```
+
+The advocate default is Bella (`hpp4J3VqNfWAUOO0d1Us`), an included premade voice, with v4 Turbo for
 the phone worker. The earlier Rachel default returned HTTP 402 on this account because it is now a
 library voice that requires a paid plan/credits. Override `ELEVENLABS_ADVOCATE_VOICE_ID` to choose another
 voice. A successful metadata lookup alone does not prove synthesis is allowed on the account's plan.
@@ -169,6 +233,7 @@ separate deployment. All except the signed provider webhook require the appropri
 | Route | Purpose |
 | --- | --- |
 | `GET /api/voice/ready` | Configuration and shared-memory status |
+| `GET /api/voice/options` | Supported model/voice choices and current defaults; no provider request |
 | `POST /api/voice/jobs/preview` | Validate a VoicePlan and preview its prompt; never dials |
 | `POST /api/voice/jobs` | Submit a VoicePlan; returns 202 plus job state |
 | `GET /api/voice/jobs/:id` | Read saved state and retry shared result delivery |
@@ -206,6 +271,10 @@ without a second voice platform. SIP trunking is a future carrier alternative. V
 voice orchestration layer to this existing ElevenLabs architecture, so it is not required here.
 
 Official references checked 2026-10-11:
+- [Eleven v4 / v4 Turbo model selection](https://elevenlabs.io/docs/eleven-api/choosing-the-right-model)
+- [Audio tags in v4 and v4 Turbo](https://elevenlabs.io/docs/help-center/product/core-capabilities/text-to-speech/how-do-audio-tags-work-with-eleven-v3-and-v4)
+- [V4 pause controls](https://elevenlabs.io/blog/how-to-add-pauses-in-ai-voiceover)
+- [Agent TTS models and overrides](https://elevenlabs.io/docs/eleven-agents/api-reference/agents/create)
 - [Haiku 5.5 model and API ID](https://platform.claude.com/docs/en/models/haiku-5-5/overview)
 - [ElevenLabs custom LLM streaming interface](https://elevenlabs.io/docs/eleven-agents/customization/llm/custom-llm)
 - [ElevenLabs Twilio native integration](https://elevenlabs.io/docs/eleven-agents/phone-numbers/twilio-integration/native-integration)
