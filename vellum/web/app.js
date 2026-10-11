@@ -980,7 +980,9 @@ function initPatient() {
       return;
     }
     room.audio.unlock(); // user gesture: lets the browser play the agents' audio
-    const counterparty = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
+    // ElevenLabs only when a person turned voice on; otherwise a free live-text negotiation.
+    const picked = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
+    const counterparty = picked === "agent" && !$("#voice-on")?.checked ? "text" : picked;
     await busy(btn, async () => {
       const res = await api(`/api/cases/${P().id}/negotiate`, { method: "POST", body: { counterparty } });
       if (res?.mode === "human") {
