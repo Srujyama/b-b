@@ -21,7 +21,7 @@ async function request(path: string, body?: unknown, headers: Record<string, str
 }
 
 const c = await request(`/api/cases/${caseId}`);
-if (c.patient?.name !== "Lin Mei (林美)" || c.patient?.consent !== true)
+if (c.patient?.name !== "Lin Mei" || c.patient?.consent !== true)
   throw new Error("Use the consenting Lin Mei synthetic demo fixture only");
 const inputText = "This is the simulated hospital billing desk. Which charge needs review, and what assistance should we check?";
 const inputResponse = await fetch("https://api.elevenlabs.io/v1/text-to-speech/cjVigY5qzO86Huf0OWal?output_format=pcm_16000", {
