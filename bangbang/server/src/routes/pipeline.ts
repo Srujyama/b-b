@@ -6,6 +6,8 @@
 //      turn is hash-chained onto the BNB AdvocateLedger
 //   -> [0% community-fund loan if Gemini says payment plan] -> XRPL escrow -> BNB recordDeal(ref = escrow tx)
 //   -> hospital confirms a zero balance (Batch release) -> settled
+//      (simulated by the pipeline by default; confirm:"portal" or PIPELINE_HOSPITAL_CONFIRM=portal waits for real
+//       billing staff to confirm in /hospital.html, see routes/hospital.ts)
 //
 // Each step reuses the public route (via app.inject) or the module function, so the pipeline runs the exact
 // code the individual buttons run. Every step emits an en+zh log; a failed step is reported (error event +
@@ -34,8 +36,24 @@ export type RunState = {
   startedAt: string;
   endedAt?: string;
   error?: string;
+  /** Set while the run is parked waiting on someone outside the pipeline (the hospital portal). */
+  awaiting?: "hospital-portal";
 };
-export type RunOptions = { counterparty?: Counterparty; confirm?: boolean; loanMonths?: number; humanTimeoutMs?: number; drainTimeoutMs?: number };
+/**
+ * confirm: true = the pipeline confirms the $0 balance itself (simulated hospital, the demo default);
+ *          false = skip it, leave it to POST /confirm-zero-balance;
+ *          "portal" = WAIT for hospital staff to confirm in /hospital.html (up to hospitalTimeoutMs, default 30 min).
+ * When a run omits `confirm`, PIPELINE_HOSPITAL_CONFIRM ("simulate" | "portal", default simulate) decides.
+ */
+export type ConfirmMode = boolean | "portal";
+export type RunOptions = {
+  counterparty?: Counterparty;
+  confirm?: ConfirmMode;
+  loanMonths?: number;
+  humanTimeoutMs?: number;
+  drainTimeoutMs?: number;
+  hospitalTimeoutMs?: number;
+};
 
 type LogBody = Omit<LedgerEntryBody, "seq" | "at"> & { at?: string };
 
@@ -91,6 +109,14 @@ export const _resetRuns = () => runs.clear();
 const has = (k: string) => Boolean(opt(k));
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const httpError = (message: string, statusCode: number) => Object.assign(new Error(message), { statusCode });
+
+/** The confirm mode for a run that does not pick one (env PIPELINE_HOSPITAL_CONFIRM). Invalid values fail loudly. */
+export function defaultConfirmMode(): ConfirmMode {
+  const v = (opt("PIPELINE_HOSPITAL_CONFIRM") ?? "").trim().toLowerCase();
+  if (v === "portal") return "portal";
+  if (v === "simulate" || v === "") return true;
+  throw httpError(`PIPELINE_HOSPITAL_CONFIRM=${v} is not valid — set it to "simulate" or "portal"`, 500);
+}
 
 /** Synchronous preconditions — a bad request gets an HTTP error instead of a background failure. */
 export function assertRunnable(c: CasePacket) {
@@ -155,7 +181,7 @@ export function ledgerSink(caseId: string, append: PipelineDeps["appendLog"], on
   };
 }
 
-function waitFor(cond: () => boolean, timeoutMs: number, everyMs = 500): Promise<boolean> {
+function waitFor(cond: () => boolean, timeoutMs: number, everyMs = Math.max(20, Math.min(500, timeoutMs / 10))): Promise<boolean> {
   return new Promise((resolve) => {
     if (cond()) return resolve(true);
     const started = Date.now();
@@ -317,7 +343,28 @@ export async function runPipeline(caseId: string, deps: PipelineDeps, opts: RunO
   // ---------------- hospital confirms $0 → Batch release ----------------
   if (!deps.openEscrow(caseId)) skip("confirm", requireCase(caseId).status === "settled" ? "already settled" : "no open escrow to release", "没有可放行的托管");
   else if (opts.confirm === false) skip("confirm", "left for the hospital to confirm (POST /confirm-zero-balance)", "等医院确认");
-  else {
+  else if (opts.confirm === "portal") {
+    const waitMs = opts.hospitalTimeoutMs ?? 30 * 60_000;
+    await exec("confirm", async () => {
+      run.awaiting = "hospital-portal";
+      step("confirm").message = "waiting for the hospital to confirm in the hospital portal";
+      log(
+        "Waiting for the hospital to confirm in the hospital portal: billing staff check the account is at $0, then release the escrow",
+        "正在等医院在医院端确认：医院工作人员核对您的账户余额为零后，托管款才会放行",
+      );
+      try {
+        const released = await waitFor(() => !deps.openEscrow(caseId) || requireCase(caseId).status === "settled", waitMs);
+        if (!released)
+          throw new Error(
+            `the hospital did not confirm in the hospital portal within ${Math.max(1, Math.round(waitMs / 60_000))} min — the money stays locked in escrow and the hospital can still confirm at /hospital.html`,
+          );
+      } finally {
+        delete run.awaiting;
+      }
+      step("confirm").message = "confirmed by the hospital in the hospital portal";
+      log("The hospital confirmed a $0 balance in the hospital portal", "医院已在医院端确认您的余额为零");
+    });
+  } else {
     log("Hospital billing confirms the account is at $0 (demo: the hospital side is simulated)", "医院确认您的账户余额为零（示范：医院一方是模拟的）");
     await exec("confirm", () => deps.confirm(caseId));
   }
@@ -425,11 +472,14 @@ export default async function pipelineRoutes(app: FastifyInstance, opts: { deps?
       const b = req.body ?? {};
       const counterparty = b.counterparty ?? "agent";
       if (counterparty !== "agent" && counterparty !== "human") return reply.code(400).send({ error: "counterparty must be 'agent' or 'human'" });
+      const confirm = b.confirm ?? defaultConfirmMode();
+      if (confirm !== true && confirm !== false && confirm !== "portal") return reply.code(400).send({ error: 'confirm must be true, false or "portal"' });
+      if (b.hospitalTimeoutMs != null && !(Number(b.hospitalTimeoutMs) > 0)) return reply.code(400).send({ error: "hospitalTimeoutMs must be a positive number of milliseconds" });
       assertRunnable(c);
       const deps = opts.deps ?? liveDeps(app);
-      const done = runPipeline(c.id, deps, { ...b, counterparty });
+      const done = runPipeline(c.id, deps, { ...b, counterparty, confirm });
       void done.catch((e) => emit(c.id, { type: "error", message: `pipeline crashed: ${errMsg(e)}` }));
-      return reply.code(202).send({ started: true, caseId: c.id, counterparty, steps: getRun(c.id)?.steps.map((s) => s.name) ?? [] });
+      return reply.code(202).send({ started: true, caseId: c.id, counterparty, confirm, steps: getRun(c.id)?.steps.map((s) => s.name) ?? [] });
     } catch (e) {
       const err = e as Error & { statusCode?: number };
       return reply.code(err.statusCode ?? 500).send({ error: err.message });
