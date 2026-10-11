@@ -21,6 +21,77 @@ import {
 } from "../src/agent/elevenlabs.js";
 import voiceRoutes from "../src/routes/voice.js";
 import Fastify from "fastify";
+import { checkElevenLabsConnection, smokeTestElevenLabs, VOICE_SMOKE_TEXT } from "../src/agent/connection.js";
+
+describe("ElevenLabs connection setup", () => {
+  beforeEach(() => {
+    vi.stubEnv("ELEVENLABS_API_KEY", "secret-test-key");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("PUBLIC_URL", "");
+    vi.stubEnv("ELEVENLABS_OUTBOUND_AGENT_ID", "");
+    vi.stubEnv("ELEVENLABS_PHONE_NUMBER_ID", "");
+    vi.stubEnv("ELEVENLABS_ADVOCATE_VOICE_ID", "");
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("checks scoped API access without Claude, public URLs, phone numbers, or writes", async () => {
+    const f = vi.fn(async (url: string, init: RequestInit) => {
+      expect(init.method ?? "GET").toBe("GET");
+      expect(init.headers).toHaveProperty("xi-api-key", "secret-test-key");
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+      return Response.json(url.includes("phone-numbers") ? { phone_numbers: [], has_more: false } : {});
+    });
+    const result = await checkElevenLabsConnection(f as unknown as typeof fetch);
+    expect(f).toHaveBeenCalledTimes(3);
+    expect(result.connected).toBe(true);
+    expect(result.callsReady).toBe(false);
+    expect(result.checks.voice.detail).toContain("hpp4J3VqNfWAUOO0d1Us");
+    expect(result.checks.phoneNumbers.detail).toContain("0 outbound Twilio numbers");
+  });
+
+  it("reports partial failures without reflecting secrets in provider bodies or transport errors", async () => {
+    const f = vi.fn(async (url: string) => {
+      if (url.includes("/voices/")) return Response.json({ detail: "secret-test-key" }, { status: 401 });
+      if (url.includes("/agents")) throw new Error("URL contained secret-test-key");
+      return Response.json({ phone_numbers: [] });
+    });
+    const result = await checkElevenLabsConnection(f as unknown as typeof fetch);
+    expect(result.connected).toBe(false);
+    expect(result.checks.voice.status).toBe(401);
+    expect(result.checks.phoneNumbers.ok).toBe(true);
+    expect(JSON.stringify(result)).not.toContain("secret-test-key");
+  });
+
+  it("collects streamed Flash audio using only the synthetic representative greeting", async () => {
+    const f = vi.fn(async (_url: string, init: RequestInit) => {
+      expect(init.method).toBe("POST");
+      expect(JSON.parse(init.body as string)).toEqual({ text: VOICE_SMOKE_TEXT, model_id: "eleven_flash_v2_5" });
+      return new Response(new ReadableStream({ start(controller) {
+        controller.enqueue(new Uint8Array());
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3]));
+        controller.close();
+      } }), { headers: { "content-type": "audio/mpeg" } });
+    });
+    const result = await smokeTestElevenLabs(f as unknown as typeof fetch);
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(result.audio).toEqual(Buffer.from([1, 2, 3]));
+    expect(result.bytes).toBe(3);
+    expect(result.firstAudioByteMs).toBeGreaterThanOrEqual(0);
+    expect(result.totalMs).toBeGreaterThanOrEqual(result.firstAudioByteMs!);
+  });
+
+  it.each([
+    ["HTTP error", () => Response.json({ detail: "secret-test-key" }, { status: 402 }), "requires a paid plan"],
+    ["non-audio response", () => Response.json({ detail: "secret-test-key" }), "did not return an audio stream"],
+    ["empty audio", () => new Response(new Uint8Array(), { headers: { "content-type": "audio/mpeg" } }), "empty audio stream"],
+    ["transport error", () => { throw new Error("Provider returned HTTP secret-test-key"); }, "timed out or failed"],
+  ] as const)("rejects %s without exposing raw diagnostics or retrying", async (_name, response, message) => {
+    const f = vi.fn(async () => response());
+    await expect(smokeTestElevenLabs(f as unknown as typeof fetch)).rejects.toThrow(message);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+});
 
 class FakeWs extends EventEmitter implements WsLike {
   readyState = 0;

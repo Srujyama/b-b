@@ -11,8 +11,9 @@ nonbinding proposals; it does not execute payments or commit the client to a set
 
 The existing `bridge.ts`, browser demos, `CasePacket`, and pipeline still work. Their default GPT-4o
 configuration is unchanged. The separate outbound representative is configured with `--outbound`.
-No new dependencies or shared files are required. All provider tests run with mocks; live service
-compatibility, phone setup, voice quality, and end-to-end latency still need keys and a real test call.
+No new dependencies or shared files are required. Automated provider tests run with mocks. The live
+ElevenLabs API and Flash speech stream have been verified; phone setup, Claude, shared memory, and
+end-to-end call latency still need configuration and a real test call.
 
 ## Same-server integration (the intended path)
 
@@ -98,10 +99,39 @@ Results include the same job/case/plan/step IDs, provider conversation ID and ca
 summary, proposal, blockers, next steps, transcript, duration, and termination reason when available.
 Provider analysis is model-generated evidence, not a validated deal or proof of task success.
 
-## Configure after adding keys
+## Connect ElevenLabs first (Claude can wait)
+
+Create a restricted ElevenLabs key with **Text to Speech access**, **Voices read**, and
+**ElevenAgents write**, then save it as `ELEVENLABS_API_KEY` in the ignored `server/.env`.
+Keep any temporary hackathon key's expiry in mind; the locally configured key expires October 18, 2026.
+Credentials, gateway tokens, and generated samples are not part of this branch or PR.
+
+```sh
+npm run setup:agents -- --check
+npm run setup:agents -- --smoke-test
+```
+
+`--check` only reads the selected voice, agent API, and outbound Twilio number inventory. An API
+connection can pass with zero phone numbers and no configured outbound agent; it is not call readiness.
+`--smoke-test` consumes TTS credits to synthesize one fixed, synthetic representative greeting, saves
+an MP3 in the operating system's temporary directory, and reports first-audio-byte and total timings.
+Neither command requires Anthropic credentials, sends client information, or places a phone call.
+Do not combine these modes with setup or `--dry-run`.
+
+The advocate default is Bella (`hpp4J3VqNfWAUOO0d1Us`), an included premade voice, with Flash v2.5 for
+the phone worker. The earlier Rachel default returned HTTP 402 on this account because it is now a
+library voice that requires a paid plan/credits. Override `ELEVENLABS_ADVOCATE_VOICE_ID` to choose another
+voice. A successful metadata lookup alone does not prove synthesis is allowed on the account's plan.
+
+Live check on October 11, 2026: all three read probes passed, zero Twilio numbers were present, and
+one Bella/Flash sample returned 104,534 audio bytes. Its first audio bytes arrived after 325 ms and
+the entire response after 477 ms. This is one laptop-to-provider observation, not a benchmark or a
+measure of ASR, Haiku, telephony, or end-of-turn response latency.
+
+## Configure outbound calls
 
 1. Copy the entries from `voice.env.example` in this directory into `server/.env` (D owns the shared
-   root `.env.example`). Set Anthropic and ElevenLabs keys, two different random tokens,
+   root `.env.example`). Set the ElevenLabs key, two different random tokens,
    `PUBLIC_URL` to the server's public HTTPS origin, and `VOICE_JOB_DIR` to an absolute persistent
    directory outside the repo and web root. Keep all real credentials out of git.
 2. Run `npm run setup:agents -- --outbound --dry-run` to inspect the config with no keys or network.
@@ -109,6 +139,10 @@ Provider analysis is model-generated evidence, not a validated deal or proof of 
    `ELEVENLABS_LLM_SECRET_ID` and `ELEVENLABS_OUTBOUND_AGENT_ID` in `.env`. Subsequent runs reuse them.
    The stored ElevenLabs secret contains only the gateway token; the Anthropic key stays on our server.
    If you rotate `VOICE_LLM_TOKEN`, update the corresponding ElevenLabs workspace secret too.
+   `ANTHROPIC_API_KEY` can remain unset during ElevenLabs provisioning. Before enabling calls, set
+   the server's shared Anthropic credential; the orchestrator and voice gateway can use it subject
+   to its workspace permissions and shared limits. There is no separate Claude account or key required
+   for this worker, and a shared key does not automatically share model context or prompt caches.
 4. In ElevenLabs, import a Twilio voice number with its account SID and auth token. Set the returned
    ElevenLabs phone number ID as `ELEVENLABS_PHONE_NUMBER_ID`. The server does not need Twilio keys
    because ElevenLabs manages the telephony connection.

@@ -25,9 +25,11 @@ The partner's architecture document described the current GPT-4o/ElevenLabs brow
 demo. This branch adds a **separate Haiku outbound representative**. It does not silently replace those
 demo agents, change their tools, or switch the existing product pipeline to real phone calls.
 
-The user requested implementation around empty API-key placeholders. No real credentials have been
-added, no provider agents or workspace secrets have been created by this work, and no calls have been
-placed. Live phone setup and latency/voice validation remain future work.
+Initial implementation used empty API-key placeholders. The user subsequently authorized connecting
+ElevenLabs first and deferring Claude credentials. A restricted ElevenLabs key is now saved only in
+the ignored local `server/.env`; it expires October 18, 2026. Two separate gateway/orchestrator tokens
+are also configured locally. No credentials are committed. No outbound agent or workspace secret has
+been provisioned, and no phone calls have been placed. Real dialing remains disabled.
 
 ## What each file contributes
 
@@ -37,9 +39,10 @@ placed. Live phone setup and latency/voice validation remain future work.
 | `src/agent/shared-context.ts` | Orchestrator storage hooks, bounded task/memory/result operations, shared-context registration |
 | `src/agent/calls.ts` | `runVoiceTask`, `syncVoiceTask`, real Twilio-through-ElevenLabs dispatch, persistent job journal, polling, reconciliation, authenticated routes, signed callbacks |
 | `src/agent/haiku.ts` | Protected ElevenLabs-compatible SSE endpoint backed by native Anthropic Messages, text/tool conversion, prompt caching, memory injection, cancellation and latency logging |
-| `src/agent/elevenlabs.ts` | Adds creation of the ElevenLabs workspace secret that holds the gateway token |
+| `src/agent/elevenlabs.ts` | Adds creation of the ElevenLabs workspace secret that holds the gateway token; updates advocate default to included Bella voice |
+| `src/agent/connection.ts` | Read-only API probes and an explicit synthetic Flash audio smoke test, independent of Claude |
 | `src/routes/voice.ts` | Registers the new gateway and phone routes within the existing voice plugin |
-| `scripts/setup-elevenlabs.ts` | Adds `--outbound` and `--dry-run`; normal demo setup remains available |
+| `scripts/setup-elevenlabs.ts` | Adds `--outbound`, `--dry-run`, `--check`, and `--smoke-test`; normal demo setup remains available |
 | `src/agent/voice.env.example` | Empty credentials and documented settings for the new worker |
 | `test/voice.test.ts` | Adds mocked coverage for the new worker, streaming, shared context, callbacks and failures |
 
@@ -154,6 +157,15 @@ Use [voice.env.example](./voice.env.example) and the README's ordered setup inst
 - `VOICE_CALLS_ENABLED=false` is the template default. A **required** `VOICE_ALLOWED_NUMBERS` list restricts
   calls to known test phones; if it is empty, no call is placed.
 
+The orchestrator and voice worker may share the server's `ANTHROPIC_API_KEY`; the user asked to defer
+that credential for now. ElevenLabs setup no longer requires it, but call readiness and the voice
+gateway still do. Shared credentials do not themselves provide shared memory or per-model caches.
+
+Use `npm run setup:agents -- --check` to verify ElevenLabs access independently. The restricted key
+needs only Text to Speech access, Voices read, and ElevenAgents write for the implemented setup.
+Webhooks can be configured through the ElevenLabs UI later; account administration is not granted to
+this key. `--smoke-test` makes one credit-consuming, synthetic TTS request and saves a temporary MP3.
+
 `GET /api/voice/ready` reports configured environment fields and whether hooks are registered. It
 does not probe credentials, validate provider account permissions, check storage writability, or
 prove phone/model availability. `liveVerified` remains false by design. Avoid interpreting this
@@ -161,9 +173,17 @@ endpoint as a successful end-to-end health check.
 
 ## Verified locally and still pending
 
-At the commit checkpoint, the baseline plus new tests total **191 passing tests across 12 files**.
+At the latest checkpoint, the baseline plus new tests total **204 passing tests across 13 files**.
 TypeScript typecheck and whitespace checks pass. Outbound setup config generation has been exercised
 without keys using a dry run. Provider network requests in tests are mocked.
+
+Live ElevenLabs validation on October 11, 2026 passed voice, agent, and phone-inventory API reads.
+No Twilio number exists yet. The previous Rachel voice returned `paid_plan_required` on the free
+account; the included Bella voice succeeded with Flash v2.5, so Bella is now the default advocate
+voice (including the existing demo unless overridden). A 104,534-byte MP3 arrived with first bytes at
+325 ms and complete response at 477 ms. These are one synthetic TTS request's timings, not phone or
+Claude latency. `PUBLIC_URL`, outbound agent/secret/phone IDs, Anthropic credentials, persistent
+`VOICE_JOB_DIR`, webhook configuration, and partner-side shared-context registration remain pending.
 
 From `bangbang/server`, the normal verification commands are:
 

@@ -178,7 +178,7 @@ export const AGENTS: AgentSpec[] = [
 
 // Premade voices (override with env). Intake uses a multilingual TTS model so it speaks natural Mandarin.
 export function voiceFor(role: AgentSpec["role"]): string {
-  if (role === "advocate") return opt("ELEVENLABS_ADVOCATE_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")!; // Rachel
+  if (role === "advocate") return opt("ELEVENLABS_ADVOCATE_VOICE_ID", "hpp4J3VqNfWAUOO0d1Us")!; // Bella, current premade voice
   if (role === "hospital") return opt("ELEVENLABS_HOSPITAL_VOICE_ID", "pNInz6obpgDQGcFmaJgB")!; // Adam
   return opt("ELEVENLABS_INTAKE_VOICE_ID", "EXAVITQu4vr4xnAvoBy")!; // Sarah (multilingual)
 }
