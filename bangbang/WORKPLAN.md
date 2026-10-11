@@ -1,4 +1,4 @@
-# Work plan: 3 people in parallel, merge-friendly
+# Work plan: 4 people in parallel, merge-friendly
 
 The code is built: 11 modules, 160 tests, all green in CI. What's left is **making each part real with live keys,
 tuning it, and producing the demo**. The work is split so that **no two people own the same file**. Then merges
@@ -6,24 +6,23 @@ are just "click merge".
 
 ## The split
 
-| | **A: Voice & Story** | **B: Money Rails** | **C: Research & Intelligence** |
-|---|---|---|---|
-| Tracks | ElevenLabs bonus, Most Creative | **Ripple**, **Agora AUSD**, **YZi/BNB** | **Gemini**, Context.dev bonus |
-| Branch | `feat/voice` | `feat/rails` | `feat/research` |
-| Owns (only you edit) | `server/src/agent/**`, `server/src/routes/voice.ts`, `server/scripts/setup-elevenlabs.ts`, `server/test/agent.test.ts`, `server/test/voice.test.ts`, `docs/DEMO.md` | `contracts/**`, `server/src/chain/**`, `server/src/routes/{xrpl,bnb,x402}.ts`, `server/scripts/{setup-xrpl,deploy-ledger,gen-wallets,live-xrpl,live-ausd}.ts`, `server/test/{xrpl,bnb,ausd}.test.ts` | `server/src/{research,markets,bill,claims}/**`, `server/src/routes/{research,markets,bill,clinic}.ts`, `server/fixtures/**`, `server/scripts/live-{research,gemini,clinic}.ts`, `server/test/{research,gemini,bill,clinic}.test.ts` |
+| | **A: Voice & Story** | **B: Money Rails** | **C: Research & Intelligence** | **D: Product & Integration** (Srujan + Claude) |
+|---|---|---|---|---|
+| Tracks | ElevenLabs bonus, Most Creative | **Ripple**, **Agora AUSD**, **YZi/BNB** | **Gemini**, Context.dev bonus | General track (Technical/Creative), clinic story, submission |
+| Branch | `feat/voice` | `feat/rails` | `feat/research` | `feat/product` |
+| Owns (only you edit) | `server/src/agent/**`, `server/src/routes/voice.ts`, `server/scripts/setup-elevenlabs.ts`, `server/test/{agent,voice}.test.ts`, `docs/DEMO.md` | `contracts/**`, `server/src/chain/**`, `server/src/routes/{xrpl,bnb,x402}.ts`, `server/scripts/{setup-xrpl,deploy-ledger,gen-wallets,live-xrpl,live-ausd}.ts`, `server/test/{xrpl,bnb,ausd}.test.ts` | `server/src/{research,markets,bill}/**`, `server/src/routes/{research,markets,bill}.ts`, `server/fixtures/lin-er-bill.*`, `server/scripts/live-{research,gemini}.ts`, `server/test/{research,gemini,bill}.test.ts` | `web/**`, `server/src/claims/**`, `server/src/routes/{clinic,pipeline}.ts`, `server/fixtures/denial-*`, `server/scripts/live-clinic.ts`, `server/test/{clinic,web,pipeline}.test.ts`, **plus all shared files** (below) |
 
-**Integrator** (Srujan + Claude) owns the shared files: `server/src/{types,store,index,env,llm}.ts`,
-`server/src/routes/pipeline.ts`, `docs/API.md`, `web/**`, `README.md`, `TEAM.md`, `package.json` + lockfile,
-`.env.example`, `.github/`.
+**Shared files (D is the gatekeeper):** `server/src/{types,store,index,env,llm}.ts`, `docs/API.md`, `README.md`,
+`TEAM.md`, `WORKPLAN.md`, `package.json` + lockfile, `.env.example`, `.github/`.
 
 > Need a change in a file you don't own? Don't edit it. Post in the team chat ("B needs `Receipt.detail.amount`")
-> and the owner makes it. This one rule is what keeps merges painless.
+> and the owner makes it (shared files → D). This one rule is what keeps merges painless.
 
 ## Git workflow (copy-paste)
 
 ```bash
 git clone https://github.com/Srujyama/b-b && cd b-b
-git checkout -b feat/voice            # your branch: feat/voice | feat/rails | feat/research
+git checkout -b feat/voice            # your branch: feat/voice | feat/rails | feat/research | feat/product
 cd bangbang/server && npm install && cp <shared .env from chat> .env
 
 # work loop: commit small, sync often
@@ -37,9 +36,9 @@ git push -u origin feat/voice                  # push the branch, open a PR into
   CI (`.github/workflows/ci.yml`) runs tsc + all tests on every PR. Merge only on green.
 - **Squash-merge** your PR, then `git fetch && git rebase origin/main` and keep going on the same branch.
 - **Never** `git push --force` to `main`, and never commit `.env` (the repo is public).
-- **Dependencies:** don't `npm install <pkg>` on your branch. Ask the integrator, who adds it on `main` once.
+- **Dependencies:** don't `npm install <pkg>` on your branch. Ask D, who adds it on `main` once.
   Two branches both touching `package-lock.json` is the #1 merge-conflict source.
-- **New env var?** Tell the integrator, who adds it to `.env.example`. Read it in code with `need("X")`/`opt("X")`.
+- **New env var?** Tell D, who adds it to `.env.example`. Read it in code with `need("X")`/`opt("X")`.
 - **Shared .env:** keys go in the team chat, not git. When you add a value (e.g. a deployed contract address),
   post it so everyone updates their local `.env`.
 
@@ -66,23 +65,34 @@ The demo moment lives here: two AI agents arguing out loud while Mrs. Lin reads 
 3. **AUSD / x402**: fund the agent wallet with AUSD (Agora faucet) and the payee with Base Sepolia ETH →
    `npm run live:ausd -- --fair-price 99285`. Done when a basescan link shows a gasless ERC-3009 transfer.
    Stretch: try the public x402 facilitator in addition to our self-settle.
-4. Write the per-track paragraph for README (send it to the integrator): what's on-chain, which tx proves it.
+4. Write the per-track paragraph for README (send it to D): what's on-chain, which tx proves it.
 
-## C: Research & Intelligence (Context.dev, Gemini, bill, clinic)
+## C: Research & Intelligence (Context.dev, Gemini, bill)
 
 1. `CONTEXT_DEV_API_KEY` + `OPENAI_API_KEY` → `npm run live:research`. Make Stanford's real financial-assistance
    policy and real Medicare rates come back **with source URLs**. Tune queries/extraction where they miss.
-2. `npm run live:clinic`: make the Aetna lumbar-MRI policy criteria come back for real, and check the appeal letter reads like a real one.
-3. **Bill photo**: photograph the printed `fixtures/lin-er-bill.html` with a phone and upload it in the UI. Fix parsing misses.
-   (PDF upload needs a change in `llm.ts`. Ask the integrator.)
-4. **Gemini**: create a sandbox account + API key → test `POST /api/cases/:id/hedge`. If FED events don't exist
+2. **Bill photo**: photograph the printed `fixtures/lin-er-bill.html` with a phone and upload it in the UI. Fix parsing misses.
+   (PDF upload needs a change in `llm.ts`. Ask D.)
+3. **Gemini**: create a sandbox account + API key → test `POST /api/cases/:id/hedge`. If FED events don't exist
    in sandbox, find another honest hedge market and document it. `npm run live:gemini` must stay green.
-5. Verify the hard-coded constants against real sources (e.g. `ED_LEVEL4_OVER_LEVEL5` in `bill/audit.ts`, the FPL table).
+4. Verify the hard-coded constants against real sources (e.g. `ED_LEVEL4_OVER_LEVEL5` in `bill/audit.ts`, the FPL table).
 
-## Integrator (Srujan + Claude)
+## D: Product & Integration (Srujan, with Claude)
 
-One-button pipeline (`/api/cases/:id/run`), web polish, README track mapping, merging PRs, shared-file requests,
-deployment link (recommended for submission), and the final submission form (YouTube ≤ 2 min, public repo, live link).
+You own the shared files, so you're also the merge gatekeeper: review and squash-merge A/B/C's PRs, and
+make the shared-file changes they ask for.
+1. **Clinic mode (the doctors' side):** `npm run live:clinic` with the keys, and make the Aetna lumbar-MRI policy
+   criteria come back for real with source URLs. Polish `/clinic.html` so a doctor's office sees: denial → criteria
+   met (with chart quotes) → appeal letter → "call the insurer" (reuses A's negotiation room).
+   Stretch: a second denial fixture (e.g. prior-auth denial).
+2. **Web UI demo polish** (`web/**`): run the Mrs. Lin flow on a real phone. Chinese first, big type, nothing
+   confusing. Make the negotiation room and the receipts timeline look great on screen for the video.
+3. **One-button pipeline** (`routes/pipeline.ts`, built by Claude's integration agent): keep it working as A/B/C
+   merge, and run it end to end after each merge.
+4. **Deploy a live link** (recommended for submission): e.g. Render/Fly/Railway running `npm start` with the shared .env.
+5. **README + submission:** the README maps each track to code (B and C send you their paragraphs). Submit at
+   hackathoncompany.com/platform (allow 15 min): YouTube ≤ 2 min, public repo, live link. Pick the General track:
+   Most Creative or Most Technically Impressive (you must choose one).
 
 ## Checkpoints
 
