@@ -9,8 +9,12 @@ import { buildNegotiation } from "../research/facts.js";
 const MAX_CODES = 6; // research the highest-charge codes; keeps Context.dev credits + latency bounded
 const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
-/** Run research for a case: fair prices per code, the hospital's 501(r) policy, then the negotiation ladder. */
-export async function researchCase(id: string): Promise<CasePacket> {
+export type FairPriceLookup = (code: string, description: string, hospital?: string) => Promise<FairPrice>;
+
+/** Run research for a case: fair prices per code, the hospital's 501(r) policy, then the negotiation ladder.
+ *  `opts.lookup` lets the pipeline route each fair-price lookup through the paid x402 endpoint (AUSD). */
+export async function researchCase(id: string, opts: { lookup?: FairPriceLookup } = {}): Promise<CasePacket> {
+  const lookup = opts.lookup ?? lookupFairPrice;
   const c = requireCase(id);
   if (!c.bill) throw Object.assign(new Error("case has no parsed bill — POST /api/cases first"), { statusCode: 409 });
   if (!c.patient) throw Object.assign(new Error("case has no patient mandate (patient.maxPay)"), { statusCode: 409 });
@@ -35,7 +39,7 @@ export async function researchCase(id: string): Promise<CasePacket> {
   await Promise.all(
     codes.map(async ({ code, description, charge }) => {
       try {
-        const fp = await lookupFairPrice(code, description, hospital);
+        const fp = await lookup(code, description, hospital);
         fp.billed = charge;
         fairPrices.push(fp);
         const bits = [

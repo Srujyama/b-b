@@ -36,7 +36,7 @@ That's expected, not a bug.
 | Fed odds → financing advice | Gemini | `src/markets/gemini.ts`, `src/routes/markets.ts` | ✅ done (live-verified); sandbox hedge needs keys |
 | Clinic denial appeals | core | `src/claims/*`, `src/routes/clinic.ts` | ✅ done |
 | Web UI (Mandarin-first) | all | `web/*` | ✅ done (patient `/`, clinic `/clinic.html`) |
-| One-button pipeline + README + demo | all | `src/routes/pipeline.ts`, `README.md`, `docs/DEMO.md` | ⏳ after the above |
+| One-button pipeline + README + demo | all | `src/routes/pipeline.ts`, `README.md`, `docs/DEMO.md` | ✅ done (`POST /api/cases/:id/run`, "Run everything" button); needs a full live run with all keys |
 
 🚧 = a Claude agent is editing these files **right now**. Don't edit them until the row turns ✅ (pull first).
 

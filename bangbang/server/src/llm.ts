@@ -10,7 +10,10 @@ const model = () => opt("OPENAI_MODEL", "gpt-4o")!;
 /** Chat completion that must return JSON. `image` is a data: URL or https URL. */
 export async function llmJson<T>(system: string, user: string, opts: { image?: string; temperature?: number } = {}): Promise<T> {
   const content: OpenAI.Chat.ChatCompletionContentPart[] = [{ type: "text", text: user }];
-  if (opts.image) content.push({ type: "image_url", image_url: { url: opts.image } });
+  // a PDF statement goes in as a file part (gpt-4o reads PDF text + page images); anything else is an image
+  if (opts.image?.startsWith("data:application/pdf"))
+    content.push({ type: "file", file: { filename: "bill.pdf", file_data: opts.image } });
+  else if (opts.image) content.push({ type: "image_url", image_url: { url: opts.image } });
   const res = await openai().chat.completions.create({
     model: model(),
     temperature: opts.temperature ?? 0.2,

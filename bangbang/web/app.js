@@ -39,7 +39,7 @@ export const I18N = {
     roomTitle: "帮帮正在和医院谈", asked: "医院要", current: "现在", saved: "省下",
     counterparty: "医院那边是", cpAgent: "AI 账单员", cpHuman: "真人账单员",
     whoAdvocate: "帮帮", whoHospital: "医院", whoInsurer: "保险公司", whoPatient: "您",
-    startCall: "开始通话", endCall: "结束通话", calling: "通话中。英文对话下面是中文翻译。",
+    startCall: "开始通话", runAll: "一键全部办理", runStarted: "帮帮正在一步一步办理：查价格、记录授权、打电话、托管付款。", endCall: "结束通话", calling: "通话中。英文对话下面是中文翻译。",
     humanMode: "真人模式：请对着麦克风扮演医院账单员，帮帮会跟您谈。",
     dealAt: (amt) => `成交：${amt}`, toReceipts: "看凭证", waitingLines: "通话开始后，对话会出现在这里。",
     receiptsTitle: "每一步都有凭证",
@@ -90,7 +90,7 @@ export const I18N = {
     roomTitle: "BangBang is negotiating with the hospital", asked: "Hospital asked", current: "Now", saved: "Saved",
     counterparty: "Hospital side is", cpAgent: "AI billing agent", cpHuman: "A person",
     whoAdvocate: "BangBang", whoHospital: "Hospital", whoInsurer: "Insurer", whoPatient: "You",
-    startCall: "Start the call", endCall: "End the call", calling: "On the call. Chinese translation under each line.",
+    startCall: "Start the call", runAll: "Run everything", runStarted: "Running every step: research, mandate, the call, escrow.", endCall: "End the call", calling: "On the call. Chinese translation under each line.",
     humanMode: "Human mode: play the hospital billing office into the microphone. BangBang will negotiate with you.",
     dealAt: (amt) => `Deal: ${amt}`, toReceipts: "See receipts", waitingLines: "The conversation appears here once the call starts.",
     receiptsTitle: "A receipt for every step",
@@ -628,6 +628,17 @@ function initPatient() {
     if (!state.packet) return;
     if (mergeEvent(state.packet, ev)) {
       if (ev.type === "deal") $("#room-status").textContent = t("dealAt", usd(ev.amount));
+      // one-button run: follow the pipeline to the call, then to the receipts
+      if (state.running && ev.type === "status" && ev.status === "negotiating" && state.screen !== "room") {
+        const cp = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
+        if (cp === "agent") state.bridgeOn = true;
+        $("#room-status").textContent = t("runStarted");
+        show("room");
+      }
+      if (state.running && ev.type === "status" && ["settled", "failed"].includes(ev.status)) {
+        state.running = false;
+        if (ev.status === "settled") show("receipts");
+      }
       if (ev.type === "deal" || (ev.type === "status" && ["agreed", "failed", "settled"].includes(ev.status))) {
         state.bridgeOn = false;
         setCallLabel();
@@ -935,6 +946,17 @@ function initPatient() {
     });
     setCallLabel();
   });
+  // One button for the demo: POST /run drives research -> financing -> mandate -> credential -> call -> escrow -> release.
+  $("#run-btn")?.addEventListener("click", (e) =>
+    busy(e.currentTarget, async () => {
+      room.audio.unlock();
+      const counterparty = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
+      await api(`/api/cases/${P().id}/run`, { method: "POST", body: { counterparty } });
+      $("#room-status").textContent = t("runStarted");
+      state.running = true;
+      if (!state.logs.length) $("#research-feed").replaceChildren(h("li", { class: "empty" }, t("researching")));
+    }),
+  );
   $("#to-receipts").addEventListener("click", () => show("receipts"));
 
   /* ---- 6 receipts ---- */

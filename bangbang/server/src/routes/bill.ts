@@ -51,10 +51,10 @@ async function readIntake(req: FastifyRequest): Promise<IntakeInput> {
       const buf = await part.toBuffer();
       if (part.fieldname !== "bill") continue;
       const mime = part.mimetype || "application/octet-stream";
-      if (mime.startsWith("image/")) out.imageDataUrl = `data:${mime};base64,${buf.toString("base64")}`;
+      if (mime.startsWith("image/") || mime === "application/pdf") out.imageDataUrl = `data:${mime};base64,${buf.toString("base64")}`;
       else if (mime.startsWith("text/")) out.text = buf.toString("utf8");
       else
-        throw Object.assign(new Error(`Unsupported bill file type ${mime} — upload a photo (JPEG/PNG) or screenshot of the statement`), {
+        throw Object.assign(new Error(`Unsupported bill file type ${mime} — upload a photo (JPEG/PNG), screenshot or PDF of the statement`), {
           statusCode: 415,
         });
     } else {

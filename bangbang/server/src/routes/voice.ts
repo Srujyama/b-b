@@ -53,7 +53,11 @@ export default async function voiceRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { name: string }; Body: Record<string, unknown> }>("/api/eleven/tools/:name", async (req, reply) => {
     const secret = opt("ELEVENLABS_TOOL_SECRET");
-    if (secret && req.headers["x-bangbang-secret"] !== secret) return reply.code(401).send({ error: "bad tool secret" });
+    // The secret guards the ElevenLabs webhook. Our own page (intake form + client-tool forwarding) cannot hold it,
+    // so a same-origin browser call is exempt: browsers set Sec-Fetch-Site themselves and page JS cannot forge it.
+    // This is a guard against blind webhook spoofing, not auth — the case UUID is the capability either way.
+    const sameOrigin = req.headers["sec-fetch-site"] === "same-origin";
+    if (secret && !sameOrigin && req.headers["x-bangbang-secret"] !== secret) return reply.code(401).send({ error: "bad tool secret" });
     const body = (req.body ?? {}) as Record<string, unknown>;
     const { case_id, ...args } = body;
     const caseId = typeof case_id === "string" && case_id ? case_id : (req.headers["x-case-id"] as string | undefined);

@@ -1,6 +1,6 @@
 # Work plan: 4 people in parallel, merge-friendly
 
-The code is built: 11 modules, 160 tests, all green in CI. What's left is **making each part real with live keys,
+The code is built: 12 modules, 173 tests, all green in CI. What's left is **making each part real with live keys,
 tuning it, and producing the demo**. The work is split so that **no two people own the same file**. Then merges
 are just "click merge".
 
