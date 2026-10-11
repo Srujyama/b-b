@@ -92,6 +92,9 @@ export async function intakeCase(input: IntakeInput, seed?: string, reader: Bill
     });
     let bill = parsed;
     if (reader === "builtin") {
+      // keyless-e2e: persist the marker on the case, so a later GET (UI, e2e) can tell it was read without AI;
+      // the log line below only goes out over the WebSocket.
+      bill = { ...parsed, reader: "builtin" };
       emit(c.id, { type: "log", message: BUILTIN_READER_LOG, messageZh: "用 Vellum 内置的账单读取程序读好了（未配置 AI 密钥）；逐项中文解释需要 ANTHROPIC_API_KEY" });
     } else {
       bill = await explainZh(parsed);

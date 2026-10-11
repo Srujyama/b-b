@@ -21,6 +21,12 @@
 // Every XRPL step is a real devnet transaction signed by the SERVER's wallets (from its .env). A run spends the
 // shared patient wallet's devnet USD; when it is short, auto mode borrows from the community-fund vault.
 //
+// KEYLESS against a local server: vellum/server/.env may hold Anthropic / ElevenLabs / Context.dev keys. dotenv does not
+// override variables already set (even to ""), so blank them on the SERVER command to exercise the keyless path:
+//   ANTHROPIC_API_KEY= ELEVENLABS_API_KEY= CONTEXT_DEV_API_KEY= DEV_PREVIEW= PORT=8899 npx tsx src/index.ts
+//   BASE_URL=http://localhost:8899 npm run e2e
+// Otherwise the server takes the keyed path: the demo case is read by Claude and the four 503 checks are SKIPped.
+//
 // The deployed server is shared: this script only ever creates and touches its OWN case (the id it got back).
 // It exits non-zero if any step FAILs. SKIP is printed (with the reason) for a step that does not apply.
 import { readFileSync } from "node:fs";
@@ -133,6 +139,7 @@ let ceiling = 0;
 let agreed = 0;
 let escrowTx = "";
 let loanId = "";
+let loanAtSettle = ""; // the 409 that made auto mode open the loan inside the escrow step
 const ourTxs: string[] = [];
 
 const tool = (name: string, args: Record<string, unknown>) =>
@@ -144,13 +151,15 @@ async function toolOk(name: string, args: Record<string, unknown>) {
   return ok(r, `tool ${name}`) as { ok: boolean; message: string };
 }
 
+let loanNote = "";
 async function openLoan(): Promise<string> {
   const rs = ok(await http("POST", `/api/cases/${caseId}/loan`, { months: 12 }), "POST /loan");
   const l = rs.find((r: any) => r.kind === "LoanSet");
   expect(l && HASH64.test(l.txHash) && l.detail?.loanId, `no LoanSet receipt: ${JSON.stringify(rs)}`);
   loanId = l.detail.loanId;
   ourTxs.push(l.txHash);
-  return `loan ${loanId}, $${l.detail.principal} over ${l.detail.payments} months at 0% — ${txLinks(rs)}`;
+  loanNote = `loan ${loanId}, $${l.detail.principal} over ${l.detail.payments} months at 0% — ${txLinks(rs)}`;
+  return loanNote;
 }
 
 async function main() {
@@ -183,10 +192,13 @@ async function main() {
         expect(f.amountAtStake === p.amountAtStake, `${p.kind} at stake ${f.amountAtStake}, fixture says ${p.amountAtStake}`);
       }
       const zh = c.bill.lineItems.filter((l: any) => l.descriptionZh).length;
-      if (!health.anthropic) expect(zh === 0, "no Anthropic key, yet lines carry Chinese explanations (unexpected)");
+      if (!health.anthropic) {
+        expect(zh === 0, "no Anthropic key, yet lines carry Chinese explanations (unexpected)");
+        expect(c.bill.reader === "builtin", `no Anthropic key, but bill.reader is ${c.bill.reader} (expected "builtin")`);
+      } else expect(c.bill.reader === undefined, `Anthropic key configured, but bill.reader is ${c.bill.reader}`);
       packet = c;
       return `case ${caseId}: ${c.bill.lineItems.length} lines, balance $${c.bill.patientBalance}, ${c.flags.length} flags; reader: ${
-        health.anthropic ? "Claude (key configured)" : "built-in statement reader (no AI key)"
+        health.anthropic ? "Claude (key configured)" : `built-in statement reader (bill.reader=${c.bill.reader})`
       }; patient ${c.patient.name}, consent, maxPay $${c.patient.maxPay}`;
     },
     { needs: ["health"] },
@@ -199,7 +211,8 @@ async function main() {
       expect(c.id === caseId, "returned a different case");
       expect(c.status === "audited", `status ${c.status}`);
       expect(c.bill?.patientBalance === packet.bill.patientBalance, "balance differs from the create response");
-      return `status ${c.status}, balance $${c.bill.patientBalance}`;
+      expect(c.bill?.reader === packet.bill.reader, `bill.reader ${c.bill?.reader} not persisted (create said ${packet.bill.reader})`);
+      return `status ${c.status}, balance $${c.bill.patientBalance}${c.bill.reader ? `, bill.reader=${c.bill.reader} (stored on the case)` : ""}`;
     },
     { needs: ["create demo case (POST /api/cases/demo)"] },
   );
@@ -269,18 +282,14 @@ async function main() {
     { needs: ["create demo case (POST /api/cases/demo)"] },
   );
 
-  // Same order as the one-button pipeline: the 0% loan (when Gemini says payment plan) comes BEFORE the escrow, so
-  // the loan's disbursement is what funds it.
-  await step(
-    "0% community-fund loan (POST /loan)",
-    async () => {
-      if (LOAN_MODE === "skip") skip("E2E_LOAN=skip");
-      if (LOAN_MODE !== "force" && financing?.recommendation !== "payment_plan")
-        skip(`Gemini odds recommend ${financing?.recommendation ?? "unknown"}, so the pipeline would not open a loan (E2E_LOAN=force to exercise it)`);
-      return openLoan();
-    },
-    { needs: ["negotiation via tool webhook (human billing rep)", "XRPL hardship credential (POST /credential)"] },
-  );
+  // Same order as the one-button pipeline: the 0% loan (when Gemini says payment plan, or E2E_LOAN=force) comes BEFORE
+  // the escrow, so the loan's disbursement is what funds it. In auto mode with a lump-sum recommendation the loan step
+  // is decided (and reported) after the escrow step, because it is opened there only if the patient wallet is short.
+  const LOAN_STEP = "0% community-fund loan (POST /loan)";
+  const loanNeeds = ["negotiation via tool webhook (human billing rep)", "XRPL hardship credential (POST /credential)"];
+  const loanBeforeEscrow = LOAN_MODE === "force" || (LOAN_MODE === "auto" && financing?.recommendation === "payment_plan");
+  if (LOAN_MODE === "skip") await step(LOAN_STEP, async () => skip("E2E_LOAN=skip"), { needs: loanNeeds });
+  else if (loanBeforeEscrow) await step(LOAN_STEP, openLoan, { needs: loanNeeds });
 
   await step(
     "XRPL escrow (POST /settle)",
@@ -291,7 +300,9 @@ async function main() {
       // its USD. When it is short the server says "open a 0% loan first", which is the product's own answer, so in
       // auto mode we do exactly that (a real LoanSet on devnet, reported below) and retry once.
       if (r.status === 409 && /patient wallet holds/.test(errText(r)) && LOAN_MODE === "auto" && !loanId) {
-        topUp = `patient wallet was short (${errText(r)}); opened the 0% loan first: ${await openLoan()}\n         `;
+        loanAtSettle = errText(r);
+        await openLoan();
+        topUp = `patient wallet was short; opened 0% loan ${loanId.slice(0, 12)}… first (reported under the loan step), then retried\n         `;
         r = await http("POST", `/api/cases/${caseId}/settle`, {});
       }
       const rs = ok(r, "POST /settle");
@@ -303,6 +314,19 @@ async function main() {
     },
     { needs: ["negotiation via tool webhook (human billing rep)", "XRPL hardship credential (POST /credential)"] },
   );
+
+  if (LOAN_MODE === "auto" && !loanBeforeEscrow)
+    await step(
+      LOAN_STEP,
+      async () => {
+        if (loanId)
+          return `opened at the escrow step: Gemini recommended ${financing?.recommendation ?? "unknown"}, but the shared devnet patient wallet was short (${loanAtSettle}) — ${loanNote}`;
+        return skip(
+          `Gemini recommended ${financing?.recommendation ?? "unknown"} and the patient wallet covered the escrow, so no loan was needed (E2E_LOAN=force to exercise it)`,
+        );
+      },
+      { needs: loanNeeds },
+    );
 
   await step(
     "hospital portal: release escrow",

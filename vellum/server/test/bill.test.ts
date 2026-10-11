@@ -235,7 +235,10 @@ describe("keyless demo path (no ANTHROPIC_API_KEY)", () => {
     expect(c.status).toBe("audited");
     expect(c.patient).toMatchObject({ name: fixture.patient.name, maxPay: 2500, consent: true });
     // exactly what the deterministic reader produces from the fixture text (real parse, not canned data)
-    expect(c.bill).toEqual(parseStatementText(statement));
+    expect(c.bill).toEqual({ ...parseStatementText(statement), reader: "builtin" });
+    // the marker is stored on the case, not only sent as a WebSocket log line
+    const again = await app.inject({ method: "GET", url: `/api/cases/${c.id}` });
+    expect(again.json().bill.reader).toBe("builtin");
     expect(c.bill.lineItems).toHaveLength(17);
     expect(c.bill.patientBalance).toBe(14296);
     expect(c.bill.lineItems.some((l: { descriptionZh?: string }) => l.descriptionZh)).toBe(false);
@@ -279,6 +282,7 @@ describe("keyless demo path (no ANTHROPIC_API_KEY)", () => {
     expect(res.statusCode).toBe(200);
     expect(mocked).toHaveBeenCalledTimes(2); // transcribe + explain
     expect(res.json().bill.lineItems[0].descriptionZh).toBeTruthy();
+    expect(res.json().bill.reader).toBeUndefined();
     await app.close();
   });
 });
