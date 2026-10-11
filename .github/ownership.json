@@ -1,5 +1,5 @@
 {
-  "_doc": "Who may edit what. Source of truth for the CI ownership check (.github/scripts/check-ownership.mjs) and bangbang/WORKPLAN.md. Branch prefix -> stream. D owns everything not listed and may edit anything (D covers for A/B/C). Paths are globs relative to the repo root (** = any depth, * = one segment).",
+  "_doc": "Who may edit what. Source of truth for the CI ownership check (.github/scripts/check-ownership.mjs) and vellum/WORKPLAN.md. Branch prefix -> stream. D owns everything not listed and may edit anything (D covers for A/B/C). Paths are globs relative to the repo root (** = any depth, * = one segment).",
   "branches": {
     "feat/voice": "A",
     "feat/rails": "B",
@@ -12,47 +12,47 @@
     "A": {
       "name": "Voice & Story",
       "paths": [
-        "bangbang/server/src/agent/**",
-        "bangbang/server/src/routes/voice.ts",
-        "bangbang/server/scripts/setup-elevenlabs.ts",
-        "bangbang/server/test/agent.test.ts",
-        "bangbang/server/test/voice.test.ts",
-        "bangbang/docs/DEMO.md"
+        "vellum/server/src/agent/**",
+        "vellum/server/src/routes/voice.ts",
+        "vellum/server/scripts/setup-elevenlabs.ts",
+        "vellum/server/test/agent.test.ts",
+        "vellum/server/test/voice.test.ts",
+        "vellum/docs/DEMO.md"
       ]
     },
     "B": {
       "name": "Money Rails",
       "paths": [
-        "bangbang/contracts/**",
-        "bangbang/server/src/chain/**",
-        "bangbang/server/src/routes/xrpl.ts",
-        "bangbang/server/src/routes/bnb.ts",
-        "bangbang/server/src/routes/x402.ts",
-        "bangbang/server/scripts/setup-xrpl.ts",
-        "bangbang/server/scripts/deploy-ledger.ts",
-        "bangbang/server/scripts/gen-wallets.ts",
-        "bangbang/server/scripts/live-xrpl.ts",
-        "bangbang/server/scripts/live-ausd.ts",
-        "bangbang/server/test/xrpl.test.ts",
-        "bangbang/server/test/bnb.test.ts",
-        "bangbang/server/test/ausd.test.ts"
+        "vellum/contracts/**",
+        "vellum/server/src/chain/**",
+        "vellum/server/src/routes/xrpl.ts",
+        "vellum/server/src/routes/bnb.ts",
+        "vellum/server/src/routes/x402.ts",
+        "vellum/server/scripts/setup-xrpl.ts",
+        "vellum/server/scripts/deploy-ledger.ts",
+        "vellum/server/scripts/gen-wallets.ts",
+        "vellum/server/scripts/live-xrpl.ts",
+        "vellum/server/scripts/live-ausd.ts",
+        "vellum/server/test/xrpl.test.ts",
+        "vellum/server/test/bnb.test.ts",
+        "vellum/server/test/ausd.test.ts"
       ]
     },
     "C": {
       "name": "Research & Intelligence",
       "paths": [
-        "bangbang/server/src/research/**",
-        "bangbang/server/src/markets/**",
-        "bangbang/server/src/bill/**",
-        "bangbang/server/src/routes/research.ts",
-        "bangbang/server/src/routes/markets.ts",
-        "bangbang/server/src/routes/bill.ts",
-        "bangbang/server/fixtures/lin-er-bill.*",
-        "bangbang/server/scripts/live-research.ts",
-        "bangbang/server/scripts/live-gemini.ts",
-        "bangbang/server/test/research.test.ts",
-        "bangbang/server/test/gemini.test.ts",
-        "bangbang/server/test/bill.test.ts"
+        "vellum/server/src/research/**",
+        "vellum/server/src/markets/**",
+        "vellum/server/src/bill/**",
+        "vellum/server/src/routes/research.ts",
+        "vellum/server/src/routes/markets.ts",
+        "vellum/server/src/routes/bill.ts",
+        "vellum/server/fixtures/lin-er-bill.*",
+        "vellum/server/scripts/live-research.ts",
+        "vellum/server/scripts/live-gemini.ts",
+        "vellum/server/test/research.test.ts",
+        "vellum/server/test/gemini.test.ts",
+        "vellum/server/test/bill.test.ts"
       ]
     }
   }
