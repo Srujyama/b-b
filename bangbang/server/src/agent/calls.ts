@@ -99,8 +99,10 @@ export async function dispatchCall(plan: VoicePlan, store: CallJobStore): Promis
   const ready = callReadiness();
   if (!ready.configured) throw voiceError(`Voice calling is not configured: ${[...ready.missing, ...ready.errors].join(", ")}`, 503);
   if (!ready.liveCallsEnabled) throw voiceError("Live calls are disabled; set VOICE_CALLS_ENABLED=true after setup", 503);
-  const allowed = opt("VOICE_ALLOWED_NUMBERS")?.split(",").map((n) => n.trim()).filter(Boolean);
-  if (allowed?.length && !allowed.includes(plan.target.phone)) throw voiceError("Destination is outside VOICE_ALLOWED_NUMBERS", 403);
+  // Fail closed: with live calls on, an EMPTY allowlist must not mean "dial anyone" (e.g. a real hospital).
+  const allowed = opt("VOICE_ALLOWED_NUMBERS")?.split(",").map((n) => n.trim()).filter(Boolean) ?? [];
+  if (!allowed.length) throw voiceError("VOICE_ALLOWED_NUMBERS is empty; list the test phone(s) in E.164 before placing live calls", 403);
+  if (!allowed.includes(plan.target.phone)) throw voiceError("Destination is outside VOICE_ALLOWED_NUMBERS", 403);
   if (store.all().some((j) => j.caseId === plan.caseId && !terminal(j)))
     throw voiceError("This case has an active or uncertain call; reconcile it before submitting another job", 409);
   const now = new Date().toISOString();

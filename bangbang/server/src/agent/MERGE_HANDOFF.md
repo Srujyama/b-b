@@ -151,8 +151,8 @@ Use [voice.env.example](./voice.env.example) and the README's ordered setup inst
   Twilio credentials belong in that integration; our server dispatches through ElevenLabs.
 - Result callbacks: ElevenLabs webhook ID and HMAC signing secret, with retries enabled. Attach
   transcript and call-initiation-failure events through outbound setup. Polling remains an alternative.
-- `VOICE_CALLS_ENABLED=false` is the template default. An optional `VOICE_ALLOWED_NUMBERS` list can
-  restrict the first tests to known test phones.
+- `VOICE_CALLS_ENABLED=false` is the template default. A **required** `VOICE_ALLOWED_NUMBERS` list restricts
+  calls to known test phones; if it is empty, no call is placed.
 
 `GET /api/voice/ready` reports configured environment fields and whether hooks are registered. It
 does not probe credentials, validate provider account permissions, check storage writability, or
