@@ -3,7 +3,8 @@
 // and extract FPL thresholds with the LLM ONLY from the scraped text, re-verifying every number.
 import type { CharityPolicy, Source } from "../types.js";
 import { llmJson } from "../llm.js";
-import { brand, mapUrls, scrape, search } from "./contextdev.js";
+import { brandByName, mapUrls, scrape, search } from "./contextdev.js";
+import { trustOf } from "./trust.js";
 import { docsPrompt, hitToDoc, numberAppearsIn, type Doc } from "./fairprice.js";
 
 // ---- 2026 HHS poverty guidelines (constant table, cited) ----
@@ -64,7 +65,7 @@ export async function findCharityPolicy(hospitalName: string, website?: string, 
   let domain = hostOf(website);
   if (!domain) {
     try {
-      const b = await brand({ name: hospitalName });
+      const b = await brandByName(hospitalName);
       domain = b.domain;
       sources.push({ ...b.source, title: `Hospital profile: ${b.title ?? b.domain}` });
       onProgress(`Resolved ${hospitalName} -> ${domain} (Context.dev brand)`, `已找到医院官网：${domain}`);
@@ -94,9 +95,10 @@ export async function findCharityPolicy(hospitalName: string, website?: string, 
     }
   }
   if (!docs.length) {
-    const hits = await search(`${hospitalName} financial assistance policy charity care federal poverty level`, { highlights: { maxCharacters: 4000 } });
-    const scored = hits.filter((h) => !domain || h.url.includes(domain) || FAP_RE.test(h.url) || FAP_RE.test(h.title));
-    for (const h of scored.slice(0, 4)) {
+    // official sources only: the hospital's own site, or a government filing of its policy
+    const hits = await search(`${hospitalName} financial assistance policy charity care federal poverty level`, { highlights: { maxCharacters: 4000 }, ...(domain ? { includeDomains: [domain] } : {}) });
+    const official = hits.filter((h) => trustOf(h.url, domain) === "official");
+    for (const h of official.slice(0, 4)) {
       const d = hitToDoc(h);
       if (d) docs.push(d);
     }
@@ -114,7 +116,6 @@ If a threshold is not printed, return null. Percents are numbers (e.g. 200 for "
 Return {"hasFap":boolean (true only if a source is this hospital's financial assistance/charity care policy),"freeCareBelowPctFpl":number|null,"discountBelowPctFpl":number|null,"discountPct":number|null (percent off charges for the discounted tier, if a single figure is printed),"applicationUrl":string|null,"summary":string (2 sentences, English, only printed facts),"sourceUrl":string|null}
 
 ${docsPrompt(docs)}`,
-    { temperature: 0 },
   );
 
   const doc = docs.find((d) => d.url === out?.sourceUrl) ?? docs[0];

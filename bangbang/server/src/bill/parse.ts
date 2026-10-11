@@ -123,7 +123,7 @@ export async function parseBill(input: { text?: string; imageDataUrl?: string })
   const user = text
     ? `Transcribe this hospital statement into the JSON shape.\n\n----- STATEMENT -----\n${text}\n----- END -----`
     : "Transcribe the hospital statement in this photo into the JSON shape. Read every charge line.";
-  const raw = await llmJson<unknown>(PARSE_SYSTEM, user, { image: input.imageDataUrl, temperature: 0 });
+  const raw = await llmJson<unknown>(PARSE_SYSTEM, user, { image: input.imageDataUrl });
   return normalizeBill(raw);
 }
 
@@ -135,7 +135,7 @@ const EXPLAIN_SYSTEM = `你是一位温暖、耐心的华人病人权益助手�
 /** Fill descriptionZh on every line (plain, warm Mandarin). Returns a new Bill. */
 export async function explainZh(bill: Bill): Promise<Bill> {
   const lines = bill.lineItems.map((li, i) => `${i}. ${li.code ?? ""} ${li.description} (qty ${li.qty})`).join("\n");
-  const res = await llmJson<{ items?: { index: number; zh: string }[] }>(EXPLAIN_SYSTEM, `账单来自：${bill.provider.name}\n收费明细：\n${lines}`, { temperature: 0.3 });
+  const res = await llmJson<{ items?: { index: number; zh: string }[] }>(EXPLAIN_SYSTEM, `账单来自：${bill.provider.name}\n收费明细：\n${lines}`);
   const byIndex = new Map<number, string>();
   for (const it of res.items ?? []) if (typeof it?.index === "number" && typeof it.zh === "string" && it.zh.trim()) byIndex.set(it.index, it.zh.trim());
   const missing = bill.lineItems.map((_, i) => i).filter((i) => !byIndex.has(i));
