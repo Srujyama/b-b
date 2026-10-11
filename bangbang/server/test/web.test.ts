@@ -91,6 +91,54 @@ describe("web: clinic page", () => {
   });
 });
 
+describe("web: case overview dashboard", () => {
+  it("serves dashboard.html with every section", async () => {
+    const res = await get("/dashboard.html");
+    expect(res.headers["content-type"]).toMatch(/text\/html/);
+    const html = res.body;
+    expect(html).toContain('lang="zh-CN"');
+    for (const id of [
+      "dashboard-app", "lang-toggle", "error", "case-picker", "case-list", "case-view", "preview-banner", "case-head",
+      "case-provider", "case-status", "stepper", "stats", "findings", "options", "room-card", "ticker", "tk-asked",
+      "tk-current", "tk-saved", "limit-guard", "transcript", "run-card", "run-steps", "activity", "receipts",
+    ]) {
+      expect(html, id).toContain(`id="${id}"`);
+    }
+    expect(html).toContain('src="/dashboard.js"');
+    expect(html).toContain('href="/styles.css"');
+    expect(html).toContain('href="/clinic.html"'); // appeals live in clinic mode, not duplicated
+  });
+
+  it("serves dashboard.js reading real case data, with no hard-coded demo numbers", async () => {
+    const js = (await get("/dashboard.js")).body;
+    expect(js).toContain('from "./app.js"');
+    for (const path of ["/api/cases", "/run"]) expect(js, path).toContain(path);
+    for (const fn of ["connectCase(", "mergeEvent(", "receiptItem"]) expect(js, fn).toContain(fn);
+    for (const field of ["totalCharges", "amountAtStake", "maxPay", "agreedAmount", "charity", "financing"]) expect(js, field).toContain(field);
+    // the PR #7 prototype's mock values must not ship
+    for (const mock of ["14296", "14,296", "2230", "BB-1042", "Stanford"]) expect(js, mock).not.toContain(mock);
+    // the simulated $0 confirmation keeps its label
+    expect(js).toContain("simulatedTag");
+  });
+
+  it("is linked from the patient and clinic pages, and every dashboard string has zh + en", async () => {
+    expect((await get("/")).body).toContain('href="/dashboard.html"');
+    expect((await get("/clinic.html")).body).toContain('href="/dashboard.html"');
+    const g = globalThis as Record<string, unknown>;
+    g.location ??= { pathname: "/", href: "http://localhost:8787/", protocol: "http:", host: "localhost:8787", hash: "" };
+    g.document ??= { body: undefined, getElementById: () => null, querySelectorAll: () => [] };
+    const { I18N } = (await import(/* @vite-ignore */ new URL("../../web/app.js", import.meta.url).href)) as Record<string, any>;
+    const dashKeys = Object.keys(I18N.zh).filter((k) => /^(dash|stat|guard|opt|caseStatus|caseSteps|flagKinds|runStatus|runSteps|simulatedTag|flaggedNote|limitGuard)/.test(k));
+    expect(dashKeys.length).toBeGreaterThan(20);
+    for (const k of dashKeys) expect(I18N.en[k], k).toBeDefined();
+    const html = (await get("/dashboard.html")).body;
+    for (const m of html.matchAll(/data-i18n="(\w+)"/g)) {
+      expect(I18N.zh[m[1]], m[1]).toBeDefined();
+      expect(I18N.en[m[1]], m[1]).toBeDefined();
+    }
+  });
+});
+
 describe("web: shared helpers (pure logic, no DOM)", () => {
   it("app.js exports parse cleanly as an ES module", async () => {
     const js = (await get("/app.js")).body;
