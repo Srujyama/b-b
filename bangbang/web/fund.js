@@ -17,13 +17,14 @@ Object.assign(I18N.zh, {
   fundLoadFailed: "读不到基金的账本数据。看上面的错误说明。",
   ledgerLine: (n, at) => `XRPL 开发网 · 第 ${n} 号账本 · 账本时间 ${at}`,
   fundRolesTitle: "三个角色",
-  roleBroker: "贷款经纪人", roleBrokerWhat: "建金库、开贷款。这里不收管理费，也不要求首损保证金。",
+  roleBroker: "贷款经纪人", roleBrokerWhat: "建金库、开贷款。",
+  brokerTerms: (fee, cover) => `账本上的条款：管理费 ${fee}，首损保证金 ${cover}。`,
   roleDepositor: "存款人（捐款人）", roleDepositorWhat: "持有“VerifiedDonor”凭证的人才能存钱，换成金库份额。",
-  roleBorrower: "借款人（病人）", roleBorrowerWhat: "有诊所签发的“经济困难”凭证的病人，借零利息分期，按月还款。",
+  roleBorrower: "借款人（病人）", roleBorrowerWhat: "有诊所签发的“经济困难”凭证的病人借分期，按月还款。",
   statTotal: "基金总额", statTotalFoot: (s) => `已发出 ${s} 份金库份额`,
   statAvail: "可以借出", statAvailFoot: "金库里还没借出去的钱",
   statLent: "已借出", statLentFoot: (n) => `${n} 笔贷款还没还完`,
-  statLoans: "贷款笔数", statLoansFoot: "利率 0%，管理费 0%",
+  statLoans: "贷款笔数", statLoansFoot: (rate, fee) => `利率 ${rate}，管理费 ${fee}`, statLoansFootNone: (fee) => `还没有贷款 · 管理费 ${fee}`,
   factOwner: "基金账户（经纪人所有者）", factBrokerId: "经纪人编号", factPseudo: "经纪人的账本账户", factFee: "管理费",
   factCover: "首损保证金", factDebt: "未还本金总额", factSetupTx: "建立交易",
   factVaultId: "金库编号", factVaultAcct: "金库的账本账户", factAsset: "资产", factPrivate: "存款权限",
@@ -45,7 +46,8 @@ Object.assign(I18N.zh, {
   loansCount: (n) => `${n} 笔`,
   noLoans: "这个金库还没有放出任何贷款。上面的数字说明钱都还在金库里。",
   loanStatus: { active: "还款中", paid: "已还清", impaired: "逾期", defaulted: "违约" },
-  loanCase: (id) => `个案 ${id}`, loanNoCase: "没有关联的个案",
+  loanCase: (id) => `个案 ${id}`, loanNoCase: "没有关联的个案", loanCaseElsewhere: (id) => `个案 ${id}（不在这台服务器上）`,
+  payCaseElsewhere: "这笔贷款的个案不在这台服务器上，所以这页不能替它还款。", payNoCase: "这笔贷款没有关联个案，服务器只替个案还款。",
   loanPrincipal: "借款", loanOutstanding: "还欠", loanPeriodic: "每期", loanNext: "下次到期",
   loanProgress: (m, n) => `已还 ${m} / ${n} 期`, loanProgressUnknown: (r) => `还剩 ${r} 期`,
   loanOrigin: "借款交易", loanPayments: "还款交易",
@@ -56,7 +58,7 @@ Object.assign(I18N.zh, {
     PermissionedDomainSet: "建立许可域（只收核实过的捐款人）", CredentialCreate: "签发 VerifiedDonor 凭证", CredentialAccept: "捐款人接受凭证",
     CredentialDelete: "撤销凭证", VaultCreate: "建立私有金库", VaultSet: "修改金库", VaultDeposit: "捐款人存款", VaultWithdraw: "存款人取款",
     VaultClawback: "金库追回", LoanBrokerSet: "设立贷款经纪人", LoanBrokerCoverDeposit: "存入首损保证金", LoanBrokerCoverWithdraw: "取出首损保证金",
-    LoanSet: "开出零利息贷款", LoanPay: "病人还款", LoanManage: "管理贷款", LoanDelete: "删除已结清的贷款",
+    LoanSet: "开出贷款", LoanPay: "病人还款", LoanManage: "管理贷款", LoanDelete: "删除已结清的贷款",
   },
   refresh: "重新读取账本",
   vaultTitle: "金库", loansTitle: "贷款",
@@ -72,13 +74,14 @@ Object.assign(I18N.en, {
   fundLoadFailed: "Couldn't read the fund from the ledger. See the error above.",
   ledgerLine: (n, at) => `XRPL devnet · ledger #${n} · ledger time ${at}`,
   fundRolesTitle: "The three roles",
-  roleBroker: "Loan broker", roleBrokerWhat: "Creates the vault and opens loans. No management fee, no first-loss cover required.",
+  roleBroker: "Loan broker", roleBrokerWhat: "Creates the vault and opens loans.",
+  brokerTerms: (fee, cover) => `Terms on the ledger: ${fee} management fee, ${cover} first-loss cover.`,
   roleDepositor: "Depositors (donors)", roleDepositorWhat: "Only holders of the VerifiedDonor credential can deposit; they receive vault shares.",
-  roleBorrower: "Borrowers (patients)", roleBorrowerWhat: "Patients with a clinic-issued FinancialHardship credential borrow at 0% and repay monthly.",
+  roleBorrower: "Borrowers (patients)", roleBorrowerWhat: "Patients with a clinic-issued FinancialHardship credential borrow and repay monthly.",
   statTotal: "Fund total", statTotalFoot: (s) => `${s} vault shares outstanding`,
   statAvail: "Available to lend", statAvailFoot: "In the vault, not lent out",
   statLent: "Lent out", statLentFoot: (n) => `${n} loans still being repaid`,
-  statLoans: "Loans", statLoansFoot: "0% interest, 0% management fee",
+  statLoans: "Loans", statLoansFoot: (rate, fee) => `${rate} interest, ${fee} management fee`, statLoansFootNone: (fee) => `No loans yet · ${fee} management fee`,
   factOwner: "Fund account (broker owner)", factBrokerId: "Broker ID", factPseudo: "Broker ledger account", factFee: "Management fee",
   factCover: "First-loss cover", factDebt: "Debt outstanding", factSetupTx: "Setup transaction",
   factVaultId: "Vault ID", factVaultAcct: "Vault ledger account", factAsset: "Asset", factPrivate: "Who can deposit",
@@ -100,7 +103,8 @@ Object.assign(I18N.en, {
   loansCount: (n) => `${n} total`,
   noLoans: "This vault has not made any loans yet. The numbers above show all of it is still in the vault.",
   loanStatus: { active: "Repaying", paid: "Paid off", impaired: "Late", defaulted: "Defaulted" },
-  loanCase: (id) => `Case ${id}`, loanNoCase: "No linked case",
+  loanCase: (id) => `Case ${id}`, loanNoCase: "No linked case", loanCaseElsewhere: (id) => `Case ${id} (not on this server)`,
+  payCaseElsewhere: "This loan's case is not on this server, so this page can't pay it.", payNoCase: "This loan names no case; the server only pays loans for a case.",
   loanPrincipal: "Borrowed", loanOutstanding: "Outstanding", loanPeriodic: "Per payment", loanNext: "Next due",
   loanProgress: (m, n) => `${m} of ${n} payments made`, loanProgressUnknown: (r) => `${r} payments remaining`,
   loanOrigin: "Loan tx", loanPayments: "Payments",
@@ -111,7 +115,7 @@ Object.assign(I18N.en, {
     PermissionedDomainSet: "Permissioned Domain created (vetted donors only)", CredentialCreate: "VerifiedDonor credential issued", CredentialAccept: "Donor accepted credential",
     CredentialDelete: "Credential revoked", VaultCreate: "Private vault created", VaultSet: "Vault updated", VaultDeposit: "Donor deposit", VaultWithdraw: "Depositor withdrawal",
     VaultClawback: "Vault clawback", LoanBrokerSet: "Loan broker set up", LoanBrokerCoverDeposit: "First-loss cover deposited", LoanBrokerCoverWithdraw: "First-loss cover withdrawn",
-    LoanSet: "0% loan opened", LoanPay: "Patient repayment", LoanManage: "Loan managed", LoanDelete: "Paid-off loan deleted",
+    LoanSet: "Loan opened", LoanPay: "Patient repayment", LoanManage: "Loan managed", LoanDelete: "Paid-off loan deleted",
   },
   refresh: "Read the ledger again",
   vaultTitle: "Vault", loansTitle: "Loans",
@@ -119,7 +123,8 @@ Object.assign(I18N.en, {
   donorMethodPublic: "Public vault: anyone can deposit and the ledger has no index of share holders, so only credential holders and the owner were checked; other depositors may exist.",
 });
 
-const state = { fund: null, donors: null, donorsError: null };
+// cases: caseId -> true when this server has the case (GET /api/cases/:id answered 200), false otherwise
+const state = { fund: null, donors: null, donorsError: null, cases: new Map() };
 const short = (x) => (x && x.length > 14 ? `${x.slice(0, 6)}…${x.slice(-4)}` : x || "—");
 const locale = () => (getLang() === "zh" ? "zh-CN" : "en-US");
 const when = (iso) => (iso ? new Date(iso).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" }) : "—");
@@ -135,6 +140,14 @@ function facts(el, rows) {
 }
 function stat(cls, label, value, foot) {
   return h("div", { class: `stat ${cls}` }, h("div", { class: "stat-top" }, h("span", { class: "stat-label" }, label)), h("b", { class: "stat-value" }, value), h("p", { class: "stat-foot" }, foot));
+}
+// XRPL lending rates (ManagementFeeRate, InterestRate) are in tenths of a basis point: 1000 = 1%.
+const rate = (r) => (typeof r === "number" && Number.isFinite(r) ? `${num(r / 1000)}%` : "—");
+function rateRange(rates) {
+  const rs = rates.filter((r) => typeof r === "number" && Number.isFinite(r));
+  if (!rs.length) return "—";
+  const lo = Math.min(...rs), hi = Math.max(...rs);
+  return lo === hi ? rate(lo) : `${rate(lo)}–${rate(hi)}`;
 }
 const txOf = (type) => (state.fund?.history ?? []).find((x) => x.type === type);
 
@@ -153,8 +166,9 @@ function render() {
     stat("total", t("statTotal"), usd(v.assetsTotal), t("statTotalFoot", num(v.shares.outstanding))),
     stat("avail", t("statAvail"), usd(v.assetsAvailable), t("statAvailFoot")),
     stat("lent", t("statLent"), usd(v.assetsLent), t("statLentFoot", active.length)),
-    stat("count", t("statLoans"), String(f.loans.length), t("statLoansFoot")),
+    stat("count", t("statLoans"), String(f.loans.length), f.loans.length ? t("statLoansFoot", rateRange(f.loans.map((l) => l.interestRate)), rate(b.managementFeeRate)) : t("statLoansFootNone", rate(b.managementFeeRate))),
   );
+  $("#broker-terms").textContent = t("brokerTerms", rate(b.managementFeeRate), usd(b.coverAvailable));
 
   // 1 broker
   const setup = txOf("LoanBrokerSet");
@@ -162,7 +176,7 @@ function render() {
     [t("factOwner"), link(b.ownerExplorerUrl, short(b.owner))],
     [t("factPseudo"), link(b.accountExplorerUrl, short(b.account))],
     [t("factBrokerId"), h("span", { class: "mono", title: b.id }, short(b.id))],
-    [t("factFee"), `${b.managementFeeRate / 1000}%`],
+    [t("factFee"), rate(b.managementFeeRate)],
     [t("factCover"), usd(b.coverAvailable)],
     [t("factDebt"), usd(b.debtTotal)],
     setup && [t("factSetupTx"), link(setup.explorerUrl, short(setup.hash))],
@@ -260,7 +274,16 @@ function render() {
 
 function loanItem(l) {
   const f = state.fund;
-  const canPay = l.status !== "paid" && f.signer?.patient === l.borrower;
+  const caseHere = Boolean(l.caseId && state.cases.get(l.caseId));
+  const signer = f.signer?.patient === l.borrower;
+  // the pay route needs the loan's own case to exist on this server (the case id is the capability)
+  const canPay = l.status !== "paid" && signer && caseHere;
+  const why = l.status === "paid" || canPay ? null : !signer ? t("payNotSigner") : !l.caseId ? t("payNoCase") : t("payCaseElsewhere");
+  const caseLine = !l.caseId
+    ? t("loanNoCase")
+    : caseHere
+      ? h("a", { href: `/dashboard.html#case=${encodeURIComponent(l.caseId)}` }, t("loanCase", l.caseId))
+      : t("loanCaseElsewhere", l.caseId);
   const pct = l.paymentTotal ? Math.round(((l.paymentsMade ?? 0) / l.paymentTotal) * 100) : null;
   const btn = canPay
     ? h("button", { class: "primary pay", type: "button", onclick: (e) => pay(l, e.currentTarget) }, t("payBtn", usd(l.periodicPayment)))
@@ -271,7 +294,7 @@ function loanItem(l) {
     h(
       "div",
       { class: "loan-top" },
-      h("div", {}, link(l.borrowerExplorerUrl, short(l.borrower)), h("p", { class: "person-meta" }, l.caseId ? h("a", { href: `/dashboard.html#case=${encodeURIComponent(l.caseId)}` }, t("loanCase", l.caseId)) : t("loanNoCase"))),
+      h("div", {}, link(l.borrowerExplorerUrl, short(l.borrower)), h("p", { class: "person-meta" }, caseLine)),
       h("span", { class: `pill ${l.status === "paid" ? "done" : l.status === "active" ? "live" : "fail"}` }, t("loanStatus")[l.status] ?? l.status),
     ),
     h(
@@ -293,12 +316,12 @@ function loanItem(l) {
       ...l.payments.map((p) => [" · ", link(p.explorerUrl, `${t("loanPayments")} ${short(p.hash)}`)]),
     ),
     btn,
-    !canPay && l.status !== "paid" ? h("p", { class: "fine" }, t("payNotSigner")) : null,
+    why ? h("p", { class: "fine" }, why) : null,
   );
 }
 
 async function pay(loan, btn) {
-  const r = await busy(btn, () => api(`/api/fund/loans/${encodeURIComponent(loan.id)}/pay`, { method: "POST", body: loan.caseId ? { caseId: loan.caseId } : {} }));
+  const r = await busy(btn, () => api(`/api/fund/loans/${encodeURIComponent(loan.id)}/pay`, { method: "POST", body: { caseId: loan.caseId } }));
   if (r) {
     await load();
     $("#loans").prepend(h("li", { class: "note" }, t("paid", usd(Number(r.detail?.amount))), " · ", link(r.explorerUrl, short(r.txHash))));
@@ -316,6 +339,16 @@ async function load() {
     return;
   }
   state.fund = fund.value;
+  // Which linked cases live on THIS server (a loan opened by another run names a case we don't have).
+  const ids = [...new Set(state.fund.loans.map((l) => l.caseId).filter(Boolean))];
+  const found = await Promise.all(
+    ids.map((id) =>
+      fetch(`/api/cases/${encodeURIComponent(id)}`)
+        .then((r) => r.ok)
+        .catch(() => false),
+    ),
+  );
+  state.cases = new Map(ids.map((id, i) => [id, found[i]]));
   state.donors = donors.status === "fulfilled" ? donors.value : null;
   state.donorsError = donors.status === "rejected" ? donors.reason : null;
   $("#loading").hidden = true;

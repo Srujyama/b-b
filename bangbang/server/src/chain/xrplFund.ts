@@ -696,3 +696,15 @@ export function fundIdsWithDomain(): FundIds {
   const d = process.env.XRPL_DONOR_DOMAIN_ID;
   return d ? { ...ids, domainId: d } : ids;
 }
+
+/**
+ * Case id a loan was opened for: the Loan entry's own Data memo if it carries one, otherwise the Data memo of
+ * the LoanSet that created it (found in the borrower's account history). null when the loan names no case.
+ */
+export async function loanCaseId(ctx: XrplCtx, loanId: string, loan: Record<string, any>): Promise<string | null> {
+  const own = caseIdFromLoanData(loan.Data);
+  if (own) return own;
+  const hist = await accountTx(ctx, String(loan.Borrower));
+  const origin = hist.find((t) => txj(t).TransactionType === "LoanSet" && createdLoanId(t) === loanId);
+  return origin ? caseIdFromLoanData(txj(origin).Data) : null;
+}

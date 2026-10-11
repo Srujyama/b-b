@@ -226,12 +226,26 @@ describe("fund routes", () => {
   });
 
   it("pay: rejects a malformed or unknown loan id", async () => {
-    expect((await app.inject({ method: "POST", url: "/api/fund/loans/xyz/pay" })).statusCode).toBe(400);
-    expect((await app.inject({ method: "POST", url: `/api/fund/loans/${H("7")}/pay` })).statusCode).toBe(404);
+    const c = createCase({ mode: "patient" });
+    expect((await app.inject({ method: "POST", url: "/api/fund/loans/xyz/pay", payload: { caseId: c.id } })).statusCode).toBe(400);
+    expect((await app.inject({ method: "POST", url: `/api/fund/loans/${H("7")}/pay`, payload: { caseId: c.id } })).statusCode).toBe(404);
+  });
+
+  it("pay: the case id is the capability (required, must exist, must match the loan's memo)", async () => {
+    const url = `/api/fund/loans/${LOAN_ID}/pay`;
+    const missing = await app.inject({ method: "POST", url });
+    expect(missing.statusCode).toBe(400);
+    expect(missing.json().error).toMatch(/caseId is required/);
+    expect((await app.inject({ method: "POST", url, payload: { caseId: "no-such-case" } })).statusCode).toBe(404);
+    const wrong = createCase({ mode: "patient" }); // exists, but the loan was opened for c42
+    const res = await app.inject({ method: "POST", url, payload: { caseId: wrong.id } });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error).toMatch(/opened for case c42/);
+    expect(client.submitted).toHaveLength(0); // nothing signed
   });
 
   it("pay: submits LoanPay for one PeriodicPayment and records it on the case", async () => {
-    const c = createCase({ mode: "patient" });
+    const c = getCase("c42") ?? createCase({ mode: "patient", id: "c42" });
     const res = await app.inject({ method: "POST", url: `/api/fund/loans/${LOAN_ID}/pay`, payload: { caseId: c.id } });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({ chain: "xrpl", kind: "LoanPay", txHash: H("A"), detail: { loanId: LOAN_ID, amount: 100 } });
@@ -242,7 +256,8 @@ describe("fund routes", () => {
   it("pay: refuses a loan whose borrower this server cannot sign for", async () => {
     const other = Fastify();
     await other.register(fundRoutes, { ctx: async () => ctxOf(makeClient({ borrower: STRANGER })), ids: () => IDS });
-    const res = await other.inject({ method: "POST", url: `/api/fund/loans/${LOAN_ID}/pay` });
+    const c = getCase("c42") ?? createCase({ mode: "patient", id: "c42" });
+    const res = await other.inject({ method: "POST", url: `/api/fund/loans/${LOAN_ID}/pay`, payload: { caseId: c.id } });
     expect(res.statusCode).toBe(409);
     expect(res.json().error).toMatch(/only sign for the patient wallet/);
     await other.close();
@@ -263,6 +278,10 @@ describe("web: fund page", () => {
       const js = (await app.inject({ method: "GET", url: "/fund.js" })).body;
       expect(js).toContain('api("/api/fund")');
       expect(js).not.toMatch(/\$\s?\d{1,3},\d{3}/); // no literal dollar figures
+      // broker terms and loan rates are read from the ledger, not written into the copy
+      expect(js).not.toMatch(/0% interest|0% management|No management fee|不收管理费/);
+      expect(js).toMatch(/managementFeeRate/);
+      expect(js).toMatch(/interestRate/);
       expect((await app.inject({ method: "GET", url: "/fund.css" })).statusCode).toBe(200);
     } finally {
       await app.close();

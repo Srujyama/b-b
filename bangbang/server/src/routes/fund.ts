@@ -3,11 +3,13 @@
 //
 //   GET  /api/fund                      vault + loan broker + every loan + fund transaction history
 //   GET  /api/fund/donors               depositors (credential holders of the private vault's domain) + shares
-//   POST /api/fund/loans/:loanId/pay    borrower pays one installment (LoanPay signed by the patient wallet)
+//   POST /api/fund/loans/:loanId/pay    borrower pays one installment (LoanPay signed by the patient wallet).
+//                                       Body { caseId } is required and is the capability, as on the other case
+//                                       routes: the case must exist here AND be the case named in the loan's memo.
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { addReceipt, emit, getCase } from "../store.js";
 import { defaultCtx, type XrplCtx } from "../chain/xrpl.js";
-import { fundDonors, fundIdsWithDomain, fundState, loanInfo, payInstallment, type FundIds } from "../chain/xrplFund.js";
+import { fundDonors, fundIdsWithDomain, fundState, loanCaseId, loanInfo, payInstallment, type FundIds } from "../chain/xrplFund.js";
 
 export type FundRouteOpts = { ctx?: () => Promise<XrplCtx>; ids?: () => FundIds };
 
@@ -50,6 +52,9 @@ export default async function fundRoutes(app: FastifyInstance, opts: FundRouteOp
     try {
       const { loanId } = req.params;
       if (!/^[0-9A-F]{64}$/i.test(loanId)) return reply.code(400).send({ error: "loanId must be a 64-hex XRPL ledger object id" });
+      const caseId = typeof req.body?.caseId === "string" ? req.body.caseId : "";
+      if (!caseId) return reply.code(400).send({ error: "caseId is required: only the case a loan was opened for can pay it" });
+      if (!getCase(caseId)) return reply.code(404).send({ error: `unknown case ${caseId}` });
       const { ids, ctx } = await load();
       let loan: Record<string, any> | undefined;
       try {
@@ -64,13 +69,16 @@ export default async function fundRoutes(app: FastifyInstance, opts: FundRouteOp
         return reply.code(409).send({ error: `loan ${loanId} belongs to ${loan.Borrower}; this server can only sign for the patient wallet ${ctx.actors.patient.address}` });
       }
       if (Number(loan.PaymentRemaining) === 0) return reply.code(409).send({ error: `loan ${loanId} is already paid off` });
-      const receipt = await payInstallment(ctx, loanId);
-      const caseId = req.body?.caseId;
-      if (caseId && getCase(caseId)) {
-        addReceipt(caseId, receipt);
-        const amt = Number(receipt.detail?.amount);
-        emit(caseId, { type: "log", message: `Paid a 0% installment of ${amt} USD to the community fund`, messageZh: `已向社区基金还了一期零利息分期：${amt} 美元` });
+      const loanCase = await loanCaseId(ctx, loanId, loan);
+      if (loanCase !== caseId) {
+        return reply
+          .code(403)
+          .send({ error: loanCase ? `loan ${loanId} was opened for case ${loanCase}, not ${caseId}` : `loan ${loanId} is not linked to any case` });
       }
+      const receipt = await payInstallment(ctx, loanId);
+      addReceipt(caseId, receipt);
+      const amt = Number(receipt.detail?.amount);
+      emit(caseId, { type: "log", message: `Paid an installment of ${amt} USD to the community fund`, messageZh: `已向社区基金还了一期分期：${amt} 美元` });
       return receipt;
     } catch (e) {
       return fail(reply, e);
