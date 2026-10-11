@@ -1,7 +1,6 @@
 --- a/bangbang/web/app.js
 +++ b/bangbang/web/app.js
-@@ -472,7 +472,10 @@
-     if (agent.language) overrides.agent.language = agent.language;
+@@ -486,5 +486,8 @@
    }
    const opts = { dynamicVariables: { ...(init?.dynamic_variables ?? {}), case_id: caseId } };
 -  if (overrides.agent) opts.overrides = overrides;
@@ -11,4 +10,3 @@
 +  if (overrides.agent || overrides.tts) opts.overrides = overrides;
    return opts;
  }
- 
