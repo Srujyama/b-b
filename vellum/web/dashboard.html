@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Vellum Case Overview</title>
   <meta name="description" content="Vellum case overview: the bill, the problems to verify, your payment limit, the negotiation and a receipt for every step." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <!-- Case overview for the person helping Mrs. Lin (family, caseworker) and for judges.
@@ -14,7 +17,7 @@
 <body>
 <header class="masthead">
   <div class="masthead-in">
-    <a class="brand" href="/" aria-label="Vellum home"><span class="wordmark">Vellum</span></a>
+    <a class="brand" href="/" aria-label="Vellum home"><span class="mark" aria-hidden="true"></span><span class="wordmark">Vellum</span></a>
     <nav class="nav" aria-label="Vellum">
       <a id="patient-link" href="/">Patient</a>
       <a href="/clinic.html">Clinic</a>
@@ -102,7 +105,7 @@
                 <div class="tk asked"><span>Hospital asked</span><b id="tk-asked">—</b></div>
                 <div class="tk current"><span>Now</span><b id="tk-current">—</b></div>
                 <div class="tk saved"><span>Saved</span><b id="tk-saved">—</b><i id="tk-pct"></i></div>
-                <div id="deal-stamp" class="stamp" hidden aria-hidden="true">Agreed</div>
+                <div id="deal-stamp" class="deal-pill" hidden>Deal reached</div>
               </div>
               <p id="limit-guard" class="limit-guard"></p>
               <ol id="transcript" class="transcript compact-t"></ol>

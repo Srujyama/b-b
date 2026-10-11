@@ -9,11 +9,7 @@
 }
 .ledger-line:empty { display: none; }
 
-.fund .stat.total { border-top-color: var(--ink-2); }
-.fund .stat.avail { border-top-color: var(--jade); }
-.fund .stat.avail .stat-value { color: var(--jade); }
-.fund .stat.lent { border-top-color: var(--brass); }
-.fund .stat.count { border-top-color: var(--seal); }
+.fund .stat.avail .stat-value { color: var(--save); }
 
 .section-h { margin: 22px 0 10px; }
 .roles { display: grid; gap: 12px; }
@@ -26,9 +22,10 @@
 }
 .role-what { margin: 0 0 4px; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
 
-.facts { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 6px 14px; margin: 6px 0 0; font-size: 15px; }
+.facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 6px 0 0; font-size: 14px; }
+.facts dt { margin-top: 10px; font-size: 13px; }
 .facts dt { color: var(--ink-2); }
-.facts dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
 .facts dd.warn { grid-column: 1 / -1; text-align: left; color: var(--seal); }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.92em; overflow-wrap: anywhere; }
 
@@ -39,26 +36,25 @@
 .people .empty, .loans .empty, .fund-history .empty { color: var(--ink-2); font-size: 16px; line-height: 1.5; }
 .role .fine { font-size: 13px; line-height: 1.45; }
 
-.deposit-note { background: var(--jade-soft); border-radius: var(--r-md); padding: 12px 14px; margin: 0 0 12px; }
+.deposit-note { background: var(--fill); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin: 0 0 12px; }
 .deposit-note p { margin: 0; font-size: 16px; line-height: 1.55; }
 .deposit-note .fine { margin-top: 8px; }
 
 .loans { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.loan { border: 1px solid var(--line); border-left: 5px solid var(--jade); border-radius: var(--r-md); padding: 12px 14px; background: var(--bg); min-width: 0; }
-.loan.paid { border-left-color: var(--ink-2); }
-.loan.impaired, .loan.defaulted { border-left-color: var(--seal); }
+.loan { border: 1px solid var(--line);  border-radius: var(--r-md); padding: 12px 14px; background: var(--bg); min-width: 0; }
+.loan.impaired, .loan.defaulted { border-color: #fecaca; }
 .loan-top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
 .loan-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 10px 0 8px; }
 .loan-nums dt { font-size: 13px; color: var(--ink-2); }
-.loan-nums dd { margin: 0; font: 500 19px/1.2 var(--serif); font-variant-numeric: tabular-nums; }
+.loan-nums dd { margin: 0; font: 500 19px/1.2 var(--sans); font-variant-numeric: tabular-nums; }
 .loan-bar { height: 8px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
-.loan-bar i { display: block; height: 100%; background: var(--jade); }
-.loan .pay { min-height: 50px; font-size: 18px; margin-top: 12px; }
+.loan-bar i { display: block; height: 100%; background: var(--ink); }
+.loan .pay { margin-top: 12px; }
 .loans .note { margin: 0; font-size: 15px; }
 
 .fund-history { margin-top: 4px; }
 .fh-item { position: relative; display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 6px 0; }
-.fh-dot { width: 12px; height: 12px; margin: 7px 0 0 5px; border-radius: 50%; background: var(--jade); box-shadow: 0 0 0 4px var(--jade-soft); position: relative; z-index: 1; }
+.fh-dot { width: 12px; height: 12px; margin: 7px 0 0 5px; border-radius: 50%; background: var(--line-2); position: relative; z-index: 1; }
 .fund-history.timeline::before { left: 10px; }
 .fh-body { min-width: 0; }
 .fh-body .r-title { font-size: 16px; }

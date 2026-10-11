@@ -39,7 +39,12 @@ export const I18N = {
     runSteps: { research: "Research fair prices + charity policy", financing: "Lump sum vs payment plan (Gemini Fed odds)", mandate: "Record the patient's mandate on BNB Chain", credential: "Issue the hardship credential on XRPL", negotiate: "Negotiate with the billing office (in English)", loan: "Open a 0% community-fund loan (XRPL)", settle: "Lock the agreed amount in XRPL escrow", recordDeal: "Record the deal on BNB Chain", confirm: "Hospital confirms a $0 balance (escrow release)" },
     flaggedNote: "Flagged for review, not confirmed savings.",
     limitGuard: "Vellum never accepts a price without your approval, and never above the limit you set.",
-    steps: ["Add the bill", "Your bill", "Your situation", "Fair prices", "Negotiate", "Pay and receipts"],
+    steps: ["Mrs. Lin's bill", "Her information", "Research", "The call", "Summary"],
+    billTitleDemo: "Mrs. Lin's bill", billTitleOwn: "Your bill",
+    dealReached: (amt) => `Deal reached at ${amt}`,
+    sumBilled: "Billed", sumRemoved: "Billing errors flagged", sumAgreed: "Agreed", sumSaved: "She saved",
+    sumNoDeal: "No deal yet", sumErrorsFoot: (n) => `${n} error${n === 1 ? "" : "s"} for the hospital to remove`,
+    sumSavedFoot: (pct) => `${pct}% off the bill`,
     stepOf: (n, total, name) => `Step ${n} of ${total}: ${name}`,
     uploadTitle: "Take a photo of your hospital bill",
     uploadLede: "Vellum reads it line by line, finds what you were overcharged, and argues it down with the hospital. It talks with you in your own language.",
@@ -48,7 +53,7 @@ export const I18N = {
     needFile: "Add a photo or file of your bill first, or try the demo bill.",
     reading: "Reading your bill, about 30 seconds…",
     billTitle: "Your bill, line by line", next: "Next",
-    hospitalSays: "The hospital says you owe", errorsFound: (n) => `${n} likely error${n === 1 ? "" : "s"} found`,
+    hospitalSays: "The hospital says you owe", errorsFound: (n) => `${n} billing error${n === 1 ? "" : "s"} found`,
     atStake: "Could come off", noErrors: "No obvious errors yet. Vellum still checks fair prices next.",
     mayOvercharge: "May be overcharged", qty: "Qty",
     intakeTitle: "Tell Vellum about your situation",
@@ -64,9 +69,10 @@ export const I18N = {
     researchTitle: "Fair prices",
     researchLede: "Medicare rates, the hospital's own price file, and the financial-assistance policy it must publish by law.",
     startResearch: "Check fair prices", researching: "Researching… this uses cached live data and takes a few seconds.",
-    researchDone: "Fair prices checked. Review the numbers below, then go negotiate.",
+    researchDone: "Research done. Review it below, then start the call.",
     researchStopped: "Research stopped. See the message above, then try again.",
-    sourcesTitle: "Sources found", ladderOpening: "Opening ask", ladderTarget: "Goal", ladderWalkaway: "Your limit",
+    sourcesTitle: "Sources", medicareTitle: "Medicare rates", charityTitle: "The hospital's charity policy",
+    colCode: "Code", colBilled: "Billed", colMedicare: "Medicare", ladderOpening: "Opening ask", ladderTarget: "Goal", ladderWalkaway: "Your limit",
     mandateLede: "Record your authorization and limit on-chain: the contract rejects any deal above your limit, and anyone can check it.", recordMandate: "Record authorization",
     mandateDone: "Authorization recorded on-chain.", toRoom: "Go negotiate",
     roomTitle: "Vellum is negotiating with the hospital", asked: "Hospital asked", current: "Now", saved: "Saved",
@@ -535,13 +541,16 @@ function chainGlyph(chain) {
 
 /* ===================================================== patient flow ===== */
 
-const SCREENS = ["upload", "bill", "intake", "research", "room", "receipts"];
+// The five demo steps. "upload" is the landing (hero + "use your own bill"), not a numbered step.
+const SCREENS = ["bill", "intake", "research", "room", "summary"];
 
 function initPatient() {
   setupErrorBox();
 
   const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null, bridgeOn: false };
   const P = () => state.packet;
+  // the demo case is Mrs. Lin; a bill the user uploads is "Your bill"
+  const isDemo = (p) => /\bLin\b/i.test(p?.patient?.name ?? "");
   const room = createRoom({ getPacket: P, getAsked: () => P()?.bill?.patientBalance });
 
   /* ---- navigation ---- */
@@ -550,12 +559,14 @@ function initPatient() {
     for (const s of document.querySelectorAll(".screen")) s.hidden = s.dataset.screen !== name;
     document.getElementById("patient-app")?.classList.toggle("landing", name === "upload");
     renderProgress();
+    if (name === "research") startResearch();
     document.querySelector(`[data-screen="${name}"] h1`)?.focus?.({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function renderProgress() {
     const idx = SCREENS.indexOf(state.screen);
     const names = t("steps");
+    if (idx < 0) return;
     document.querySelectorAll("#steps li").forEach((li, i) => {
       li.className = i < idx ? "done" : i === idx ? "now" : "";
       li.setAttribute("aria-current", i === idx ? "step" : "false");
@@ -594,6 +605,8 @@ function initPatient() {
     if (ev.type === "log") {
       state.logs.push(ev);
       renderFeed();
+      // during the call, show the latest server note quietly (e.g. "Voice unavailable … continuing as a live text negotiation")
+      if (state.screen === "room" && ev.message) $("#room-log").textContent = ev.message;
       return;
     }
     if (ev.type === "error") {
@@ -608,18 +621,7 @@ function initPatient() {
     }
     if (!state.packet) return;
     if (mergeEvent(state.packet, ev)) {
-      if (ev.type === "deal") $("#room-status").textContent = t("dealAt", usd(ev.amount));
-      // one-button run: follow the pipeline to the call, then to the receipts
-      if (state.running && ev.type === "status" && ev.status === "negotiating" && state.screen !== "room") {
-        const cp = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
-        if (cp === "agent") state.bridgeOn = true;
-        $("#room-status").textContent = t("runStarted");
-        show("room");
-      }
-      if (state.running && ev.type === "status" && ["settled", "failed"].includes(ev.status)) {
-        state.running = false;
-        if (ev.status === "settled") show("receipts");
-      }
+      if (ev.type === "deal") $("#room-status").textContent = "";
       if (ev.type === "deal" || (ev.type === "status" && ["agreed", "failed", "settled"].includes(ev.status))) {
         state.bridgeOn = false;
         setCallLabel();
@@ -633,6 +635,8 @@ function initPatient() {
     renderIntake();
     renderResearch();
     room.render();
+    renderDeal();
+    renderSummary();
     renderReceipts();
   }
 
@@ -663,6 +667,14 @@ function initPatient() {
       show("bill");
     }),
   );
+  // "Or use your own bill": open the upload panel below the hero
+  $("#own-bill-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const d = $("#own-bill");
+    d.open = true;
+    d.scrollIntoView({ block: "start", behavior: "smooth" });
+    d.querySelector("summary")?.focus({ preventScroll: true });
+  });
 
   /* ---- 2 bill ---- */
   function renderBill() {
@@ -672,14 +684,17 @@ function initPatient() {
     const list = $("#bill-lines");
     if (!bill) return;
     const flags = p.flags ?? [];
-    const stake = flags.reduce((a, f) => a + (Number(f.amountAtStake) || 0), 0);
+    // a "billing error" is a flag with money on it; zero-dollar flags (e.g. a No Surprises Act note) stay as notes
+    const errors = flags.filter((f) => Number(f.amountAtStake) > 0);
+    const stake = errors.reduce((a, f) => a + (Number(f.amountAtStake) || 0), 0);
+    $("#bill-title").textContent = isDemo(p) ? t("billTitleDemo") : t("billTitleOwn");
     sum.replaceChildren(
       h("p", { class: "provider" }, bill.provider?.name ?? ""),
       h("div", { class: "owe" }, h("span", {}, t("hospitalSays")), h("b", {}, usd(bill.patientBalance))),
-      flags.length
-        ? h("div", { class: "stake" }, h("span", {}, t("errorsFound", flags.length)), h("b", {}, `${t("atStake")} ${usd(stake)}`))
+      errors.length
+        ? h("div", { class: "stake" }, h("span", {}, t("errorsFound", errors.length)), h("b", {}, `${t("atStake")} ${usd(stake)}`))
         : h("p", { class: "fine" }, t("noErrors")),
-      flags.length ? h("p", { class: "fine flagged-note" }, t("flaggedNote")) : null,
+      errors.length ? h("p", { class: "fine flagged-note" }, t("flaggedNote")) : null,
       ...flags.filter((f) => f.lineIndex == null).map(flagEl),
     );
     list.replaceChildren(
@@ -687,7 +702,7 @@ function initPatient() {
         const lf = flags.filter((f) => f.lineIndex === i);
         return h(
           "li",
-          { class: lf.length ? "flagged" : "" },
+          { class: lf.some((f) => Number(f.amountAtStake) > 0) ? "flagged" : lf.length ? "noted" : "" },
           h(
             "div",
             { class: "li-head" },
@@ -731,11 +746,10 @@ function initPatient() {
       if (pt.maxPay) $("#f-maxpay").value = pt.maxPay;
       $("#f-consent").checked = Boolean(pt.consent);
     }
-    if (intakeOk()) {
+    if (state.intakeSaved && intakeOk()) {
       done.hidden = false;
       done.textContent = t("intakeSaved", pt.name, usd(pt.maxPay));
     } else done.hidden = true;
-    $("#to-research").disabled = !intakeOk();
   }
   function addBubble(source, text) {
     $("#intake-transcript").append(h("li", { class: source === "user" ? "me" : "bb" }, text));
@@ -805,11 +819,12 @@ function initPatient() {
       const res = await api("/api/eleven/tools/submit_intake", { method: "POST", body: args });
       if (res && res.ok === false) throw new Error(res.message || "submit_intake rejected the form");
       adopt(res?.packet?.id ? res.packet : await api(`/api/cases/${P().id}`));
+      if (!intakeOk()) throw new Error(t("needConsent"));
+      state.intakeSaved = true;
+      // "Next": straight into research, which starts on its own
+      show("research");
+      startResearch();
     });
-  });
-  $("#to-research").addEventListener("click", () => {
-    if (!intakeOk()) return showError(t("needConsent"));
-    show("research");
   });
 
   /* ---- 4 research ---- */
@@ -835,6 +850,7 @@ function initPatient() {
       $("#research-status-text").textContent = t(doneKey);
     } else box.hidden = true;
     $("#research-btn").disabled = on;
+    $("#research-btn").hidden = on || isResearched(P()); // shown only to retry after a failure
   }
   function renderResearch() {
     const p = P();
@@ -855,6 +871,32 @@ function initPatient() {
           rung(t("ladderTarget"), p.target),
           rung(t("ladderWalkaway"), p.walkaway ?? p.patient?.maxPay),
         ),
+        p.fairPrices.length ? h("h2", {}, t("medicareTitle")) : null,
+        p.fairPrices.length
+          ? h(
+              "div",
+              { class: "table-wrap" },
+              h(
+                "table",
+                {},
+                h("thead", {}, h("tr", {}, h("th", {}, t("colCode")), h("th", { class: "num" }, t("colBilled")), h("th", { class: "num" }, t("colMedicare")))),
+                h(
+                  "tbody",
+                  {},
+                  ...p.fairPrices.map((f) =>
+                    h(
+                      "tr",
+                      {},
+                      h("td", {}, h("b", {}, f.code), f.description ? h("span", { class: "td-sub" }, f.description) : null),
+                      h("td", { class: "num" }, usd(f.billed)),
+                      h("td", { class: "num" }, usd(f.medicareRate)),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
+        p.charity ? h("h2", {}, t("charityTitle")) : null,
         p.charity ? h("p", { class: "charity" }, p.charity.summary) : null,
         sources.length ? h("h2", {}, t("sourcesTitle")) : null,
         h(
@@ -868,7 +910,6 @@ function initPatient() {
             }),
         ),
       );
-      $("#mandate-box").hidden = false;
       $("#to-room").disabled = false;
     }
     const hasMandate = p.receipts.some((r) => r.chain === "bsc" && /mandate/i.test(r.kind));
@@ -879,11 +920,15 @@ function initPatient() {
   const rung = (label, v) => h("div", { class: "rung" }, h("span", {}, label), h("b", {}, usd(v)));
   const receiptList = (rs) => h("ol", { class: "timeline compact" }, ...rs.map(receiptItem));
 
-  $("#research-btn").addEventListener("click", async (e) => {
+  const isResearched = (p) => ["researched", "mandated", "negotiating", "agreed", "settled"].includes(p?.status) || (p?.fairPrices?.length ?? 0) > 0;
+  // Research is async: POST /research answers 202, the result arrives as a "case" event over /ws.
+  async function startResearch() {
+    const btn = $("#research-btn");
+    if (!P() || state.researching || isResearched(P())) return;
     state.logs = [];
     renderFeed();
     setResearching(true);
-    await busy(e.currentTarget, async () => {
+    await busy(btn, async () => {
       try {
         const res = await api(`/api/cases/${P().id}/research`, { method: "POST", body: {} });
         if (res?.id && res?.bill) adopt(res); // a full packet: finished (older servers) or the 202 snapshot
@@ -893,8 +938,10 @@ function initPatient() {
       }
     });
     // busy() re-enables the button; keep it off while the background research is still running
-    $("#research-btn").disabled = Boolean(state.researching);
-  });
+    btn.disabled = Boolean(state.researching);
+    btn.hidden = Boolean(state.researching) || isResearched(P());
+  }
+  $("#research-btn").addEventListener("click", startResearch);
   $("#mandate-btn").addEventListener("click", (e) =>
     busy(e.currentTarget, async () => {
       const r = await api(`/api/cases/${P().id}/mandate`, { method: "POST", body: {} });
@@ -902,14 +949,19 @@ function initPatient() {
       renderAll();
     }),
   );
-  $("#to-room").addEventListener("click", () => show("room"));
+  // "Start the call": go to the call and dial straight away (unless a call already ran)
+  $("#to-room").addEventListener("click", () => {
+    show("room");
+    const p = P();
+    if (p && !p.transcript.length && p.agreedAmount == null && !state.bridgeOn && !state.callConvo) startCall($("#negotiate-btn"));
+  });
 
   /* ---- 5 room ---- */
   function setCallLabel() {
     $("#negotiate-btn").textContent = state.callConvo || state.bridgeOn ? t("endCall") : t("startCall");
   }
-  $("#negotiate-btn").addEventListener("click", async (e) => {
-    const btn = e.currentTarget;
+  $("#negotiate-btn").addEventListener("click", (e) => startCall(e.currentTarget));
+  async function startCall(btn) {
     if (state.callConvo) {
       const c = state.callConvo;
       state.callConvo = null;
@@ -956,21 +1008,36 @@ function initPatient() {
       }
     });
     setCallLabel();
-  });
-  // One button for the demo: POST /run drives research -> financing -> mandate -> credential -> call -> escrow -> release.
-  $("#run-btn")?.addEventListener("click", (e) =>
-    busy(e.currentTarget, async () => {
-      room.audio.unlock();
-      const counterparty = document.querySelector('input[name="counterparty"]:checked')?.value ?? "agent";
-      await api(`/api/cases/${P().id}/run`, { method: "POST", body: { counterparty } });
-      $("#room-status").textContent = t("runStarted");
-      state.running = true;
-      if (!["researched", "mandated", "negotiating", "agreed", "settled"].includes(P().status)) setResearching(true);
-    }),
-  );
-  $("#to-receipts").addEventListener("click", () => show("receipts"));
+  }
+  function renderDeal() {
+    const p = P();
+    const box = $("#deal-box");
+    if (!p || !box) return;
+    box.hidden = p.agreedAmount == null;
+    if (p.agreedAmount != null) $("#deal-stamp").textContent = t("dealReached", usd0(p.agreedAmount));
+  }
+  $("#to-summary").addEventListener("click", () => show("summary"));
 
-  /* ---- 6 receipts ---- */
+  /* ---- 5 summary ---- */
+  function renderSummary() {
+    const p = P();
+    const box = $("#sum-figs");
+    if (!p?.bill || !box) return;
+    const billed = p.bill.patientBalance;
+    const errors = (p.flags ?? []).filter((f) => Number(f.amountAtStake) > 0);
+    const removed = errors.reduce((a, f) => a + Number(f.amountAtStake), 0);
+    const agreed = p.agreedAmount;
+    const saved = typeof agreed === "number" && typeof billed === "number" ? billed - agreed : undefined;
+    const fig = (cls, label, value, foot) => h("div", { class: `stat ${cls}` }, h("span", { class: "stat-label" }, label), h("b", { class: "stat-value" }, value), foot ? h("p", { class: "stat-foot" }, foot) : null);
+    box.replaceChildren(
+      fig("billed", t("sumBilled"), usd0(billed)),
+      fig("removed", t("sumRemoved"), usd(removed), t("sumErrorsFoot", errors.length)),
+      fig("agreed", t("sumAgreed"), agreed != null ? usd0(agreed) : t("sumNoDeal")),
+      fig("saved", t("sumSaved"), saved != null && saved > 0 ? usd0(saved) : "—", saved > 0 && billed > 0 ? t("sumSavedFoot", Math.round((saved / billed) * 100)) : null),
+    );
+  }
+
+  /* ---- payment & receipts (a collapsed row under the summary) ---- */
   // Outcome summary: deterministic English text from GET /summary; audio from GET /summary.mp3 (ElevenLabs).
   const outcome = { key: "", seq: 0, url: null, audioKey: "" };
   function summaryKey(p) {
@@ -987,7 +1054,10 @@ function initPatient() {
       .then((s) => {
         if (seq !== outcome.seq) return;
         const lines = s.lines ?? { en: [s.en] };
-        $("#outcome-en").replaceChildren(...lines.en.map((l) => h("li", {}, l)));
+        // the main summary stays about the bill; payment/ledger sentences go in the collapsed "Payment & receipts" row
+        const isPay = (l) => /XRPL|BNB|escrow|credential|on-chain|ledger|x402/i.test(l);
+        $("#outcome-en").replaceChildren(...lines.en.filter((l) => !isPay(l)).map((l) => h("li", {}, l)));
+        $("#pay-summary").replaceChildren(...lines.en.filter(isPay).map((l) => h("li", {}, l)));
         const tag = $("#outcome-preview");
         tag.hidden = !(s.preview || s.simulated);
         tag.textContent = t(s.preview ? "outcomePreview" : "simulatedTag");
@@ -1137,13 +1207,15 @@ function initPatient() {
 
   /* ---- resume ---- */
   const resumeId = new URLSearchParams(location.hash.slice(1)).get("case");
+  const deepLink = new URLSearchParams(location.hash.slice(1)).get("screen");
   show("upload");
   if (resumeId) {
     api(`/api/cases/${encodeURIComponent(resumeId)}`)
       .then((p) => {
         adopt(p);
-        const byStatus = { intake: "bill", audited: "bill", researched: "research", mandated: "room", negotiating: "room", agreed: "receipts", settled: "receipts", failed: "room" };
-        show(byStatus[p.status] ?? "bill");
+        const byStatus = { intake: "bill", audited: "bill", researching: "research", researched: "research", mandated: "research", negotiating: "room", agreed: "summary", settled: "summary", failed: "room" };
+        // #case=<id>&screen=<step> deep-links one step (handy for review); otherwise resume where the case is
+        show(SCREENS.includes(deepLink) ? deepLink : byStatus[p.status] ?? "bill");
       })
       .catch(() => history.replaceState(null, "", location.pathname));
   }

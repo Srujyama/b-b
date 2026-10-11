@@ -1,8 +1,8 @@
-/* Hospital billing portal (hospital.html). Built on the shared tokens in styles.css: same jade/ink/seal palette,
+/* Hospital billing portal (hospital.html). Built on the shared tokens in styles.css: same white/ink palette,
    but denser and calmer than the patient flow, because this is an office tool used at a desk. */
 
 body.hosp { font-size: 15px; }
-.hosp-shell.shell.wide { max-width: 1180px; padding-bottom: 72px; }
+.hosp-shell.shell.wide { max-width: 960px; padding-bottom: 72px; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em; overflow-wrap: anywhere; }
 
 .hosp-net { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; font-size: 14px; color: var(--ink-2); }
@@ -28,14 +28,14 @@ body.hosp { font-size: 15px; }
 .hosp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .hosp-row {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline;
-  padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line);
+  padding: 12px 14px; background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--r-md); color: var(--ink); text-decoration: none;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
-.hosp-row:hover { border-color: var(--jade); }
-.hosp-row.on { border-left-color: var(--jade); background: var(--jade-soft); }
-.hr-name { font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
-.hr-amt { font: 500 20px/1.2 var(--serif); font-variant-numeric: tabular-nums; }
+.hosp-row:hover { border-color: var(--line-2); }
+.hosp-row.on { border-color: var(--ink); background: var(--fill); }
+.hr-name { font-weight: 600; font-size: 18px; overflow-wrap: anywhere; }
+.hr-amt { font: 500 20px/1.2 var(--sans); font-variant-numeric: tabular-nums; }
 .hr-meta { grid-column: 1 / -1; font-size: 14px; color: var(--ink-2); }
 .hr-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .hr-tags .pill { font-size: 12px; padding: 1px 8px; }
@@ -54,13 +54,13 @@ body.hosp { font-size: 15px; }
 .hosp-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; }
 .hosp-head-main { min-width: 0; flex: 1 1 240px; }
 @media (max-width: 560px) { .hosp-head .pill { order: -1; margin-top: 0; } }
-.hosp-patient { font: 400 22px/1.25 var(--serif); margin: 2px 0 4px; overflow-wrap: anywhere; }
+.hosp-patient { font: 400 22px/1.25 var(--sans); margin: 2px 0 4px; overflow-wrap: anywhere; }
 .hosp-meta { margin: 0; color: var(--ink-2); font-size: 15px; }
 .hosp-head .pill { margin-top: 4px; }
 
 .hosp-waiting {
   display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding: 12px 16px;
-  background: var(--seal-soft); color: var(--seal); border-radius: var(--r-md); font-weight: 700; font-size: 16px;
+  background: var(--seal-soft); color: var(--seal); border-radius: var(--r-md); font-weight: 600; font-size: 16px;
 }
 .hosp-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--seal); flex: none; animation: hosp-pulse 1.6s ease-in-out infinite; }
 @keyframes hosp-pulse { 50% { opacity: 0.3; } }
@@ -68,37 +68,35 @@ body.hosp { font-size: 15px; }
 
 /* figures: billed -> agreed -> locked */
 .hosp-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
-.fig { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; min-width: 0; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-top: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; min-width: 0; }
 .fig dt { font-size: 14px; color: var(--ink-2); font-weight: 600; }
-.fig dd { margin: 2px 0 0; font: 500 20px/1.25 var(--serif); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.fig dd { margin: 2px 0 0; font: 500 20px/1.25 var(--sans); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .fig dd.struck { color: var(--ink-2); text-decoration: line-through; text-decoration-thickness: 2px; }
-.fig.agreed { border-top-color: var(--jade); }
-.fig.agreed dd { color: var(--jade); }
-.fig.locked { border-top-color: var(--brass); }
+.fig.agreed dd { color: var(--save); }
 @media (max-width: 560px) {
   .hosp-figs { grid-template-columns: 1fr 1fr; }
   .fig.billed, .fig:first-child { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 }
 
 /* the action */
-.hosp-confirm { border: 2px solid var(--jade); }
+.hosp-confirm { border-color: var(--line-2); box-shadow: var(--shadow); }
 .hosp-note { margin: 0 0 14px; font-size: 16px; }
 .hosp-check {
   display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start; padding: 14px;
-  background: var(--jade-soft); border-radius: var(--r-sm); font-size: 16px; cursor: pointer;
+  background: var(--fill); border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 16px; cursor: pointer;
 }
-.hosp-check input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--jade); }
+.hosp-check input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--ink); }
 .hosp-check:has(input:disabled) { opacity: 0.55; cursor: not-allowed; }
 .hosp-staff { margin-top: 14px; }
-.hosp-staff input { max-width: 420px; font-size: 17px; min-height: 48px; }
-.hosp-go { max-width: 460px; font-size: 19px; }
+.hosp-staff input { max-width: 420px; }
+.hosp-go { max-width: 460px; }
 .hosp-why { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); min-height: 1.4em; }
 
 /* released */
-.hosp-released { position: relative; border: 2px solid var(--jade); overflow: hidden; }
+.hosp-released { position: relative; border-color: #bbf7d0; overflow: hidden; }
 .hosp-released h3 { padding-right: 96px; }
 .hosp-stamp {
-  position: absolute; top: 14px; right: 16px; padding: 4px 12px; border-radius: 3px; background: var(--ok-soft);
+  position: absolute; top: 14px; right: 16px; padding: 4px 12px; border-radius: 999px; background: var(--ok-soft);
   color: var(--ok); font: 600 13px/1.4 var(--sans);
 }
 
@@ -117,8 +115,8 @@ body.hosp { font-size: 15px; }
   background: var(--sunk); padding: 8px 10px; border-radius: var(--r-sm);
 }
 .hosp-fine { margin: 14px 0 0; font-size: 13px; color: var(--ink-2); line-height: 1.5; }
-.hosp-ledger { font-size: 13px; font-weight: 700; color: var(--ink-2); }
-.hosp-ledger.ok, .hosp-ok { color: var(--jade); }
+.hosp-ledger { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.hosp-ledger.ok, .hosp-ok { color: var(--ok); }
 .hosp-ledger.bad, .hosp-bad { color: var(--seal); }
 .hosp-ledger.warn { color: var(--brass); }
 .hosp-ledger.ok::before { content: "✓ "; }

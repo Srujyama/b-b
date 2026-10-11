@@ -23,14 +23,16 @@ describe("web: patient app", () => {
     expect(res.headers["content-type"]).toMatch(/text\/html/);
     const html = res.body;
     expect(html).toContain('<html lang="en">');
-    for (const screen of ["upload", "bill", "intake", "research", "room", "receipts"]) {
+    // the landing ("upload": hero + use your own bill) and the five demo steps
+    for (const screen of ["upload", "bill", "intake", "research", "room", "summary"]) {
       expect(html).toContain(`data-screen="${screen}"`);
     }
     for (const id of [
       "patient-app", "error", "upload-doc", "bill-file", "upload-btn", "demo-btn", "bill-lines", "talk-btn",
       "intake-form", "f-consent", "research-btn", "research-feed", "mandate-btn", "ticker", "tk-asked", "tk-current",
       "tk-saved", "counterparty", "negotiate-btn", "transcript", "receipts", "fed-card", "settle-btn", "confirm-btn",
-      "credential-btn", "loan-btn", "hedge-btn", "financing-btn", "x402-btn",
+      "credential-btn", "loan-btn", "hedge-btn", "financing-btn", "x402-btn", "intake-submit", "to-room", "deal-box",
+      "to-summary", "sum-figs", "outcome-card", "pay-details", "own-bill",
     ]) {
       expect(html, id).toContain(`id="${id}"`);
     }
@@ -45,6 +47,12 @@ describe("web: patient app", () => {
     // research status line for the async (202 + /ws) research step
     expect(html).toContain('id="research-status"');
     expect(html).toContain('id="research-status-text"');
+    // the five-step demo flow, with its exact wording; no "Run everything" in the main flow
+    for (const words of ["Mrs. Lin's bill", "Her information", "Research", "The call", "Summary", "Start the call", "See summary", "Payment &amp; receipts"]) {
+      expect(html, words).toContain(words);
+    }
+    expect(html).not.toContain('id="run-btn"');
+    expect(html).toMatch(/Vellum <span class="accent">negotiates<\/span> your hospital bill\./);
   });
 
   it("serves app.js wired to the API contract", async () => {
@@ -72,10 +80,12 @@ describe("web: patient app", () => {
     expect(js).toContain("clientTools");
   });
 
-  it("serves styles.css with dark-mode tokens", async () => {
+  it("serves styles.css: always white, one blue accent", async () => {
     const res = await get("/styles.css");
     expect(res.headers["content-type"]).toMatch(/text\/css/);
-    expect(res.body).toContain("prefers-color-scheme: dark");
+    expect(res.body).toContain("--bg: #ffffff");
+    expect(res.body).toContain("--accent: #2563eb");
+    expect(res.body).toContain("color-scheme: light");
   });
 });
 
@@ -171,8 +181,8 @@ describe("web: English-only UI and the shared masthead", () => {
       expect(html, page).toContain('<html lang="en">');
       expect(html, page).toContain('<header class="masthead">');
       expect(html, page).toContain('<span class="wordmark">Vellum</span>');
-      // plain and fast: system fonts only, no decorative seal
-      expect(html, page).not.toContain("fonts.googleapis.com");
+      // Inter from Google Fonts, pinned to the css2 URL (system-ui fallback in styles.css); no decorative seal
+      expect(html, page).toContain('href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"');
       expect(html, page).not.toContain("seal-mark");
       for (const href of ['href="/"', 'href="/clinic.html"', 'href="/dashboard.html"', 'href="/hospital.html"', 'href="/fund.html"', 'href="/verify.html"']) {
         expect(html, `${page} ${href}`).toContain(href);
@@ -198,9 +208,11 @@ describe("web: English-only UI and the shared masthead", () => {
     expect((await get("/")).body).toMatch(/not deployed yet/);
   });
 
-  it("styles.css is plain: system font stack, no stamps, hard shadows or condensed display type", async () => {
+  it("styles.css is plain: Inter over system-ui, no stamps, hard shadows or condensed display type", async () => {
     const css = (await get("/styles.css")).body;
-    expect(css).toMatch(/--sans: system-ui/);
+    expect(css).toMatch(/--sans: "Inter", system-ui/);
+    expect(css).not.toMatch(/text-transform: uppercase/);
+    expect(css).not.toMatch(/font-weight: (?:[7-9]00|bold)/);
     expect(css).not.toMatch(/font-stretch/);
     expect(css).not.toMatch(/box-shadow: \d+px \d+px 0/); // hard offset shadows
     expect(css).not.toMatch(/rotate\(-?(?!360)\d+deg\)/); // tilted stamps (the spinner turns 360)
