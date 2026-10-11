@@ -369,16 +369,16 @@ describe("pipeline confirm:\"portal\"", () => {
   });
 });
 
-// ---------------------------------------------------------------- the portal page (static, English first, zh parity)
+// ---------------------------------------------------------------- the portal page (static, English-only UI)
 
 describe("web: hospital.html", () => {
-  it("is served with its controls, its own module + stylesheet, and every string in en and zh", async () => {
+  it("is served with its controls, its own module + stylesheet, and every hosp string in English", async () => {
     const { buildApp } = await import("../src/index.js");
     const web = await buildApp();
     try {
       const html = (await web.inject({ method: "GET", url: "/hospital.html" })).body;
-      expect(html).toContain('data-default-lang="en"');
-      for (const id of ["hospital-app", "lang-toggle", "error", "case-list", "detail", "escrow", "credential", "attest", "staff-name", "confirm-btn", "release-receipts", "activity", "ledger-check"])
+      expect(html).toContain('<html lang="en">');
+      for (const id of ["hospital-app", "error", "case-list", "detail", "escrow", "credential", "attest", "staff-name", "confirm-btn", "release-receipts", "activity", "ledger-check"])
         expect(html, id).toContain(`id="${id}"`);
       expect(html).toContain('src="/hospital.js"');
       expect(html.indexOf('href="/styles.css"')).toBeLessThan(html.indexOf('href="/hospital.css"'));
@@ -394,12 +394,7 @@ describe("web: hospital.html", () => {
       await import(/* @vite-ignore */ new URL("../../web/hospital.js", import.meta.url).href);
       const keys = Object.keys(I18N.en).filter((k) => k.startsWith("hosp"));
       expect(keys.length).toBeGreaterThan(25);
-      for (const k of keys) expect(I18N.zh[k], k).toBeDefined();
-      for (const k of Object.keys(I18N.zh).filter((k) => k.startsWith("hosp"))) expect(I18N.en[k], k).toBeDefined();
-      for (const m of html.matchAll(/data-i18n="(\w+)"/g)) {
-        expect(I18N.zh[m[1]], m[1]).toBeDefined();
-        expect(I18N.en[m[1]], m[1]).toBeDefined();
-      }
+      expect(I18N.zh, "the UI is English-only").toBeUndefined();
     } finally {
       await web.close();
     }

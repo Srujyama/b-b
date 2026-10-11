@@ -277,25 +277,15 @@ describe("web: verify page", () => {
     await app.close();
   });
 
-  it("has zh + en for every verify string, including every data-i18n key in verify.html", async () => {
+  it("has English copy for every verify string, including every overall() state", async () => {
     const { readFileSync } = await import("node:fs");
     const src = readFileSync(new URL("../../web/verify.js", import.meta.url), "utf8");
-    const html = readFileSync(new URL("../../web/verify.html", import.meta.url), "utf8");
     // evaluate the STRINGS literal alone (the module itself touches the DOM at import time)
-    const lit = src.slice(src.indexOf("const STRINGS = {") + "const STRINGS = ".length, src.indexOf("Object.assign(I18N.zh"));
-    const S = new Function(`return ${lit.trim().replace(/;$/, "")}`)() as { zh: Record<string, unknown>; en: Record<string, unknown> };
-    expect(Object.keys(S.zh).sort()).toEqual(Object.keys(S.en).sort());
-    const g = globalThis as Record<string, unknown>;
-    g.location ??= { pathname: "/", href: "http://localhost:8787/", protocol: "http:", host: "localhost:8787", hash: "" };
-    g.document ??= { body: undefined, getElementById: () => null, querySelectorAll: () => [] };
-    const { I18N } = (await import(/* @vite-ignore */ new URL("../../web/app.js", import.meta.url).href)) as { I18N: Record<string, Record<string, unknown>> };
-    for (const m of html.matchAll(/data-i18n="(\w+)"/g)) {
-      expect(S.zh[m[1]] ?? I18N.zh[m[1]], m[1]).toBeDefined();
-      expect(S.en[m[1]] ?? I18N.en[m[1]], m[1]).toBeDefined();
-    }
-    // every overall() state has copy in both languages
+    const lit = src.slice(src.indexOf("const STRINGS = {") + "const STRINGS = ".length, src.indexOf("Object.assign(I18N.en"));
+    const S = new Function(`return ${lit.trim().replace(/;$/, "")}`)() as { en: Record<string, unknown> } & Record<string, unknown>;
+    expect(Object.keys(S)).toEqual(["en"]);
+    expect(Object.keys(S.en).length).toBeGreaterThan(20);
     for (const st of ["anchored", "local", "empty", "broken", "mismatch"]) {
-      expect((S.zh.vfStates as Record<string, unknown>)[st], st).toBeDefined();
       expect((S.en.vfStates as Record<string, unknown>)[st], st).toBeDefined();
     }
     expect((S.en.vfStates as Record<string, [string]>).local[0]).toBe("Locally consistent; not yet anchored on BNB");

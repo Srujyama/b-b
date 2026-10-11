@@ -1,68 +1,18 @@
-// Vellum verify page (核验记录): recompute the advocate's tamper-evident log in the browser.
+// Vellum verify page: recompute the advocate's tamper-evident log in the browser.
 // Data: GET /api/cases/:id/proof (server/src/routes/proof.ts) or a downloaded bundle file. The math lives in
 // verify-core.js (pure, also run by test/proof.test.ts against chain/bnb.ts verifyChain). keccak-256 comes from a
 // pinned @noble/hashes build on jsDelivr; if it cannot load we say so instead of showing a verdict.
 
-import { $, I18N, api, applyI18n, errorText, getLang, h, onLangChange, receiptItem, safeUrl, setupErrorBox, setupLangToggle, showError, t, usd } from "./app.js";
+import { $, I18N, api, errorText, h, receiptItem, safeUrl, setupErrorBox, showError, t, usd } from "./app.js";
 import { bundleProblems, flattenEntries, overall, verifyEntries } from "./verify-core.js";
 
 export const KECCAK_URL = "https://cdn.jsdelivr.net/npm/@noble/hashes@1.4.0/esm/sha3.js/+esm";
 // a CDN that never answers must not leave the page "computing" forever: after this long we say it failed
 const KECCAK_TIMEOUT_MS = 15000;
 
-/* ------------------------------------------------------------------ strings (zh first, en for judges) */
+/* ------------------------------------------------------------------ strings */
 
 const STRINGS = {
-  zh: {
-    vfBrand: "核验记录", vfEyebrow: "防篡改记录", vfTitle: "这份谈判记录有没有被改过？",
-    vfLede: "Vellum 把每一次出价和每一句对话做成哈希，串成一条链。这个页面在您自己的浏览器里重新计算，不需要相信我们的服务器。",
-    vfPick: "选一个个案", vfNoCases: "服务器上还没有个案。",
-    vfLoadTitle: "核验下载的文件", vfLoadLede: "别人发给您的核验文件（.json）也可以在这里检查。文件只在您的浏览器里读取，不会上传。",
-    vfLoadBtn: "选择核验文件", vfBadFile: (why) => `这不是 Vellum 的核验文件：${why}`,
-    vfFromFile: (name) => `正在核验文件 ${name}。文件里写的链上数值只是文件的说法，请点合约链接自己去 BNB 链上查。`,
-    vfPreview: "这是界面预览数据（开发用）：病人、通话和交易都不是真的，这条记录也从来没有上链。",
-    vfCase: (id) => `个案 ${id}`,
-    vfLoading: "正在计算……", vfLoadingText: "正在加载哈希计算库，马上在您的浏览器里重新计算。", vfLibTimeout: "超时", vfNoLib: "无法加载哈希计算库，所以没法核验。请检查网络后刷新。",
-    vfStates: {
-      anchored: ["和 BNB 链上的记录一致", (n) => `${n} 条记录都重新算过，结果和 BNB 测试链上合约存的链头完全相同。`],
-      local: ["本地一致，尚未上链", (n, why) => `${n} 条记录在您的浏览器里重新算过，前后完全对得上；但还没有锚定在 BNB 链上（${why}），所以还不能和链上比对。`],
-      empty: ["还没有谈判记录", (n, why) => `这个个案还没有记录任何出价或对话。${why ? `链上状态：${why}。` : ""}`],
-      broken: ["记录对不上", (n, why) => why],
-      mismatch: ["和 BNB 链上的记录不一致", () => "每条记录自己对得上，但重新算出的链头和链上合约存的不一样：有记录被删掉、加进来，或者链上还有别的记录。"],
-    },
-    vfBrokenEdited: (i) => `第 ${i + 1} 条记录的内容和它当初的哈希不一样：内容被改过。从这一条开始，后面的链头全部对不上。`,
-    vfBrokenHead: (i) => `第 ${i + 1} 条之后的链头和记录的不一样：有记录被删掉或调换了顺序。`,
-    vfTamperOn: "（篡改测试：只改了您浏览器里的副本）",
-    vfReasons: { "contract not deployed": "合约还没有部署", "on-chain read failed": "读取链上数据失败" },
-    vfHeadRecomputed: "重新算出的链头", vfHeadClaimed: "服务器声称的链头", vfHeadOnChain: "BNB 链上的链头", vfNone: "没有",
-    vfContract: "在 BscScan 上查看合约",
-    vfTamper: "篡改测试", vfTamperWhich: "改哪一条",
-    vfTamperNote: "把其中一条记录改动一个字节（只改您浏览器里的副本），看看哈希链从哪里断开。",
-    vfTamperDid: (i, b, from, to) => `已把第 ${i + 1} 条的第 ${b} 个字节从 “${from}” 改成 “${to}”。`,
-    vfTamperNone: "没有记录可以改。",
-    vfEntries: "每一条记录", vfCount: (n) => `${n} 条`,
-    vfSourceServer: "来源：服务器的链下记录（每一条都已经发到 BNB 链上的合约）。",
-    vfSourcePreview: "来源：预览用的本地记录，从来没有发到链上。",
-    vfNoEntries: "还没有记录。Vellum 开始和医院谈以后，每一次出价都会在这里出现。",
-    vfHashOk: "内容哈希对得上", vfHashBad: "内容被改过", vfHeadOk: "链头对得上", vfHeadBad: "链从这里断开",
-    vfAfterBreak: "前面断了，这一条也跟着对不上",
-    vfKinds: { offer: "出价", transcript: "对话", note: "备注" },
-    vfBy: { advocate: "Vellum", hospital: "医院", insurer: "保险公司", patient: "病人", system: "系统" },
-    vfDetails: "看完整哈希", vfEntryHash: "内容哈希", vfRecorded: "记录的", vfRecomputed: "重新算的", vfHead: "链头",
-    vfMandate: "您的授权", vfNoMandate: "还没有授权。",
-    vfMax: "最多可以同意", vfConsentHash: "同意书哈希（个人信息不上链）",
-    vfMandateAnchored: "这个上限已经记录在 BNB 链上。", vfMandateMatch: "链上的同意书哈希和这里算的一样。", vfMandateNoMatch: "链上的同意书哈希和这里算的不一样！",
-    vfMandateLocal: "这个哈希是根据个案算出来的，还没有记录在链上。",
-    vfReceipts: "结算凭证", vfNoReceipts: "还没有凭证。",
-    vfHow: "怎么算的",
-    vfHowSteps: [
-      "每条记录先排好字段顺序，变成一段固定的文字（canonical JSON）。",
-      "内容哈希 = keccak256（这段文字）。改一个字，哈希就全变。",
-      "链头从 32 个零字节开始；每加一条，新链头 = keccak256（上一个链头 + 这条的内容哈希）。",
-      "BNB 链上的 AdvocateLedger 合约用同样的公式存链头。两边一样，就说明记录没有被改、删或调换。",
-    ],
-    vfDownload: "下载核验文件", vfToDash: "回到个案总览",
-  },
   en: {
     vfBrand: "Verify the record", vfEyebrow: "Tamper-evident log", vfTitle: "Has this negotiation record been changed?",
     vfLede: "Vellum hashes every offer and every line of the call into a chain. This page recomputes it in your own browser, so you don't have to trust our server.",
@@ -114,7 +64,6 @@ const STRINGS = {
     vfDownload: "Download the proof file", vfToDash: "Back to the case overview",
   },
 };
-Object.assign(I18N.zh, STRINGS.zh);
 Object.assign(I18N.en, STRINGS.en);
 
 /* ------------------------------------------------------------------ state */
@@ -381,13 +330,7 @@ function route() {
   else if (!state.fileName) showPicker();
 }
 
-setupLangToggle();
 setupErrorBox();
-onLangChange(() => {
-  applyI18n();
-  if (state.bundle) render();
-  else showPicker();
-});
 $("#vf-file").addEventListener("change", onFile);
 $("#vf-tamper-on").addEventListener("change", (e) => {
   state.tamperOn = e.target.checked;
@@ -398,5 +341,4 @@ $("#vf-tamper-at").addEventListener("change", (e) => {
   render();
 });
 window.addEventListener("hashchange", route);
-document.documentElement.lang = getLang() === "zh" ? "zh-CN" : "en";
 route();

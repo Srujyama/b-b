@@ -3,97 +3,9 @@
 
 const ELEVEN_CLIENT_URL = "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.25.0/+esm";
 
-/* ------------------------------------------------------------------ i18n */
+/* --------------------------------------------------------------- strings */
 
 export const I18N = {
-  zh: {
-    clinicLink: "诊所入口", patientLink: "病人入口", dismiss: "知道了",
-    dashLink: "个案总览", dashBrand: "个案总览",
-    dashPickTitle: "选一个个案", dashPickLede: "这里显示服务器上正在办理的账单个案。", dashStartNew: "从拍账单开始",
-    dashNoCases: "还没有个案。先在病人入口拍账单，或用示范账单。",
-    dashPreview: "这是界面预览数据（开发用），不是真实的账单或交易。",
-    dashCase: "个案", dashOpenFlow: "打开办理页面", dashCaseId: (id) => `编号 ${id}`,
-    dashFindings: "账单里可能的问题", dashToVerify: "待核实", dashNotSavings: "这些是需要核实的线索，不是已经省下的钱。",
-    dashNoFindings: "还没发现明显错误。Vellum 还会去查合理价格。", dashLine: (n) => `第 ${n} 行`,
-    dashOptions: "可以走的路", dashAppeals: "保险拒赔了？",
-    dashAppealsLede: "诊所入口会读拒赔信、对照保险公司的医疗标准，并起草申诉信。", dashAppealsLink: "去诊所入口申诉",
-    dashRoom: "和医院谈的过程", dashRun: "一键办理的进度", dashActivity: "刚刚发生的事",
-    statBill: "账单原价", statBillFoot: (amt) => `医院说您要付 ${amt}`,
-    statIssues: "待核实的问题", statIssuesFoot: (n) => `${n} 条线索，需要核实，不是已省下的钱`,
-    statLimit: "您的上限", statLimitFoot: "您自己定的，不是医院定的", statLimitUnset: "还没设定",
-    statDeal: "谈妥的价格", statDealFoot: (amt) => `比医院要的少 ${amt}`, statDealNone: "还没谈妥",
-    guardLimit: (amt) => `没有您同意，Vellum 不会答应任何价格，也绝不超过您的上限 ${amt}。`,
-    guardOnChain: "这个上限已经记录在 BNB 链上，任何人都可以查证。",
-    guardUnset: "您还没设定最多付多少。请在办理页面的“说说情况”里设定，Vellum 才会去谈。",
-    optErrors: "纠正账单错误", optErrorsBody: (n, amt) => `${n} 条可能的错误，最多 ${amt}，要请医院核实后删掉。`,
-    optErrorsNone: "还没发现明显错误。",
-    optCharity: "经济援助（慈善医疗）", optCharityNone: "还没查医院的经济援助政策。先在办理页面“查价格”。",
-    optCharityFree: (pct) => `家庭收入在贫困线 ${pct}% 以下可以全免。`, optCharityNoFap: "没有找到这家医院的经济援助政策。",
-    optCharityApply: "看申请方法",
-    optFinancing: "一次付清，还是分期？", optFinancingNone: "还没看建议。谈妥以后在“凭证”页可以看。",
-    simulatedTag: "示范：医院一方是模拟的",
-    caseStatus: { intake: "刚开始", audited: "账单已读懂", researched: "价格已查好", mandated: "授权已上链", negotiating: "正在谈", agreed: "已谈妥", settled: "已结清", failed: "没谈成" },
-    caseSteps: ["读懂账单", "查价格", "记录授权", "谈价钱", "结清"],
-    flagKinds: { duplicate: "重复收费", upcoding: "级别收高了", unbundling: "拆开重复收", above_fair_price: "高于合理价", charity_eligible: "可申请援助", no_surprises_act: "意外账单保护", math_error: "算错了", other: "其他" },
-    runStatus: { pending: "等待", running: "进行中", ok: "完成", skipped: "跳过", failed: "失败" },
-    runSteps: { research: "查合理价格和慈善政策", financing: "看一次付清还是分期（参考 Gemini 的美联储决议预测）", mandate: "在 BNB 链上记录您的授权", credential: "在 XRPL 上签发经济困难证明", negotiate: "用英语和医院谈价钱", loan: "从互助基金开 0% 分期", settle: "把钱放进 XRPL 托管", recordDeal: "在 BNB 链上记录协议", confirm: "医院确认余额为零" },
-    flaggedNote: "这是需要核实的金额，不是已经省下的钱。",
-    limitGuard: "没有您同意，Vellum 不会答应任何价格，也绝不超过您设定的上限。",
-    steps: ["拍账单", "看懂账单", "说说情况", "查价格", "谈价钱", "凭证"],
-    stepOf: (n, total, name) => `第 ${n} 步，共 ${total} 步：${name}`,
-    uploadTitle: "把医院账单拍下来",
-    uploadLede: "Vellum 会用中文一行一行解释给您听，找出多收的钱。",
-    takePhoto: "拍照或选择账单文件", yourName: "您的名字", readBill: "读账单",
-    useDemo: "用示范账单试试", demoNote: "示范账单是虚构的病人和账号，只用来演示。",
-    needFile: "请先拍照或选择账单文件，或者用示范账单。",
-    reading: "正在读账单，大约需要半分钟……",
-    billTitle: "您的账单，逐行说明", next: "下一步",
-    hospitalSays: "医院说您要付", errorsFound: (n) => `找到 ${n} 个可能的错误`,
-    atStake: "最多可以少付", noErrors: "暂时没有发现明显错误，Vellum 还会去查合理价格。",
-    mayOvercharge: "可能多收", qty: "数量",
-    intakeTitle: "跟 Vellum 说说您的情况",
-    intakeLede: "用普通话说就可以。Vellum 会问您家里几口人、收入多少、最多愿意付多少。",
-    startTalking: "开始说话", stopTalking: "结束对话", connecting: "正在连接……",
-    listening: "Vellum 在听", speaking: "Vellum 在说话", disconnected: "对话已结束",
-    micDenied: "没有麦克风权限。请在浏览器里允许使用麦克风，或者填表。",
-    orForm: "不方便说话？填表也可以", household: "家里几口人", income: "全家一年收入（美元）",
-    maxPay: "最多愿意付多少（美元）",
-    consent: "我同意 Vellum 代表我和医院沟通账单，并在我设定的金额内达成协议。",
-    saveIntake: "保存我的信息", needConsent: "需要您勾选同意，Vellum 才能代表您去谈。",
-    intakeSaved: (name, max) => `已记录：${name}，最多付 ${max}。`,
-    researchTitle: "Vellum 在查合理价格",
-    researchLede: "查联邦医保价格、医院公开的价格表、以及医院依法必须提供的经济援助政策。",
-    startResearch: "开始查", researching: "正在查，来源会一条条出现……",
-    sourcesTitle: "查到的来源", ladderOpening: "开口价", ladderTarget: "目标", ladderWalkaway: "您的上限",
-    mandateLede: "把您的授权（最高金额）记录在链上：超过上限的成交会被链上合约拒绝，任何人都可以查证。", recordMandate: "记录授权",
-    mandateDone: "授权已记录在链上。", toRoom: "去谈价钱",
-    roomTitle: "Vellum 正在和医院谈", asked: "医院要", current: "现在", saved: "省下",
-    counterparty: "医院那边是", cpAgent: "AI 账单员", cpHuman: "真人账单员",
-    whoAdvocate: "Vellum", whoHospital: "医院", whoInsurer: "保险公司", whoPatient: "您",
-    startCall: "开始通话", runAll: "一键全部办理", runStarted: "Vellum 正在一步一步办理：查价格、记录授权、打电话、托管付款。", endCall: "结束通话", calling: "通话中。英文对话下面是中文翻译。",
-    humanMode: "真人模式：请对着麦克风扮演医院账单员，Vellum 会跟您谈。",
-    dealAt: (amt) => `成交：${amt}`, toReceipts: "看凭证", waitingLines: "通话开始后，对话会出现在这里。",
-    receiptsTitle: "每一步都有凭证",
-    outcomeTitle: "结果", hearResult: "听结果", hearStop: "停止", hearLoading: "正在准备声音……",
-    hearUnavailable: "现在放不了声音，您可以先看下面的文字。", hearFailed: "声音没放出来，您可以先看下面的文字。",
-    outcomePreview: "预览数据：示例个案，不是真实的结果", hearDetails: "技术细节",
-    receiptsLede: "钱先放在托管账户里，医院确认您欠款为零才会付出去。",
-    credential: "证明困难资格", settle: "把钱放进托管", confirmZero: "医院确认余额为零",
-    months: "分期月数", loan: "0% 分期", fedTitle: "一次付清，还是分期？", getAdvice: "看建议", hedge: "用 Gemini 测试盘对冲利率风险",
-    lumpSum: "建议一次付清", paymentPlan: "建议分期付款", rateMove: (bps) => `市场预期利率变化：${bps > 0 ? "+" : ""}${bps} 基点`,
-    loadPayments: "显示 Vellum 付的数据费", noReceipts: "还没有凭证。每做一步，这里会多一条。",
-    viewTx: "在区块浏览器查看", noPayments: "Vellum 还没有付过数据费。",
-    notConfigured: "这一步暂时不能用：", failed: "出错了：", wsLost: "和服务器的实时连接断了，正在重连。",
-    kinds: {
-      EscrowCreate: "钱放进托管", EscrowFinish: "托管放款给医院", CredentialCreate: "诊所签发困难资格证明",
-      CredentialAccept: "您接受资格证明", Batch: "放款和服务费一次完成", VaultDeposit: "社区基金存款",
-      LoanSet: "0% 分期贷款", openMandate: "您的授权上链", mandate: "您的授权上链", logEntry: "谈判记录上链",
-      deal: "成交记录上链", recordDeal: "成交记录上链", "x402-payment": "Vellum 付数据费", odds: "美联储利率概率",
-      "fed-odds": "美联储利率概率", "prediction-hedge-order": "用预测市场对冲利率风险", Payment: "Vellum 服务费",
-      LoanPay: "按时还了一期", VaultCreate: "社区医疗基金成立", LoanBrokerSet: "基金开始放贷",
-      CredentialDelete: "旧资格证明作废", PermissionedDomainSet: "只许审核过的捐款人存钱", AccountSet: "账户设置", TrustSet: "开通美元额度",
-    },
-  },
   en: {
     clinicLink: "For clinics", patientLink: "For patients", dismiss: "Dismiss",
     dashLink: "Case overview", dashBrand: "Case overview",
@@ -130,7 +42,7 @@ export const I18N = {
     steps: ["Photo", "Your bill", "Your situation", "Fair prices", "Negotiate", "Receipts"],
     stepOf: (n, total, name) => `Step ${n} of ${total}: ${name}`,
     uploadTitle: "Take a photo of your hospital bill",
-    uploadLede: "Vellum explains it line by line and finds what you were overcharged.",
+    uploadLede: "Vellum reads it line by line, finds what you were overcharged, and argues it down with the hospital. It talks with you in your own language.",
     takePhoto: "Take a photo or choose a file", yourName: "Your name", readBill: "Read my bill",
     useDemo: "Try the demo bill", demoNote: "The demo bill uses a made-up patient and account, for demonstration only.",
     needFile: "Add a photo or file of your bill first, or try the demo bill.",
@@ -158,7 +70,7 @@ export const I18N = {
     roomTitle: "Vellum is negotiating with the hospital", asked: "Hospital asked", current: "Now", saved: "Saved",
     counterparty: "Hospital side is", cpAgent: "AI billing agent", cpHuman: "A person",
     whoAdvocate: "Vellum", whoHospital: "Hospital", whoInsurer: "Insurer", whoPatient: "You",
-    startCall: "Start the call", runAll: "Run everything", runStarted: "Running every step: research, mandate, the call, escrow.", endCall: "End the call", calling: "On the call. Chinese translation under each line.",
+    startCall: "Start the call", runAll: "Run everything", runStarted: "Running every step: research, mandate, the call, escrow.", endCall: "End the call", calling: "On the call. Each line appears below as it is spoken.",
     humanMode: "Human mode: play the hospital billing office into the microphone. Vellum will negotiate with you.",
     dealAt: (amt) => `Deal: ${amt}`, toReceipts: "See receipts", waitingLines: "The conversation appears here once the call starts.",
     receiptsTitle: "A receipt for every step",
@@ -184,43 +96,11 @@ export const I18N = {
   },
 };
 
-const LANG_KEY = `bb-lang-${location.pathname.includes("clinic") ? "clinic" : "patient"}`;
-let lang = (() => {
-  try {
-    const v = localStorage.getItem(LANG_KEY);
-    if (v === "zh" || v === "en") return v;
-  } catch {}
-  return document.body?.dataset.defaultLang === "en" ? "en" : "zh";
-})();
-const langListeners = new Set();
-
-export const getLang = () => lang;
+/** Look up an interface string. The UI is English-only; page modules add their own keys with
+ *  Object.assign(I18N.en, {...}). Function values take arguments: t("stepOf", 1, 6, "Photo"). */
 export function t(key, ...args) {
-  const v = I18N[lang][key] ?? I18N.zh[key] ?? key;
+  const v = I18N.en[key] ?? key;
   return typeof v === "function" ? v(...args) : v;
-}
-export function applyI18n(root = document) {
-  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
-  for (const el of root.querySelectorAll("[data-i18n]")) {
-    const v = t(el.dataset.i18n);
-    if (typeof v === "string") el.textContent = v;
-  }
-  const btn = document.getElementById("lang-toggle");
-  if (btn) btn.textContent = lang === "zh" ? "EN" : "中文";
-}
-export function onLangChange(fn) {
-  langListeners.add(fn);
-}
-export function setupLangToggle() {
-  applyI18n();
-  document.getElementById("lang-toggle")?.addEventListener("click", () => {
-    lang = lang === "zh" ? "en" : "zh";
-    try {
-      localStorage.setItem(LANG_KEY, lang);
-    } catch {}
-    applyI18n();
-    for (const fn of langListeners) fn(lang);
-  });
 }
 
 /* ------------------------------------------------------------- utilities */
@@ -557,13 +437,8 @@ export function createRoom({ getPacket, getAsked }) {
       lastLen = 0;
       return;
     }
-    const zhFirst = getLang() === "zh";
     for (const line of p.transcript) {
-      const zh = line.textZh ? h("p", { class: "zh", lang: "zh-CN" }, line.textZh) : null;
-      const en = h("p", { class: "en", lang: "en" }, line.text);
-      list.append(
-        h("li", { class: `line ${sideOf(line.role)}` }, h("span", { class: "who" }, roleLabel(line.role)), ...(zhFirst ? [zh, en] : [en, zh])),
-      );
+      list.append(h("li", { class: `line ${sideOf(line.role)}` }, h("span", { class: "who" }, roleLabel(line.role)), h("p", {}, line.text)));
     }
     if (p.transcript.length !== lastLen) list.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     lastLen = p.transcript.length;
@@ -623,7 +498,7 @@ export function receiptItem(r) {
         { class: "r-meta" },
         `${chain.name} ${chain.note}`,
         amount != null ? `  ${typeof amount === "number" ? usd(amount) : amount}` : "",
-        isNaN(when) ? "" : `  ${when.toLocaleTimeString(getLang() === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })}`,
+        isNaN(when) ? "" : `  ${when.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
       ),
       href
         ? h("a", { class: "r-link", href, target: "_blank", rel: "noopener" }, `${t("viewTx")} ${shortHash(r.txHash)}`)
@@ -661,7 +536,6 @@ function chainGlyph(chain) {
 const SCREENS = ["upload", "bill", "intake", "research", "room", "receipts"];
 
 function initPatient() {
-  setupLangToggle();
   setupErrorBox();
 
   const state = { packet: null, sub: null, logs: [], screen: "upload", convo: null, callConvo: null, bridgeOn: false };
@@ -672,6 +546,7 @@ function initPatient() {
   function show(name) {
     state.screen = name;
     for (const s of document.querySelectorAll(".screen")) s.hidden = s.dataset.screen !== name;
+    document.getElementById("patient-app")?.classList.toggle("landing", name === "upload");
     renderProgress();
     document.querySelector(`[data-screen="${name}"] h1`)?.focus?.({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -785,7 +660,6 @@ function initPatient() {
     const sum = $("#bill-summary");
     const list = $("#bill-lines");
     if (!bill) return;
-    const zh = getLang() === "zh";
     const flags = p.flags ?? [];
     const stake = flags.reduce((a, f) => a + (Number(f.amountAtStake) || 0), 0);
     sum.replaceChildren(
@@ -806,13 +680,13 @@ function initPatient() {
           h(
             "div",
             { class: "li-head" },
-            h("p", { class: "li-desc" }, zh ? li.descriptionZh || li.description : li.description),
+            h("p", { class: "li-desc" }, li.description),
             h("b", { class: "li-amt" }, usd(li.charge)),
           ),
           h(
             "p",
             { class: "li-meta" },
-            [li.code ? `${li.codeType ?? ""} ${li.code}`.trim() : "", zh && li.descriptionZh ? li.description : "", li.qty > 1 ? `${t("qty")} ${li.qty}` : "", li.date ?? ""]
+            [li.code ? `${li.codeType ?? ""} ${li.code}`.trim() : "", li.qty > 1 ? `${t("qty")} ${li.qty}` : "", li.date ?? ""]
               .filter(Boolean)
               .join("   "),
           ),
@@ -822,11 +696,10 @@ function initPatient() {
     );
   }
   function flagEl(f) {
-    const zh = getLang() === "zh";
     return h(
       "div",
       { class: `flag kind-${f.kind}` },
-      h("p", {}, zh ? f.messageZh || f.message : f.message),
+      h("p", {}, f.message),
       f.amountAtStake ? h("b", {}, `${t("mayOvercharge")} ${usd(f.amountAtStake)}`) : null,
     );
   }
@@ -931,8 +804,7 @@ function initPatient() {
   /* ---- 4 research ---- */
   function renderFeed() {
     const feed = $("#research-feed");
-    const zh = getLang() === "zh";
-    feed.replaceChildren(...state.logs.map((l) => h("li", {}, zh ? l.messageZh || l.message : l.message)));
+    feed.replaceChildren(...state.logs.map((l) => h("li", {}, l.message)));
     if (state.screen === "research") feed.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
   function renderResearch() {
@@ -1056,7 +928,7 @@ function initPatient() {
   $("#to-receipts").addEventListener("click", () => show("receipts"));
 
   /* ---- 6 receipts ---- */
-  // Outcome summary: deterministic zh/en text from GET /summary; audio from GET /summary.mp3 (ElevenLabs).
+  // Outcome summary: deterministic English text from GET /summary; audio from GET /summary.mp3 (ElevenLabs).
   const outcome = { key: "", seq: 0, url: null, audioKey: "" };
   function summaryKey(p) {
     return [p.id, p.status, p.agreedAmount ?? "", p.flags.length, p.receipts.map((r) => r.kind).join(",")].join("|");
@@ -1071,12 +943,10 @@ function initPatient() {
     api(`/api/cases/${encodeURIComponent(p.id)}/summary`)
       .then((s) => {
         if (seq !== outcome.seq) return;
-        const lines = s.lines ?? { zh: [s.zh], en: [s.en] };
-        $("#outcome-zh").replaceChildren(...lines.zh.map((l) => h("li", {}, l)));
+        const lines = s.lines ?? { en: [s.en] };
         $("#outcome-en").replaceChildren(...lines.en.map((l) => h("li", {}, l)));
         const tag = $("#outcome-preview");
         tag.hidden = !s.preview;
-        tag.dataset.i18n = "outcomePreview";
         tag.textContent = t("outcomePreview");
         $("#outcome-card").classList.toggle("is-preview", Boolean(s.preview));
         $("#outcome-card").hidden = false;
@@ -1088,14 +958,12 @@ function initPatient() {
   function setHearLabel(playing) {
     $("#hear-btn").classList.toggle("playing", playing);
     $("#hear-btn .hear-icon").textContent = playing ? "■" : "▶";
-    $("#hear-btn [data-i18n]").dataset.i18n = playing ? "hearStop" : "hearResult";
-    $("#hear-btn [data-i18n]").textContent = t(playing ? "hearStop" : "hearResult");
+    $("#hear-label").textContent = t(playing ? "hearStop" : "hearResult");
   }
   const hearAudio = $("#hear-audio");
   hearAudio.addEventListener("ended", () => setHearLabel(false));
   hearAudio.addEventListener("pause", () => setHearLabel(false));
   hearAudio.addEventListener("play", () => setHearLabel(true));
-  // The note keeps an i18n key (not a string) so it re-translates on the language toggle.
   // The server's own message (e.g. "ElevenLabs is not configured — set ELEVENLABS_API_KEY") stays
   // visible for honesty but is tucked into a collapsed "details" line Mrs. Lin doesn't have to read.
   const hearNote = { key: null, detail: "" };
@@ -1115,7 +983,6 @@ function initPatient() {
     hearNote.detail = detail;
     renderHearNote();
   }
-  onLangChange(renderHearNote);
   $("#hear-btn").addEventListener("click", async (e) => {
     const p = P();
     if (!p) return;
@@ -1193,11 +1060,10 @@ function initPatient() {
     }),
   );
   function renderFed(adv) {
-    const zh = getLang() === "zh";
     const odds = adv.fedOdds;
     $("#fed-body").replaceChildren(
       h("p", { class: `rec ${adv.recommendation}` }, adv.recommendation === "lump_sum" ? t("lumpSum") : t("paymentPlan")),
-      h("p", {}, zh ? adv.reasonZh || adv.reason : adv.reason),
+      h("p", {}, adv.reason),
       odds
         ? h(
             "div",
@@ -1226,16 +1092,7 @@ function initPatient() {
     );
   }
 
-  /* ---- language + resume ---- */
-  onLangChange(() => {
-    renderProgress();
-    renderAll();
-    renderFeed();
-    setTalking(Boolean(state.convo));
-    setCallLabel();
-    if (!$("#bill-file").files?.length) $("#file-name").textContent = t("takePhoto");
-  });
-
+  /* ---- resume ---- */
   const resumeId = new URLSearchParams(location.hash.slice(1)).get("case");
   show("upload");
   if (resumeId) {

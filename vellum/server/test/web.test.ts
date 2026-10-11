@@ -22,12 +22,12 @@ describe("web: patient app", () => {
     const res = await get("/");
     expect(res.headers["content-type"]).toMatch(/text\/html/);
     const html = res.body;
-    expect(html).toContain('lang="zh-CN"');
+    expect(html).toContain('<html lang="en">');
     for (const screen of ["upload", "bill", "intake", "research", "room", "receipts"]) {
       expect(html).toContain(`data-screen="${screen}"`);
     }
     for (const id of [
-      "patient-app", "lang-toggle", "error", "bill-file", "upload-btn", "demo-btn", "bill-lines", "talk-btn",
+      "patient-app", "error", "upload-doc", "bill-file", "upload-btn", "demo-btn", "bill-lines", "talk-btn",
       "intake-form", "f-consent", "research-btn", "research-feed", "mandate-btn", "ticker", "tk-asked", "tk-current",
       "tk-saved", "counterparty", "negotiate-btn", "transcript", "receipts", "fed-card", "settle-btn", "confirm-btn",
       "credential-btn", "loan-btn", "hedge-btn", "financing-btn", "x402-btn",
@@ -36,6 +36,13 @@ describe("web: patient app", () => {
     }
     expect(html).toContain('src="/app.js"');
     expect(html).toContain('href="/styles.css"');
+    // the landing intro is its own module + stylesheet, and the patient flow never depends on it
+    expect(html).toContain('src="/intro.js"');
+    expect(html).toContain('href="/intro.css"');
+    const intro = (await get("/intro.js")).body;
+    expect(intro).toContain("prefers-reduced-motion");
+    expect(intro).toContain("upload-doc");
+    expect(intro).not.toMatch(/\$\s?\d/); // illustrative bars only: no invented dollar figures
   });
 
   it("serves app.js wired to the API contract", async () => {
@@ -96,9 +103,9 @@ describe("web: case overview dashboard", () => {
     const res = await get("/dashboard.html");
     expect(res.headers["content-type"]).toMatch(/text\/html/);
     const html = res.body;
-    expect(html).toContain('lang="zh-CN"');
+    expect(html).toContain('<html lang="en">');
     for (const id of [
-      "dashboard-app", "lang-toggle", "error", "case-picker", "case-list", "case-view", "preview-banner", "case-head",
+      "dashboard-app", "error", "case-picker", "case-list", "case-view", "preview-banner", "case-head",
       "case-provider", "case-status", "stepper", "stats", "findings", "options", "room-card", "ticker", "tk-asked",
       "tk-current", "tk-saved", "limit-guard", "transcript", "run-card", "run-steps", "activity", "receipts",
     ]) {
@@ -121,20 +128,55 @@ describe("web: case overview dashboard", () => {
     expect(js).toContain("simulatedTag");
   });
 
-  it("is linked from the patient and clinic pages, and every dashboard string has zh + en", async () => {
+  it("is linked from the patient and clinic pages, and every dashboard string has English copy", async () => {
     expect((await get("/")).body).toContain('href="/dashboard.html"');
     expect((await get("/clinic.html")).body).toContain('href="/dashboard.html"');
     const g = globalThis as Record<string, unknown>;
     g.location ??= { pathname: "/", href: "http://localhost:8787/", protocol: "http:", host: "localhost:8787", hash: "" };
     g.document ??= { body: undefined, getElementById: () => null, querySelectorAll: () => [] };
     const { I18N } = (await import(/* @vite-ignore */ new URL("../../web/app.js", import.meta.url).href)) as Record<string, any>;
-    const dashKeys = Object.keys(I18N.zh).filter((k) => /^(dash|stat|guard|opt|caseStatus|caseSteps|flagKinds|runStatus|runSteps|simulatedTag|flaggedNote|limitGuard)/.test(k));
+    const dashKeys = Object.keys(I18N.en).filter((k) => /^(dash|stat|guard|opt|caseStatus|caseSteps|flagKinds|runStatus|runSteps|simulatedTag|flaggedNote|limitGuard)/.test(k));
     expect(dashKeys.length).toBeGreaterThan(20);
-    for (const k of dashKeys) expect(I18N.en[k], k).toBeDefined();
-    const html = (await get("/dashboard.html")).body;
-    for (const m of html.matchAll(/data-i18n="(\w+)"/g)) {
-      expect(I18N.zh[m[1]], m[1]).toBeDefined();
-      expect(I18N.en[m[1]], m[1]).toBeDefined();
+    for (const k of dashKeys) expect(I18N.en[k], k).toBeTruthy();
+  });
+});
+
+describe("web: English-only UI and the shared masthead", () => {
+  const PAGES = ["/", "/clinic.html", "/dashboard.html", "/hospital.html", "/fund.html", "/verify.html"];
+
+  it("ships no Chinese text, no language toggle and no i18n attributes in any page, script or stylesheet", async () => {
+    const { readdirSync, readFileSync } = await import("node:fs");
+    const webDir = new URL("../../web/", import.meta.url);
+    for (const f of readdirSync(webDir).filter((f) => /\.(html|js|css)$/.test(f))) {
+      const src = readFileSync(new URL(f, webDir), "utf8");
+      expect(src, f).not.toMatch(/[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]/);
+      expect(src, f).not.toContain("lang-toggle");
+      expect(src, f).not.toContain("data-i18n");
+      expect(src, f).not.toMatch(/setupLangToggle|onLangChange|getLang|I18N\.zh/);
+    }
+    const g = globalThis as Record<string, unknown>;
+    g.location ??= { pathname: "/", href: "http://localhost:8787/", protocol: "http:", host: "localhost:8787", hash: "" };
+    g.document ??= { body: undefined, getElementById: () => null, querySelectorAll: () => [] };
+    const { I18N, t } = (await import(/* @vite-ignore */ new URL("../../web/app.js", import.meta.url).href)) as Record<string, any>;
+    expect(Object.keys(I18N)).toEqual(["en"]);
+    expect(t("stepOf", 2, 6, "Your bill")).toBe("Step 2 of 6: Your bill");
+    expect(t("no-such-key")).toBe("no-such-key");
+  });
+
+  it("every page carries the same masthead: seal + wordmark and a six-link nav marking the current page", async () => {
+    for (const page of PAGES) {
+      const html = (await get(page)).body;
+      expect(html, page).toContain('<html lang="en">');
+      expect(html, page).toContain('<header class="masthead">');
+      expect(html, page).toContain('class="seal-mark"');
+      expect(html, page).toContain('<span class="wordmark">Vellum</span>');
+      expect(html, page).toMatch(/fonts\.googleapis\.com\/css2\?family=Archivo/);
+      for (const href of ['href="/"', 'href="/clinic.html"', 'href="/dashboard.html"', 'href="/hospital.html"', 'href="/fund.html"', 'href="/verify.html"']) {
+        expect(html, `${page} ${href}`).toContain(href);
+      }
+      expect(html.match(/aria-current="page"/g) ?? [], page).toHaveLength(1);
+      expect(html, page).toContain('id="dash-link"');
+      expect(html, page).toContain('id="patient-link"');
     }
   });
 });
@@ -175,7 +217,7 @@ describe("web: app.js logic in node (DOM stubbed)", () => {
     expect(initToSessionOptions(undefined, "c2")).toEqual({ dynamicVariables: { case_id: "c2" } });
   });
 
-  it("has a Chinese and English label for every receipt kind the server emits", async () => {
+  it("has an English label for every receipt kind the server emits", async () => {
     const { readFileSync, readdirSync, statSync } = await import("node:fs");
     const { join } = await import("node:path");
     const { fileURLToPath } = await import("node:url");
@@ -193,8 +235,8 @@ describe("web: app.js logic in node (DOM stubbed)", () => {
     }
     for (const k of ["x402-payment", "prediction-hedge-order", "openMandate", "recordDeal", "logEntry", "EscrowCreate", "Batch"]) expect(kinds, `scanner should find ${k}`).toContain(k);
     const { I18N } = await load();
-    const missing = [...kinds].filter((k) => !I18N.zh.kinds[k] || !I18N.en.kinds[k]);
-    expect(missing, "add these to I18N.{zh,en}.kinds in web/app.js").toEqual([]);
+    const missing = [...kinds].filter((k) => !I18N.en.kinds[k]);
+    expect(missing, "add these to I18N.en.kinds in web/app.js").toEqual([]);
   });
 
   it("merges CaseEvents without duplicating lines, offers or receipts", async () => {

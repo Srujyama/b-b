@@ -1,70 +1,13 @@
-// Community fund dashboard (互助基金): the three roles of XRPL's lending protocol on one page.
+// Community fund dashboard: the three roles of XRPL's lending protocol on one page.
 //   Broker  (LoanBroker on the vault, run by the fund)  ->  Depositor (vetted donors, private vault shares)
 //   ->  Borrower (patients with a FinancialHardship credential, 0% LoanSet, monthly LoanPay)
 // Every value comes from GET /api/fund and GET /api/fund/donors, which read the validated XRPL devnet ledger.
 // Nothing here is hard-coded; when the ledger has no loans the page says so instead of showing an example.
 
 import {
-  I18N, $, api, applyI18n, busy, errorText, getLang, h, onLangChange, safeUrl, setupErrorBox, setupLangToggle, showError, t, usd,
+  I18N, $, api, busy, errorText, h, safeUrl, setupErrorBox, showError, t, usd,
 } from "./app.js";
 
-Object.assign(I18N.zh, {
-  fundBrand: "互助基金",
-  fundEyebrow: "XRPL 开发网 · 实时账本",
-  fundTitle: "社区医疗债务互助基金",
-  fundLede: "捐款人把钱存进一个只收经过核实的捐款人的金库，病人从中借零利息分期还医院，再按月还给基金。下面每个数字都是刚从账本上读的。",
-  fundLoading: "正在读取 XRPL 开发网……",
-  fundLoadFailed: "读不到基金的账本数据。看上面的错误说明。",
-  ledgerLine: (n, at) => `XRPL 开发网 · 第 ${n} 号账本 · 账本时间 ${at}`,
-  fundRolesTitle: "三个角色",
-  roleBroker: "贷款经纪人", roleBrokerWhat: "建金库、开贷款。",
-  brokerTerms: (fee, cover) => `账本上的条款：管理费 ${fee}，首损保证金 ${cover}。`,
-  roleDepositor: "存款人（捐款人）", roleDepositorWhat: "持有“VerifiedDonor”凭证的人才能存钱，换成金库份额。",
-  roleBorrower: "借款人（病人）", roleBorrowerWhat: "有诊所签发的“经济困难”凭证的病人借分期，按月还款。",
-  statTotal: "基金总额", statTotalFoot: (s) => `已发出 ${s} 份金库份额`,
-  statAvail: "可以借出", statAvailFoot: "金库里还没借出去的钱",
-  statLent: "已借出", statLentFoot: (n) => `${n} 笔贷款还没还完`,
-  statLoans: "贷款笔数", statLoansFoot: (rate, fee) => `利率 ${rate}，管理费 ${fee}`, statLoansFootNone: (fee) => `还没有贷款 · 管理费 ${fee}`,
-  factOwner: "基金账户（经纪人所有者）", factBrokerId: "经纪人编号", factPseudo: "经纪人的账本账户", factFee: "管理费",
-  factCover: "首损保证金", factDebt: "未还本金总额", factSetupTx: "建立交易",
-  factVaultId: "金库编号", factVaultAcct: "金库的账本账户", factAsset: "资产", factPrivate: "存款权限",
-  privateYes: "私有：只收许可域里的成员", privateNo: "公开：任何人都能存",
-  factDomain: "许可域", factCred: "许可域接受的凭证", credBy: (type, who) => `${type}，签发人 ${who}`,
-  factKind: "金库类型", kindClosed: "封闭式（有认购期和赎回日）", kindOpen: "开放式",
-  factSub: "认购期结束", factRed: "赎回日", factShares: "份额代币", domainEnvMismatch: (env) => `注意：.env 里的 XRPL_DONOR_DOMAIN_ID 是 ${env}，和账本不一致`,
-  phase: { subscription: "认购期：可以存款", investment: "投资期：可以放贷", redemption: "赎回期", open: "开放式" },
-  depositClosed: (date, total) => `存款已关闭。这是封闭式金库，认购期在 ${date} 结束（按账本时间）。基金里的 ${total} 是建立基金时由经过核实的捐款人存进去的，见下面的存款交易。现在账本会拒绝新的存款，所以这页没有“存款”按钮。`,
-  depositOpen: (date) => `认购期到 ${date} 为止：只有持有 VerifiedDonor 凭证的账户能存款。存款要捐款人自己签名，这个页面不替任何人签，所以没有“存款”按钮。`,
-  depositRedemption: (date) => `金库已经在 ${date} 进入赎回期，不能再存款或放新贷款。`,
-  depositOpenEnded: "开放式金库：持有许可的人随时可以存款。存款要捐款人自己签名，这个页面不替任何人签。",
-  depositTx: "存款交易",
-  sharesOf: (s, v) => `${s} 份，现值 ${v}`,
-  credAccepted: "凭证已接受", credPending: "凭证未接受", ownerTag: "基金账户",
-  noDonors: "账本上没有找到存款人。",
-  noBorrowers: "还没有人借款。个案谈妥、诊所签发“经济困难”凭证之后，可以在办理页面申请零利息分期，借款会出现在这里。",
-  borrowerLoans: (n, amt) => `${n} 笔贷款，还欠 ${amt}`,
-  loansCount: (n) => `${n} 笔`,
-  noLoans: "这个金库还没有放出任何贷款。上面的数字说明钱都还在金库里。",
-  loanStatus: { active: "还款中", paid: "已还清", impaired: "逾期", defaulted: "违约" },
-  loanCase: (id) => `个案 ${id}`, loanNoCase: "没有关联的个案", loanCaseElsewhere: (id) => `个案 ${id}（不在这台服务器上）`,
-  payCaseElsewhere: "这笔贷款的个案不在这台服务器上，所以这页不能替它还款。", payNoCase: "这笔贷款没有关联个案，服务器只替个案还款。",
-  loanPrincipal: "借款", loanOutstanding: "还欠", loanPeriodic: "每期", loanNext: "下次到期",
-  loanProgress: (m, n) => `已还 ${m} / ${n} 期`, loanProgressUnknown: (r) => `还剩 ${r} 期`,
-  loanOrigin: "借款交易", loanPayments: "还款交易",
-  payBtn: (amt) => `还一期 ${amt}`, payNotSigner: "这笔贷款的借款人不是本服务器的病人钱包，只能由借款人自己还。",
-  paid: (amt) => `已还一期：${amt}`,
-  historyTitle: "账本上的每一步", noHistory: "没有找到这个基金的交易。",
-  txKinds: {
-    PermissionedDomainSet: "建立许可域（只收核实过的捐款人）", CredentialCreate: "签发 VerifiedDonor 凭证", CredentialAccept: "捐款人接受凭证",
-    CredentialDelete: "撤销凭证", VaultCreate: "建立私有金库", VaultSet: "修改金库", VaultDeposit: "捐款人存款", VaultWithdraw: "存款人取款",
-    VaultClawback: "金库追回", LoanBrokerSet: "设立贷款经纪人", LoanBrokerCoverDeposit: "存入首损保证金", LoanBrokerCoverWithdraw: "取出首损保证金",
-    LoanSet: "开出贷款", LoanPay: "病人还款", LoanManage: "管理贷款", LoanDelete: "删除已结清的贷款",
-  },
-  refresh: "重新读取账本",
-  vaultTitle: "金库", loansTitle: "贷款",
-  donorMethodPrivate: "私有金库：账本只接受许可域成员（持有被接受凭证的人）和金库所有者存款。这里列出的是凭证签发人名下每一个持有该凭证的账户（以及持有份额的金库所有者），份额是各自持有的金库份额代币余额。",
-  donorMethodPublic: "公开金库：任何人都能存款，而账本没有份额持有人的索引，所以这里只核对了凭证持有人和金库所有者，可能还有其他存款人。",
-});
 Object.assign(I18N.en, {
   fundBrand: "Community fund",
   fundEyebrow: "XRPL devnet · live ledger",
@@ -126,7 +69,7 @@ Object.assign(I18N.en, {
 // cases: caseId -> true when this server has the case (GET /api/cases/:id answered 200), false otherwise
 const state = { fund: null, donors: null, donorsError: null, cases: new Map() };
 const short = (x) => (x && x.length > 14 ? `${x.slice(0, 6)}…${x.slice(-4)}` : x || "—");
-const locale = () => (getLang() === "zh" ? "zh-CN" : "en-US");
+const locale = () => "en-US";
 const when = (iso) => (iso ? new Date(iso).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" }) : "—");
 const day = (iso) => (iso ? new Date(iso).toLocaleDateString(locale(), { dateStyle: "medium" }) : "—");
 const num = (n) => (typeof n === "number" && Number.isFinite(n) ? n.toLocaleString(locale(), { maximumFractionDigits: 2 }) : "—");
@@ -356,11 +299,6 @@ async function load() {
   render();
 }
 
-setupLangToggle();
 setupErrorBox();
-onLangChange(() => {
-  applyI18n();
-  render();
-});
 $("#refresh-btn").addEventListener("click", (e) => busy(e.currentTarget, load));
 load().catch((e) => showError(errorText(e)));

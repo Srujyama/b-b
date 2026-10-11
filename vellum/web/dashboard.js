@@ -1,19 +1,17 @@
-// Vellum case overview (个案总览): one page that shows where a bill case stands, for the person helping
+// Vellum case overview: one page that shows where a bill case stands, for the person helping
 // Mrs. Lin (family member, caseworker) and for judges. Read-only: every action stays in the patient flow.
 //
 // Design credit: the stat tiles, the case stepper, the numbered "to verify" findings and the approval guard
 // on the payment limit are ported from LemonLover101's blue React dashboard prototype (PR #7). Rebuilt here as
-// vanilla JS on our jade/seal tokens, Chinese first, with every number read from the real CasePacket
+// vanilla JS on the shared paper-trail tokens, with every number read from the real CasePacket
 // (GET /api/cases/:id + live CaseEvents over /ws). Nothing on this page is hard-coded data.
 
 import {
-  $, api, applyI18n, connectCase, getLang, h, mergeEvent, onLangChange, receiptItem, roleLabel, safeUrl, setupErrorBox,
-  setupLangToggle, showError, t, usd, usd0, errorText,
+  $, api, connectCase, h, mergeEvent, receiptItem, roleLabel, safeUrl, setupErrorBox, showError, t, usd, usd0, errorText,
 } from "./app.js";
 
 const state = { packet: null, sub: null, run: null, logs: [], runTimer: null };
 const P = () => state.packet;
-const zh = () => getLang() === "zh";
 
 /* ------------------------------------------------------------ derived data */
 
@@ -104,7 +102,7 @@ function renderFindings(p) {
   list.replaceChildren(
     ...flags.map((f, i) => {
       const li = f.lineIndex != null ? p.bill?.lineItems?.[f.lineIndex] : null;
-      const lineName = li ? (zh() ? li.descriptionZh || li.description : li.description) : null;
+      const lineName = li ? li.description : null;
       return h(
         "li",
         { class: `finding kind-${f.kind}` },
@@ -112,7 +110,7 @@ function renderFindings(p) {
         h(
           "div",
           { class: "finding-body" },
-          h("p", { class: "finding-text" }, zh() ? f.messageZh || f.message : f.message),
+          h("p", { class: "finding-text" }, f.message),
           lineName ? h("p", { class: "finding-line" }, `${t("dashLine", f.lineIndex + 1)}: ${lineName}${li.code ? ` (${li.code})` : ""}`) : null,
           h("div", { class: "finding-foot" }, h("span", { class: "tag" }, kinds[f.kind] ?? f.kind), f.amountAtStake ? h("b", {}, usd(f.amountAtStake)) : null),
         ),
@@ -143,7 +141,7 @@ function renderOptions(p) {
   const fin = p.financing;
   const financing = option(
     t("optFinancing"),
-    fin ? [h("p", { class: `rec-sm ${fin.recommendation}` }, fin.recommendation === "lump_sum" ? t("lumpSum") : t("paymentPlan")), zh() ? fin.reasonZh || fin.reason : fin.reason] : t("optFinancingNone"),
+    fin ? [h("p", { class: `rec-sm ${fin.recommendation}` }, fin.recommendation === "lump_sum" ? t("lumpSum") : t("paymentPlan")), fin.reason] : t("optFinancingNone"),
   );
   $("#options").replaceChildren(errors, charity, financing);
 }
@@ -178,10 +176,8 @@ function renderRoom(p) {
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
   list.replaceChildren(
     ...p.transcript.map((line) => {
-      const zhP = line.textZh ? h("p", { class: "zh", lang: "zh-CN" }, line.textZh) : null;
-      const enP = h("p", { class: "en", lang: "en" }, line.text);
       const us = /advoc|bang|^agent$|^ai$/i.test(line.role);
-      return h("li", { class: `line ${us ? "us" : "them"}` }, h("span", { class: "who" }, roleLabel(line.role)), ...(zh() ? [zhP, enP] : [enP, zhP]));
+      return h("li", { class: `line ${us ? "us" : "them"}` }, h("span", { class: "who" }, roleLabel(line.role)), h("p", {}, line.text));
     }),
   );
   // follow new lines inside the box only; never scroll the page
@@ -212,7 +208,7 @@ function renderRun() {
 
 function renderActivity() {
   $("#activity-card").hidden = !state.logs.length;
-  $("#activity").replaceChildren(...state.logs.slice(-8).map((l) => h("li", {}, zh() ? l.messageZh || l.message : l.message)));
+  $("#activity").replaceChildren(...state.logs.slice(-8).map((l) => h("li", {}, l.message)));
 }
 
 function renderReceipts(p) {
@@ -329,12 +325,6 @@ function route() {
   else showPicker();
 }
 
-setupLangToggle();
 setupErrorBox();
-onLangChange(() => {
-  applyI18n();
-  if (P()) renderAll();
-  else showPicker();
-});
 window.addEventListener("hashchange", route);
 route();

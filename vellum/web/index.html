@@ -1,26 +1,34 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Vellum Vellum</title>
-  <meta name="description" content="Vellum：替您看懂医院账单、找出错误、用英文和医院谈价钱。" />
+  <title>Vellum</title>
+  <meta name="description" content="Vellum reads your hospital bill line by line, finds the billing errors, and negotiates it down with the hospital for you." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Source+Serif+4:opsz,wght@8..60,400..700&amp;display=swap" />
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/intro.css" />
 </head>
 <body>
-<div id="patient-app" class="shell">
-  <header class="topbar">
-    <a class="brand" href="/" aria-label="Vellum Vellum">
-      <span class="seal" aria-hidden="true">V</span>
-      <span class="brand-name">Vellum</span>
+<header class="masthead">
+  <div class="masthead-in">
+    <a class="brand" href="/" aria-label="Vellum home">
+      <svg class="seal-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path class="seal-wax" d="M20 1 23 2.8 26.4 2.3 28.8 4.8 32 5.7 33.3 8.9 36.5 10.5 36.4 14 38.5 16.7 37.6 20 38.4 23.2 36.3 25.9 36.5 29.5 33.4 31.2 32.1 34.4 28.8 35.2 26.4 37.6 23 37 20 39 17 37.2 13.6 37.7 11.2 35.2 8 34.3 6.7 31.1 3.5 29.5 3.6 26 1.5 23.3 2.4 20 1.6 16.8 3.7 14.1 3.5 10.5 6.6 8.8 7.9 5.6 11.2 4.8 13.6 2.4 17 3Z"/><circle class="seal-ring" cx="20" cy="20" r="13"/><path class="seal-v" d="M14 13.5 20 27 26 13.5"/></svg>
+      <span class="wordmark">Vellum</span>
     </a>
-    <a id="dash-link" class="toplink" href="/dashboard.html" data-i18n="dashLink">个案总览</a>
-    <a class="toplink" href="/clinic.html" data-i18n="clinicLink">诊所入口</a>
-    <button id="lang-toggle" class="lang" type="button" aria-label="Switch language">EN</button>
-  </header>
+    <nav class="nav" aria-label="Vellum">
+      <a id="patient-link" href="/" aria-current="page">Patient</a>
+      <a href="/clinic.html">Clinic</a>
+      <a id="dash-link" href="/dashboard.html">Case overview</a>
+      <a href="/hospital.html">Hospital</a>
+      <a href="/fund.html">Fund</a>
+      <a href="/verify.html">Verify</a>
+    </nav>
+  </div>
+</header>
+<div id="patient-app" class="shell landing">
 
   <nav class="progress" aria-label="progress">
     <ol id="steps">
@@ -32,142 +40,156 @@
 
   <div id="error" class="error" role="alert" hidden>
     <p id="error-text"></p>
-    <button id="error-close" type="button" data-i18n="dismiss">知道了</button>
+    <button id="error-close" type="button">Dismiss</button>
   </div>
 
   <main>
-    <!-- 1 upload -->
-    <section class="screen" data-screen="upload" id="screen-upload">
-      <h1 data-i18n="uploadTitle">把医院账单拍下来</h1>
-      <p class="lede" data-i18n="uploadLede">Vellum 会用中文一行一行解释给您听，找出多收的钱。</p>
-      <form id="upload-form" class="stack">
-        <label class="dropzone" for="bill-file">
-          <input id="bill-file" name="bill" type="file" accept="image/*,application/pdf" capture="environment" />
-          <span class="dz-icon" aria-hidden="true">
-            <svg viewBox="0 0 48 48" width="48" height="48"><rect x="6" y="12" width="36" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="24" cy="25" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M17 12l3-5h8l3 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>
-          </span>
-          <span id="file-name" class="dz-text" data-i18n="takePhoto">拍照或选择账单文件</span>
-        </label>
-        <label class="field"><span data-i18n="yourName">您的名字</span>
-          <input id="patient-name" name="name" autocomplete="name" placeholder="林美" /></label>
-        <button id="upload-btn" class="primary" type="submit" data-i18n="readBill">读账单</button>
-      </form>
-      <button id="demo-btn" class="secondary" type="button" data-i18n="useDemo">用示范账单试试</button>
-      <p class="fine" data-i18n="demoNote">示范账单是虚构的病人和账号，只用来演示。</p>
+    <!-- 1 upload: the landing. intro.js morphs its opening bill into #upload-doc -->
+    <section class="screen screen-upload" data-screen="upload" id="screen-upload">
+      <div class="hero">
+        <p class="eyebrow">Medical bill advocate</p>
+        <h1>Take a photo of your hospital <span class="circled">bill<svg class="pen-circle" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path pathLength="1" d="M86 7C68-1 22 0 9 11-3 22 18 38 52 37 85 36 101 26 93 12 89 6 78 4 68 6"/></svg></span></h1>
+        <p class="lede">Vellum reads it line by line, circles what you were overcharged, and argues it down with the hospital for you. It talks with you in your own language.</p>
+      </div>
+      <div id="upload-doc" class="doc upload-doc">
+        <p class="doc-head"><span>Your bill</span><span>Photo or PDF</span></p>
+        <form id="upload-form" class="stack">
+          <label class="dropzone" for="bill-file">
+            <input id="bill-file" name="bill" type="file" accept="image/*,application/pdf" capture="environment" />
+            <span class="dz-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" width="44" height="44"><rect x="5" y="12" width="38" height="27" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="24" cy="25.5" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 12l3-5h10l3 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="miter"/></svg>
+            </span>
+            <span id="file-name" class="dz-text">Take a photo or choose a file</span>
+          </label>
+          <label class="field"><span>Your name</span>
+            <input id="patient-name" name="name" autocomplete="name" placeholder="As it appears on the bill" /></label>
+          <button id="upload-btn" class="primary" type="submit">Read my bill</button>
+        </form>
+        <p class="or-rule">or</p>
+        <button id="demo-btn" class="secondary" type="button">Try the demo bill</button>
+        <p class="fine">The demo bill uses a made-up patient and account, for demonstration only.</p>
+      </div>
+      <ol class="hero-steps" aria-label="What Vellum does">
+        <li><b>01</b><span>Every line of the bill, explained</span></li>
+        <li><b>02</b><span>Fair prices and the hospital's own charity policy</span></li>
+        <li><b>03</b><span>A negotiation out loud, never above your limit</span></li>
+        <li><b>04</b><span>Paid through escrow, with a receipt for each step</span></li>
+      </ol>
     </section>
 
     <!-- 2 bill explained -->
     <section class="screen" data-screen="bill" id="screen-bill" hidden>
-      <h1 data-i18n="billTitle">您的账单，逐行说明</h1>
+      <h1>Your bill, line by line</h1>
       <div id="bill-summary" class="summary"></div>
       <ol id="bill-lines" class="lines"></ol>
-      <button id="to-intake" class="primary" type="button" data-i18n="next">下一步</button>
+      <button id="to-intake" class="primary" type="button">Next</button>
     </section>
 
     <!-- 3 intake -->
     <section class="screen" data-screen="intake" id="screen-intake" hidden>
-      <h1 data-i18n="intakeTitle">跟 Vellum 说说您的情况</h1>
-      <p class="lede" data-i18n="intakeLede">用普通话说就可以。Vellum 会问您家里几口人、收入多少、最多愿意付多少。</p>
+      <h1>Tell Vellum about your situation</h1>
+      <p class="lede">Just talk. Vellum asks about your household, income, and the most you can pay.</p>
       <div class="talk">
         <button id="talk-btn" class="mic" type="button" aria-pressed="false">
           <span class="mic-ring" aria-hidden="true"></span>
-          <span id="talk-label" data-i18n="startTalking">开始说话</span>
+          <span id="talk-label">Start talking</span>
         </button>
         <p id="talk-status" class="fine" aria-live="polite"></p>
         <ol id="intake-transcript" class="chat" aria-live="polite"></ol>
       </div>
       <details id="intake-form-wrap" class="formwrap">
-        <summary data-i18n="orForm">不方便说话？填表也可以</summary>
+        <summary>Can't talk right now? Fill in a form</summary>
         <form id="intake-form" class="stack">
-          <label class="field"><span data-i18n="yourName">您的名字</span><input name="name" id="f-name" required /></label>
-          <label class="field"><span data-i18n="household">家里几口人</span><input name="household_size" id="f-household" type="number" min="1" inputmode="numeric" /></label>
-          <label class="field"><span data-i18n="income">全家一年收入（美元）</span><input name="annual_income" id="f-income" type="number" min="0" inputmode="numeric" /></label>
-          <label class="field"><span data-i18n="maxPay">最多愿意付多少（美元）</span><input name="max_pay" id="f-maxpay" type="number" min="1" inputmode="numeric" required /></label>
-          <p class="limit-guard" data-i18n="limitGuard">没有您同意，Vellum 不会答应任何价格，也绝不超过您设定的上限。</p>
+          <label class="field"><span>Your name</span><input name="name" id="f-name" required /></label>
+          <label class="field"><span>People in your household</span><input name="household_size" id="f-household" type="number" min="1" inputmode="numeric" /></label>
+          <label class="field"><span>Household income per year (USD)</span><input name="annual_income" id="f-income" type="number" min="0" inputmode="numeric" /></label>
+          <label class="field"><span>The most you can pay (USD)</span><input name="max_pay" id="f-maxpay" type="number" min="1" inputmode="numeric" required /></label>
+          <p class="limit-guard">Vellum never accepts a price without your approval, and never above the limit you set.</p>
           <label class="consent"><input id="f-consent" name="consent" type="checkbox" />
-            <span data-i18n="consent">我同意 Vellum 代表我和医院沟通账单，并在我设定的金额内达成协议。</span></label>
-          <button id="intake-submit" class="primary" type="submit" data-i18n="saveIntake">保存我的信息</button>
+            <span>I authorize Vellum to discuss this bill with the hospital and agree to a deal up to my limit.</span></label>
+          <button id="intake-submit" class="primary" type="submit">Save my answers</button>
         </form>
       </details>
       <div id="intake-done" class="note" hidden></div>
-      <button id="to-research" class="primary" type="button" data-i18n="next" disabled>下一步</button>
+      <button id="to-research" class="primary" type="button" disabled>Next</button>
     </section>
 
     <!-- 4 research -->
     <section class="screen" data-screen="research" id="screen-research" hidden>
-      <h1 data-i18n="researchTitle">Vellum 在查合理价格</h1>
-      <p class="lede" data-i18n="researchLede">查联邦医保价格、医院公开的价格表、以及医院依法必须提供的经济援助政策。</p>
-      <button id="research-btn" class="primary" type="button" data-i18n="startResearch">开始查</button>
-      <button id="run-btn" class="secondary" type="button" data-i18n="runAll">一键全部办理</button>
+      <h1>Vellum is checking fair prices</h1>
+      <p class="lede">Medicare rates, the hospital's own price file, and the financial-assistance policy it must publish by law.</p>
+      <button id="research-btn" class="primary" type="button">Start checking</button>
+      <button id="run-btn" class="secondary" type="button">Run everything</button>
       <ol id="research-feed" class="feed" aria-live="polite"></ol>
       <div id="ladder" class="ladder" hidden></div>
       <div id="mandate-box" class="note" hidden>
-        <p data-i18n="mandateLede">把您的授权（最高金额）记录在链上：超过上限的成交会被链上合约拒绝，任何人都可以查证。</p>
-        <button id="mandate-btn" class="secondary" type="button" data-i18n="recordMandate">记录授权</button>
+        <p>Record your authorization and limit on-chain: the contract rejects any deal above your limit, and anyone can check it.</p>
+        <button id="mandate-btn" class="secondary" type="button">Record authorization</button>
       </div>
-      <button id="to-room" class="primary" type="button" data-i18n="toRoom" disabled>去谈价钱</button>
+      <button id="to-room" class="primary" type="button" disabled>Go negotiate</button>
     </section>
 
     <!-- 5 negotiation room -->
     <section class="screen" data-screen="room" id="screen-room" hidden>
-      <h1 data-i18n="roomTitle">Vellum 正在和医院谈</h1>
+      <h1>Vellum is negotiating with the hospital</h1>
       <div id="room" class="room">
         <div id="ticker" class="ticker" aria-live="polite">
-          <div class="tk asked"><span data-i18n="asked">医院要</span><b id="tk-asked">—</b></div>
-          <div class="tk current"><span data-i18n="current">现在</span><b id="tk-current">—</b></div>
-          <div class="tk saved"><span data-i18n="saved">省下</span><b id="tk-saved">—</b><i id="tk-pct"></i></div>
-          <div id="deal-stamp" class="stamp" hidden aria-hidden="true">成交</div>
+          <div class="tk asked"><span>Hospital asked</span><b id="tk-asked">—</b></div>
+          <div class="tk current"><span>Now</span><b id="tk-current">—</b></div>
+          <div class="tk saved"><span>Saved</span><b id="tk-saved">—</b><i id="tk-pct"></i></div>
+          <div id="deal-stamp" class="stamp" hidden aria-hidden="true">Agreed</div>
         </div>
-        <p class="limit-guard" data-i18n="limitGuard">没有您同意，Vellum 不会答应任何价格，也绝不超过您设定的上限。</p>
+        <p class="limit-guard">Vellum never accepts a price without your approval, and never above the limit you set.</p>
         <fieldset class="seg" id="counterparty">
-          <legend data-i18n="counterparty">医院那边是</legend>
-          <label><input type="radio" name="counterparty" value="agent" checked /><span data-i18n="cpAgent">AI 账单员</span></label>
-          <label><input type="radio" name="counterparty" value="human" /><span data-i18n="cpHuman">真人账单员</span></label>
+          <legend>Hospital side is</legend>
+          <label><input type="radio" name="counterparty" value="agent" checked /><span>AI billing agent</span></label>
+          <label><input type="radio" name="counterparty" value="human" /><span>A person</span></label>
         </fieldset>
         <div class="voices">
-          <span class="voice" id="v-advocate"><i></i><span data-i18n="whoAdvocate">Vellum</span></span>
-          <span class="voice" id="v-hospital"><i></i><span data-i18n="whoHospital">医院</span></span>
+          <span class="voice" id="v-advocate"><i></i><span>Vellum</span></span>
+          <span class="voice" id="v-hospital"><i></i><span>Hospital</span></span>
         </div>
-        <button id="negotiate-btn" class="primary" type="button" data-i18n="startCall">开始通话</button>
+        <button id="negotiate-btn" class="primary" type="button">Start the call</button>
         <p id="room-status" class="fine" aria-live="polite"></p>
         <ol id="transcript" class="transcript"></ol>
       </div>
-      <button id="to-receipts" class="primary" type="button" data-i18n="toReceipts">看凭证</button>
+      <button id="to-receipts" class="primary" type="button">See receipts</button>
     </section>
 
     <!-- 6 receipts -->
     <section class="screen" data-screen="receipts" id="screen-receipts" hidden>
-      <h1 data-i18n="receiptsTitle">每一步都有凭证</h1>
-      <p class="lede" data-i18n="receiptsLede">钱先放在托管账户里，医院确认您欠款为零才会付出去。</p>
+      <h1>A receipt for every step</h1>
+      <p class="lede">Your money waits in escrow and is paid only after the hospital confirms a zero balance.</p>
       <div id="outcome-card" class="outcome" hidden>
-        <h2 data-i18n="outcomeTitle">结果</h2>
+        <h2>The result</h2>
         <p id="outcome-preview" class="outcome-tag" hidden></p>
-        <button id="hear-btn" class="primary hear" type="button"><span class="hear-icon" aria-hidden="true">▶</span><span data-i18n="hearResult">听结果</span></button>
+        <button id="hear-btn" class="primary hear" type="button"><span class="hear-icon" aria-hidden="true">▶</span><span id="hear-label">Hear the result</span></button>
         <p id="hear-note" class="fine hear-note" role="status" hidden></p>
         <audio id="hear-audio" preload="none" hidden></audio>
-        <ul id="outcome-zh" class="outcome-zh" lang="zh-CN"></ul>
-        <ul id="outcome-en" class="outcome-en" lang="en"></ul>
+        <ul id="outcome-en" class="outcome-en"></ul>
       </div>
       <div class="actions">
-        <button id="credential-btn" class="secondary" type="button" data-i18n="credential">证明困难资格</button>
-        <button id="settle-btn" class="secondary" type="button" data-i18n="settle">把钱放进托管</button>
-        <button id="confirm-btn" class="secondary" type="button" data-i18n="confirmZero">医院确认余额为零</button>
+        <button id="credential-btn" class="secondary" type="button">Prove hardship eligibility</button>
+        <button id="settle-btn" class="secondary" type="button">Put the money in escrow</button>
+        <button id="confirm-btn" class="secondary" type="button">Hospital confirms zero balance</button>
         <div class="loan-row">
-          <label class="field inline"><span data-i18n="months">分期月数</span><input id="loan-months" type="number" min="1" max="36" value="12" /></label>
-          <button id="loan-btn" class="secondary" type="button" data-i18n="loan">0% 分期</button>
+          <label class="field inline"><span>Months</span><input id="loan-months" type="number" min="1" max="36" value="12" /></label>
+          <button id="loan-btn" class="secondary" type="button">0% payment plan</button>
         </div>
       </div>
       <div id="fed-card" class="fed">
-        <h2 data-i18n="fedTitle">一次付清，还是分期？</h2>
-        <button id="financing-btn" class="secondary" type="button" data-i18n="getAdvice">看建议</button>
+        <h2>Pay at once, or in installments?</h2>
+        <button id="financing-btn" class="secondary" type="button">Get advice</button>
         <div id="fed-body"></div>
-        <button id="hedge-btn" class="text" type="button" data-i18n="hedge">用 Gemini 测试盘对冲利率风险</button>
+        <button id="hedge-btn" class="text" type="button">Hedge rate risk (Gemini sandbox)</button>
       </div>
       <ol id="receipts" class="timeline"></ol>
-      <button id="x402-btn" class="text" type="button" data-i18n="loadPayments">显示 Vellum 付的数据费</button>
+      <button id="x402-btn" class="text" type="button">Show the data fees Vellum paid</button>
     </section>
   </main>
 </div>
+<footer class="colophon">Vellum runs on test networks only (XRPL devnet, BNB Chain testnet, Base Sepolia). No real money moves. Vellum never agrees to a price above the limit you set.</footer>
 <script type="module" src="/app.js"></script>
+<script type="module" src="/intro.js"></script>
 </body>
 </html>
