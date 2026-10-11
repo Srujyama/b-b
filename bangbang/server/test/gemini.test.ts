@@ -486,8 +486,8 @@ describe("network boundary + routes (fetch mocked)", () => {
 
   it("hedge route 503s without Gemini keys", async () => {
     const saved = { k: process.env.GEMINI_API_KEY, s: process.env.GEMINI_API_SECRET };
-    delete process.env.GEMINI_API_KEY;
-    delete process.env.GEMINI_API_SECRET;
+    process.env.GEMINI_API_KEY = ""; // blank, not deleted: dotenv would refill a deleted key from a local .env
+    process.env.GEMINI_API_SECRET = "";
     try {
       const app = Fastify();
       await app.register(marketsRoutes);

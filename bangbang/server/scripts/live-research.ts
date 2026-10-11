@@ -1,4 +1,4 @@
-// Live proof for the research module against real Context.dev + OpenAI.
+// Live proof for the research module against real Context.dev + Claude.
 //   npx tsx scripts/live-research.ts [code] [description] [hospital]
 // Needs CONTEXT_DEV_API_KEY and ANTHROPIC_API_KEY in bangbang/server/.env. Defaults are DEMO SEED inputs only.
 import "dotenv/config";

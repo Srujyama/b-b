@@ -4,6 +4,7 @@ vi.mock("../src/llm.js", () => ({ llmJson: vi.fn(), llmText: vi.fn() }));
 import { llmJson } from "../src/llm.js";
 import { buildScrapeBody, buildSearchBody, mapUrls, scrape, search, answer, brand, CONTEXT_DEV_BASE } from "../src/research/contextdev.js";
 import { lookupFairPrice, numberAppearsIn } from "../src/research/fairprice.js";
+import { MEDICARE_SOURCE_DOMAINS, trustOf } from "../src/research/trust.js";
 import { findCharityPolicy, fplPercent, povertyLine } from "../src/research/charity.js";
 import { buildNegotiation } from "../src/research/facts.js";
 import { createCase } from "../src/store.js";
@@ -84,6 +85,26 @@ describe("contextdev client", () => {
     expect(urls[0].url).toContain("financial-assistance");
   });
 
+  it("runs one request at a time and retries a rate-limit response", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let n = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        maxInFlight = Math.max(maxInFlight, ++inFlight);
+        await new Promise((r) => setTimeout(r, 5));
+        inFlight--;
+        // the first call is rate-limited once, then succeeds on retry
+        return ++n === 1 ? new Response(JSON.stringify({ error_code: "RATE_LIMITED" }), { status: 429, headers: { "retry-after": "0.01" } }) : new Response(JSON.stringify({ results: [] }));
+      }),
+    );
+    const out = await Promise.all([search("a"), search("b"), search("c")]);
+    expect(out).toEqual([[], [], []]);
+    expect(maxInFlight).toBe(1);
+    expect(n).toBe(4); // 3 searches + 1 retry
+  });
+
   it("fails loudly without a key and on HTTP errors", async () => {
     delete process.env.CONTEXT_DEV_API_KEY;
     await expect(search("x")).rejects.toThrow(/CONTEXT_DEV_API_KEY/);
@@ -102,35 +123,101 @@ describe("lookupFairPrice", () => {
     expect(numberAppearsIn("rate 180.5", 180)).toBe(false);
   });
 
-  it("keeps only numbers printed in the cited scraped source", async () => {
+  it("trustOf: government and the hospital's own site are official, known bodies institutional, the rest untrusted", () => {
+    expect(trustOf("https://www.medicare.gov/procedure-price-lookup/cost/74177/")).toBe("official");
+    expect(trustOf("https://data.cms.gov/x")).toBe("official");
+    expect(trustOf("https://billing.mercy.example/prices", "mercy.example")).toBe("official");
+    expect(trustOf("https://www.acep.org/apc-faq")).toBe("institutional");
+    expect(trustOf("https://claimmaxrcm.com/cpt-code-99285")).toBe("untrusted");
+    expect(trustOf("https://notmercy.example/prices", "mercy.example")).toBe("untrusted");
+    expect(trustOf("https://cms.gov.evil.example/x")).toBe("untrusted");
+    expect(trustOf("not a url")).toBe("untrusted");
+  });
+
+  const emptyMedicareGov = (url: string) => ({ url, markdown: { requested: true, success: true, data: "## Code:\n\nFacility Fee\n\n$null" } });
+
+  it("drops untrusted sites before the LLM and keeps only numbers printed in the cited source", async () => {
     mockFetch((r) => {
-      if (r.body?.query?.startsWith("CPT")) return { results: [hit("https://cms.example/pfs", "PFS", ["CPT 99285 national payment amount $176.17"])] };
-      return { results: [hit("https://hosp.example/prices", "Prices", ["99285 ED visit discounted cash price $1,450.00"])] };
+      if (r.url.endsWith("/web/scrape")) return emptyMedicareGov(r.body.url);
+      if (r.url.endsWith("/brand/retrieve")) return { brand: { domain: "mercy.example", title: "Mercy General" } };
+      if (r.body?.query?.startsWith("CPT"))
+        return { results: [hit("https://billingblog.example/99285", "Blog", ["CPT 99285 pays $171.35"]), hit("https://www.cms.gov/pfs", "PFS", ["CPT 99285 national payment amount $176.17"])] };
+      return { results: [hit("https://mercy.example/prices", "Prices", ["99285 ED visit discounted cash price $1,450.00"]), hit("https://aggregator.example/mercy", "Agg", ["99285 cash price $1,200.00"])] };
     });
-    llm.mockResolvedValueOnce({ medicareRate: { amount: 176.17, sourceUrl: "https://cms.example/pfs", quote: "CPT 99285 national payment amount $176.17" } });
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 176.17, sourceUrl: "https://www.cms.gov/pfs", quote: "CPT 99285 national payment amount $176.17", kind: "professional", plausible: true } });
     // hospital: cash price is real; negotiatedMedian is hallucinated (not in text) -> must be dropped
-    llm.mockResolvedValueOnce({ hospitalCashPrice: { amount: 1450, sourceUrl: "https://hosp.example/prices" }, negotiatedMedian: { amount: 999, sourceUrl: "https://hosp.example/prices" } });
+    llm.mockResolvedValueOnce({ hospitalCashPrice: { amount: 1450, sourceUrl: "https://mercy.example/prices" }, negotiatedMedian: { amount: 999, sourceUrl: "https://mercy.example/prices" } });
     const fp = await lookupFairPrice("99285", "ED visit", "Mercy General");
     expect(fp.medicareRate).toBe(176.17);
     expect(fp.hospitalCashPrice).toBe(1450);
     expect(fp.negotiatedMedian).toBeUndefined();
-    expect(fp.sources.map((s) => s.url)).toEqual(["https://cms.example/pfs", "https://hosp.example/prices"]);
+    expect(fp.sources.map((s) => s.url)).toEqual(["https://www.cms.gov/pfs", "https://mercy.example/prices"]);
+    expect(fp.sources[0].title).toMatch(/^Medicare physician fee for 99285/);
     expect(fp.sources.every((s) => s.via === "context.dev")).toBe(true);
-    // the LLM only ever saw scraped text
-    expect(String(llm.mock.calls[0][1])).toContain("URL: https://cms.example/pfs");
+    // searches are restricted to trusted domains / the hospital's own site
+    const searches = calls.filter((c) => c.url.endsWith("/web/search"));
+    expect(searches[0].body.includeDomains).toEqual(MEDICARE_SOURCE_DOMAINS);
+    expect(searches[1].body.includeDomains).toEqual(["mercy.example"]);
+    // the LLM only ever saw trusted scraped text
+    const medicarePrompt = String(llm.mock.calls[0][1]);
+    expect(medicarePrompt).toContain("URL: https://www.cms.gov/pfs\nTITLE: PFS\nTRUST: official");
+    expect(medicarePrompt).not.toContain("billingblog");
+    expect(String(llm.mock.calls[1][1])).not.toContain("aggregator.example");
   });
 
-  it("falls back to Answers -> scrape, and leaves medicareRate undefined if still unverifiable", async () => {
+  it("reads the official medicare.gov price page first and labels the facility rate", async () => {
+    const page = "# CT abdomen and pelvis\n\n## Code: 74177\n\n## Hospital outpatient departments\n\nTotal Cost\n\n**$656**\n\nDoctor Fee\n\n$300\n\nFacility Fee\n\n$356";
+    mockFetch((r) => (r.url.endsWith("/web/scrape") ? { url: r.body.url, markdown: { requested: true, success: true, data: page } } : { results: [] }));
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 356, sourceUrl: "https://www.medicare.gov/procedure-price-lookup/cost/74177/", quote: "Facility Fee $356", kind: "facility", plausible: true } });
+    const fp = await lookupFairPrice("74177", "CT abdomen/pelvis");
+    const scrapeCall = calls.find((c) => c.url.endsWith("/web/scrape"))!;
+    expect(scrapeCall.body).toMatchObject({ url: "https://www.medicare.gov/procedure-price-lookup/cost/74177/", formats: { markdown: true }, sharedParams: { mainContentOnly: true, waitFor: 6000 } });
+    expect(String(llm.mock.calls[0][1])).toContain("TRUST: official");
+    expect(fp.medicareRate).toBe(356);
+    expect(fp.sources[0]).toMatchObject({ url: "https://www.medicare.gov/procedure-price-lookup/cost/74177/", snippet: "Facility Fee $356" });
+    expect(fp.sources[0].title).toMatch(/^Medicare hospital facility rate for 74177/);
+  });
+
+  it("rejects a printed number Claude flags as implausible, then falls back to Answers -> scrape on trusted sites only", async () => {
     mockFetch((r) => {
-      if (r.url.endsWith("/web/search")) return { results: [hit("https://blog.example/x", "Blog", ["ER visits are expensive"])] };
-      if (r.url.endsWith("/web/answers")) return { json_content: { source_url: "https://cms.example/lookup", amount: 176.17 }, sources: [] };
-      return { url: "https://cms.example/lookup", highlights: { requested: true, success: true, data: ["HCPCS 99285 ... see table"] } };
+      if (r.url.endsWith("/web/search")) return { results: [hit("https://www.acep.org/faq", "FAQ", ["99285 billed charge $4,000.00"])] };
+      if (r.url.endsWith("/web/answers")) return { json_content: { source_url: "https://www.cms.gov/lookup", amount: 176.17 }, sources: [] };
+      if (r.body.url.includes("medicare.gov")) return emptyMedicareGov(r.body.url);
+      return { url: "https://www.cms.gov/lookup", highlights: { requested: true, success: true, data: ["HCPCS 99285 ... see table"] } };
     });
-    llm.mockResolvedValue({ medicareRate: { amount: 176.17, sourceUrl: "https://cms.example/lookup" } });
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 4000, sourceUrl: "https://www.acep.org/faq", kind: "facility", plausible: false } });
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 176.17, sourceUrl: "https://www.cms.gov/lookup", plausible: true } });
     const fp = await lookupFairPrice("99285", "ED visit");
-    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/search", "/v1/web/answers", "/v1/web/scrape"]);
-    expect(fp.medicareRate).toBeUndefined(); // Answers claimed 176.17 but the scraped page doesn't print it
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/scrape", "/v1/web/search", "/v1/web/answers", "/v1/web/scrape"]);
+    expect(fp.medicareRate).toBeUndefined(); // 4000 was implausible; Answers claimed 176.17 but the scraped page doesn't print it
     expect(fp.sources).toEqual([]);
+  });
+
+  it("rejects a stale rate from an old report and labels a current one with its year", async () => {
+    const thisYear = new Date().getFullYear();
+    mockFetch((r) => {
+      if (r.url.endsWith("/web/search")) return { results: [hit("https://www.cms.gov/old-report.pdf", "Report", ["APC 0616 (HCPCS 99285), $334.71"]), hit("https://www.acep.org/apc-faq", "APC FAQ", ["5025 | 99285 | Level 5 Type A ED Visits | $612.40"])] };
+      if (r.url.endsWith("/web/answers")) return { json_content: {}, sources: [] };
+      return emptyMedicareGov(r.body.url);
+    });
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 334.71, sourceUrl: "https://www.cms.gov/old-report.pdf", kind: "facility", year: thisYear - 10, plausible: true } });
+    expect((await lookupFairPrice("99285", "ED visit")).medicareRate).toBeUndefined();
+    llm.mockResolvedValueOnce({ medicareRate: { amount: 612.4, sourceUrl: "https://www.acep.org/apc-faq", kind: "facility", year: thisYear, plausible: true } });
+    const fp = await lookupFairPrice("99285", "ED visit");
+    expect(fp.medicareRate).toBe(612.4);
+    expect(fp.sources[0].title).toMatch(new RegExp(`^Medicare hospital facility rate \\(${thisYear}\\) for 99285`));
+  });
+
+  it("never scrapes an untrusted page suggested by Answers", async () => {
+    mockFetch((r) => {
+      if (r.url.endsWith("/web/search")) return { results: [hit("https://blog.example/x", "Blog", ["CPT 99285 pays $171.35"])] };
+      if (r.url.endsWith("/web/answers")) return { json_content: { source_url: "https://blog.example/x", amount: 171.35 }, sources: [] };
+      return emptyMedicareGov(r.body.url);
+    });
+    const fp = await lookupFairPrice("99285", "ED visit");
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(["/v1/web/scrape", "/v1/web/search", "/v1/web/answers"]);
+    expect(llm).not.toHaveBeenCalled();
+    expect(fp.medicareRate).toBeUndefined();
   });
 });
 
@@ -159,6 +246,18 @@ describe("charity", () => {
     expect(p).toMatchObject({ hasFap: true, freeCareBelowPctFpl: 200, discountBelowPctFpl: 400 });
     expect(p.discountPct).toBeUndefined(); // 80 is not printed in the policy text
     expect(p.sources.at(-1)?.url).toBe("https://mercy.example/billing/financial-assistance-policy.pdf");
+  });
+
+  it("search fallback reads only the hospital's own site, never third-party summaries", async () => {
+    mockFetch((r) => {
+      if (r.url.includes("/web/urls")) return { urls: [] };
+      return { results: [hit("https://www.advocamed.example/hospital/st-elsewhere", "Guide", ["free care below 300% FPL"]), hit("https://stelsewhere.example/financial-assistance", "FAP", ["Free care at or below 250% of the FPL."])] };
+    });
+    llm.mockResolvedValue({ hasFap: true, freeCareBelowPctFpl: 250, discountBelowPctFpl: null, discountPct: null, applicationUrl: null, summary: "Free below 250% FPL.", sourceUrl: "https://stelsewhere.example/financial-assistance" });
+    const p = await findCharityPolicy("St Elsewhere", "https://www.stelsewhere.example");
+    expect(calls.find((c) => c.url.endsWith("/web/search"))?.body.includeDomains).toEqual(["stelsewhere.example"]);
+    expect(String(llm.mock.calls[0][1])).not.toContain("advocamed");
+    expect(p).toMatchObject({ hasFap: true, freeCareBelowPctFpl: 250 });
   });
 
   it("reports hasFap:false when nothing is found", async () => {
@@ -236,7 +335,7 @@ describe("buildNegotiation", () => {
 // ---------------- route ----------------
 describe("POST /api/cases/:id/research", () => {
   it("503s loudly when Context.dev is not configured", async () => {
-    delete process.env.CONTEXT_DEV_API_KEY;
+    process.env.CONTEXT_DEV_API_KEY = ""; // blank, not deleted: dotenv would refill a deleted key from a local .env
     const { buildApp } = await import("../src/index.js");
     const app = await buildApp();
     const c = createCase({ mode: "patient", bill, patient: patient() });
@@ -251,7 +350,7 @@ describe("POST /api/cases/:id/research", () => {
     mockFetch((r) => {
       if (r.url.includes("/web/search")) {
         const code = r.body.query.includes("99285") ? "99285" : "74177";
-        return { results: [hit(`https://cms.example/${code}`, "PFS", [`CPT ${code} national payment amount $${code === "99285" ? "200.00" : "400.00"}`])] };
+        return { results: [hit(`https://www.cms.gov/${code}`, "PFS", [`CPT ${code} national payment amount $${code === "99285" ? "200.00" : "400.00"}`])] };
       }
       if (r.url.includes("/brand/retrieve")) return { brand: { domain: "mercy.example" } };
       if (r.url.includes("/web/urls")) return { urls: [] };
@@ -260,7 +359,7 @@ describe("POST /api/cases/:id/research", () => {
     llm.mockImplementation(async (_s: string, user: string) => {
       if (user.includes("Medicare payment amount")) {
         const code = user.includes("Code: 99285") ? "99285" : "74177";
-        return { medicareRate: { amount: code === "99285" ? 200 : 400, sourceUrl: `https://cms.example/${code}` } };
+        return { medicareRate: { amount: code === "99285" ? 200 : 400, sourceUrl: `https://www.cms.gov/${code}` } };
       }
       return { hospitalCashPrice: null, negotiatedMedian: null };
     });

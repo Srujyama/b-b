@@ -194,7 +194,7 @@ describe("routes (llm mocked)", () => {
     await app.close();
   });
 
-  it("returns 503 with a clear message when OpenAI is not configured", async () => {
+  it("returns 503 with a clear message when Claude is not configured", async () => {
     mocked.mockReset();
     mocked.mockRejectedValue(new Error("ANTHROPIC_API_KEY is not configured — set it in bangbang/server/.env (see .env.example)"));
     const { buildApp } = await import("../src/index.js");

@@ -24,26 +24,55 @@ export function contextDevKey(): string {
 
 type Method = "GET" | "POST";
 
+// The free plan runs one request at a time (a second concurrent one gets 429), so calls queue here.
+const MAX_CONCURRENT = 1;
+const MAX_ATTEMPTS = 3;
+const MAX_RETRY_WAIT_MS = 10_000;
+let active = 0;
+const waiting: (() => void)[] = [];
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (active >= MAX_CONCURRENT) await new Promise<void>((go) => waiting.push(go));
+  else active++;
+  try {
+    return await fn();
+  } finally {
+    const next = waiting.shift();
+    if (next) next(); // hand the slot straight to the next caller
+    else active--;
+  }
+}
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function call<T>(method: Method, path: string, body?: unknown, query?: Record<string, string | number | boolean | undefined>): Promise<T> {
   const key = contextDevKey();
   const url = new URL(CONTEXT_DEV_BASE + path);
   for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined) url.searchParams.set(k, String(v));
-  const res = await fetch(url.toString(), {
-    method,
-    headers: { Authorization: `Bearer ${key}`, ...(body ? { "Content-Type": "application/json" } : {}), Accept: "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
+  return withSlot(async () => {
+    for (let attempt = 1; ; attempt++) {
+      const res = await fetch(url.toString(), {
+        method,
+        headers: { Authorization: `Bearer ${key}`, ...(body ? { "Content-Type": "application/json" } : {}), Accept: "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      // rate limits and transient server errors are retried (bounded); validation errors never are
+      if ((res.status === 429 || res.status === 408 || res.status >= 500) && attempt < MAX_ATTEMPTS) {
+        const retryAfter = Number(res.headers.get("retry-after"));
+        await sleep(Math.min(MAX_RETRY_WAIT_MS, retryAfter > 0 ? retryAfter * 1000 : 1000 * attempt));
+        continue;
+      }
+      const text = await res.text();
+      let json: any;
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        throw new ContextDevError(`Context.dev ${path} returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
+      }
+      if (!res.ok) {
+        throw new ContextDevError(`Context.dev ${path} failed (HTTP ${res.status}${json?.error_code ? ` ${json.error_code}` : ""}): ${json?.message ?? text.slice(0, 200)}`, res.status === 401 || res.status === 403 ? 503 : 502, json?.error_code);
+      }
+      return json as T;
+    }
   });
-  const text = await res.text();
-  let json: any;
-  try {
-    json = text ? JSON.parse(text) : {};
-  } catch {
-    throw new ContextDevError(`Context.dev ${path} returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
-  }
-  if (!res.ok) {
-    throw new ContextDevError(`Context.dev ${path} failed (HTTP ${res.status}${json?.error_code ? ` ${json.error_code}` : ""}): ${json?.message ?? text.slice(0, 200)}`, res.status === 401 || res.status === 403 ? 503 : 502, json?.error_code);
-  }
-  return json as T;
 }
 
 const src = (url: string, title?: string, snippet?: string): Source => ({ title: title || url, url, snippet: snippet?.slice(0, 500), via: "context.dev" });
@@ -71,7 +100,7 @@ export async function search(query: string, o: SearchOpts = {}): Promise<SearchH
 }
 
 // ---------- scrape ----------
-export type ScrapeOpts = { markdown?: boolean; highlightsQuery?: string; maxCharacters?: number; json?: { schema: object; instructions?: string } };
+export type ScrapeOpts = { markdown?: boolean; highlightsQuery?: string; maxCharacters?: number; json?: { schema: object; instructions?: string }; /** ms to let a JavaScript-rendered page load its data */ waitForMs?: number };
 export type ScrapeResult = { url: string; markdown?: string; highlights?: string[]; json?: Record<string, unknown>; errors: string[]; source: Source };
 
 export function buildScrapeBody(url: string, o: ScrapeOpts = {}) {
@@ -89,6 +118,7 @@ export function buildScrapeBody(url: string, o: ScrapeOpts = {}) {
     formats.json = true;
     body.jsonParams = { schema: o.json.schema, ...(o.json.instructions ? { instructions: o.json.instructions } : {}) };
   }
+  if (o.waitForMs) body.sharedParams = { ...(body.sharedParams as object | undefined), waitFor: o.waitForMs };
   return body;
 }
 
@@ -122,6 +152,19 @@ export async function brand(lookup: { name: string } | { domain: string }): Prom
   const b = r.brand ?? {};
   if (!b.domain) throw new ContextDevError(`Context.dev brand lookup returned no domain for ${JSON.stringify(lookup)}`);
   return { domain: b.domain, title: b.title, description: b.description, phone: b.phone, address: b.address, source: src(`https://${b.domain}`, b.title, b.description) };
+}
+
+/** Resolve an organisation's official domain by name, once per process (a brand lookup costs 10 credits). */
+const brandsByName = new Map<string, Promise<Brand>>();
+export function brandByName(name: string): Promise<Brand> {
+  const key = name.trim().toLowerCase();
+  let p = brandsByName.get(key);
+  if (!p) {
+    p = brand({ name });
+    brandsByName.set(key, p);
+    p.catch(() => brandsByName.delete(key)); // don't cache failures
+  }
+  return p;
 }
 
 // ---------- map site URLs ----------
