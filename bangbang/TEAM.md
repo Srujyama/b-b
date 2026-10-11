@@ -18,6 +18,10 @@ npm test                      # unit tests, need no keys
 npm run dev                   # http://localhost:8787  (web UI + API)
 ```
 
+**See every screen without keys:** `DEV_PREVIEW=1 npm run dev`, then open
+`http://localhost:8787/dev/preview?stage=bill|research|room|receipts` (add `&step=900` to watch the call replay live).
+This is a design harness only, with data labeled PREVIEW. It's off unless that flag is set.
+
 `GET /health` shows which integrations have keys. A route whose key is missing returns **503 "X is not configured"**.
 That's expected, not a bug.
 
