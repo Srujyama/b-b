@@ -1,5 +1,10 @@
 # Hosted judge demo: Vellum integration handoff
 
+**New demo direction:** the user now wants Haiku-to-Haiku agent audio. Read
+[AGENT_DEMO.md](./AGENT_DEMO.md) for the separate hospital agent, deployment setting and validation.
+The checkpoint below records the previous release; it does not imply that the new hospital
+endpoint is already deployed or that a live two-agent rehearsal has passed.
+
 Prepared 2026-10-11. The founder owns deployment and wallet secrets. Voice implementation PR #28 is
 reviewed and merged into `main`; GitHub runs TypeScript + tests before deploying Fly. No personal or app deploy token is
 needed by Branch A. Do not deploy this feature branch directly.

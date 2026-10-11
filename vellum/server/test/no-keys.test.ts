@@ -191,6 +191,7 @@ const PROBES: Probe[] = [
   { route: "POST /api/voice/llm/v1/chat/completions", url: "/api/voice/llm/v1/chat/completions", payload: {}, status: 503, match: NOT_CONFIGURED("VOICE_LLM_TOKEN") },
   { route: "POST /api/voice/llm/v1/chat/completions", url: "/api/voice/llm/v1/chat/completions", payload: "{bad", headers: JSON_CT, status: 400, match: /not valid JSON/ },
   { route: "POST /api/voice/browser/llm/v1/chat/completions", url: "/api/voice/browser/llm/v1/chat/completions", payload: {}, status: 503, match: NOT_CONFIGURED("VOICE_LLM_TOKEN") },
+  { route: "POST /api/voice/hospital/llm/v1/chat/completions", url: "/api/voice/hospital/llm/v1/chat/completions", payload: {}, status: 503, match: NOT_CONFIGURED("VOICE_LLM_TOKEN") },
 
   // ---- calls.ts phone-call orchestration (bearer token, job dir, ElevenLabs)
   { route: "GET /api/voice/ready", url: "/api/voice/ready", status: 503, match: NOT_CONFIGURED("VOICE_ORCHESTRATOR_TOKEN") },

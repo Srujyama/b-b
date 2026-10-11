@@ -8,6 +8,7 @@ import { readVoiceMemory } from "./shared-context.js";
 import { CallJobStore } from "./calls.js";
 import { resolveSpeechProfile, speechInstructions, type SpeechProfile } from "./speech.js";
 import { browserDemoMemory } from "./browser-demo.js";
+import { hospitalDemoContext, hospitalSpeechProfile } from "./hospital-demo.js";
 
 export const voiceModel = () => opt("VOICE_LLM_MODEL", "claude-haiku-5-5")!;
 export function voiceError(message: string, statusCode = 400): Error & { statusCode: number } {
@@ -23,7 +24,7 @@ type Message = { role: string; content?: unknown; tool_call_id?: string; tool_ca
   id: string; type: string; function: { name: string; arguments: string };
 }[] };
 export type CompletionRequest = { stream: boolean; messages: Message[]; voice_job_id?: string;
-  elevenlabs_extra_body?: { voice_job_id?: string; browser_case_id?: string }; tools?: {
+  elevenlabs_extra_body?: { voice_job_id?: string; browser_case_id?: string; hospital_case_id?: string }; tools?: {
   type: string; function: { name: string; description?: string; parameters: Record<string, unknown> };
 }[] };
 
@@ -35,7 +36,7 @@ function textContent(value: unknown): string {
   throw voiceError("Voice LLM accepts text content only");
 }
 
-export function anthropicRequest(input: CompletionRequest, speech: SpeechProfile = resolveSpeechProfile()) {
+export function anthropicRequest(input: CompletionRequest, speech: SpeechProfile = resolveSpeechProfile(), role: "advocate" | "hospital" = "advocate") {
   if (input?.stream !== true || !Array.isArray(input.messages) || !input.messages.length || input.messages.length > 200)
     throw voiceError("stream:true and 1–200 messages are required");
   const system: string[] = [];
@@ -76,7 +77,7 @@ export function anthropicRequest(input: CompletionRequest, speech: SpeechProfile
   });
   // Bound to the job's actual TTS selection, after provider-supplied system instructions.
   // Plain text stays streamed immediately; do not buffer a full sentence to add delivery tags.
-  system.push(speechInstructions(speech));
+  system.push(speechInstructions(speech, role));
   return {
     model: voiceModel(), stream: true, max_tokens: 512,
     // No reasoning delay in spoken turns. Planning belongs to the orchestrator.
@@ -144,11 +145,12 @@ export async function* completionChunks(body: ReadableStream<Uint8Array>, onFirs
 }
 
 export async function haikuRoutes(app: FastifyInstance) {
-  for (const browser of [false, true]) app.post<{ Body: CompletionRequest }>(browser
-    ? "/api/voice/browser/llm/v1/chat/completions" : "/api/voice/llm/v1/chat/completions", { bodyLimit: 256 * 1024 }, async (req, reply) => {
+  for (const role of ["phone", "browser", "hospital"] as const) app.post<{ Body: CompletionRequest }>(role === "phone"
+    ? "/api/voice/llm/v1/chat/completions" : `/api/voice/${role}/llm/v1/chat/completions`, { bodyLimit: 256 * 1024 }, async (req, reply) => {
     checkBearer(req.headers.authorization, "VOICE_LLM_TOKEN");
     let speech: SpeechProfile;
     let memory;
+    let hospital;
     const extra = req.body?.elevenlabs_extra_body;
     if (extra != null && (typeof extra !== "object" || Array.isArray(extra))) throw voiceError("Invalid custom LLM metadata");
     const jobId = extra?.voice_job_id ?? req.body?.voice_job_id;
@@ -156,8 +158,16 @@ export async function haikuRoutes(app: FastifyInstance) {
       throw voiceError("Invalid voice job ID");
     if (extra?.voice_job_id && req.body?.voice_job_id && extra.voice_job_id !== req.body.voice_job_id)
       throw voiceError("Conflicting voice job IDs");
-    if (!browser && extra?.browser_case_id) throw voiceError("Browser cases must use the browser rehearsal endpoint");
-    if (browser) {
+    if (role !== "browser" && extra?.browser_case_id !== undefined) throw voiceError("Browser cases must use the browser rehearsal endpoint");
+    if (role !== "hospital" && extra?.hospital_case_id !== undefined) throw voiceError("Hospital cases must use the hospital demo endpoint");
+    if (role === "hospital") {
+      if (jobId) throw voiceError("Phone jobs cannot use the hospital demo endpoint");
+      hospital = hospitalDemoContext(extra?.hospital_case_id);
+      speech = hospitalSpeechProfile();
+      if (req.body.tools && (!Array.isArray(req.body.tools) ||
+        req.body.tools.some((tool) => !["end_call", "skip_turn"].includes(tool?.function?.name))))
+        throw voiceError("Hospital demo only permits call-control tools");
+    } else if (role === "browser") {
       if (jobId) throw voiceError("Phone jobs cannot use the browser rehearsal endpoint");
       memory = browserDemoMemory(extra?.browser_case_id);
       speech = resolveSpeechProfile();
@@ -168,7 +178,9 @@ export async function haikuRoutes(app: FastifyInstance) {
       speech = job.speech ?? { model: "eleven_flash_v2_5", voiceId: "legacy", voiceName: "Legacy call voice" };
       memory = await readVoiceMemory(job);
     } else speech = resolveSpeechProfile();
-    const payload = anthropicRequest(req.body, speech);
+    const payload = anthropicRequest(req.body, speech, role === "hospital" ? "hospital" : "advocate");
+    if (hospital) payload.system.push({ type: "text", text: hospital.authorized ? hospital.prompt
+      : "Client authorization has been revoked. Do not discuss account details. Say goodbye and use end_call." });
     if (memory) {
       // Keep the stable prefix cached and the latest state uncached. A fake user turn here made the
       // live agent answer internal notes instead of the hospital's actual last utterance.
