@@ -14,6 +14,7 @@ import { AGENTS, agentConfig, createVoiceGatewaySecret, listTools, toolConfig, t
 import { outboundAgentConfig, publicVoiceUrl } from "../src/agent/call-plan.js";
 import { checkElevenLabsConnection, smokeTestElevenLabs } from "../src/agent/connection.js";
 import { speechOptions } from "../src/agent/speech.js";
+import { browserAgentConfig } from "../src/agent/browser-demo.js";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(`setup-elevenlabs: creates/updates 3 ElevenLabs agents (advocate en, hospital billing en, intake zh)
@@ -21,6 +22,7 @@ and their tools (log_offer, accept_offer, report_outcome, submit_intake), enable
 language/voice overrides, and prints the agent ids to paste into vellum/server/.env.
 Tool mode: ELEVENLABS_TOOL_MODE=client (default; no public URL needed) or webhook (needs PUBLIC_URL).
 --outbound: configure a separate Haiku 5.5 + Eleven v4 Turbo phone representative.
+--browser: configure Haiku 5.5 + v4 Turbo for a teammate speaking in the browser; no Twilio.
 --dry-run: print configs without credentials, network access, or placing a call.
 --check: read-only ElevenLabs credential, voice, agent, and phone inventory checks.
 --options: list supported speech models and voice choices without network access.
@@ -36,7 +38,9 @@ const dryRun = process.argv.includes("--dry-run");
 const check = process.argv.includes("--check");
 const smoke = process.argv.includes("--smoke-test");
 const options = process.argv.includes("--options");
-if ((check || smoke || options) && (dryRun || process.argv.includes("--outbound") || [check, smoke, options].filter(Boolean).length > 1)) {
+const browser = process.argv.includes("--browser");
+if (browser && process.argv.includes("--outbound")) throw new Error("Choose --browser or --outbound, not both.");
+if ((check || smoke || options) && (dryRun || browser || process.argv.includes("--outbound") || [check, smoke, options].filter(Boolean).length > 1)) {
   throw new Error("Use --check, --smoke-test, or --options on its own; none can be combined with setup or --dry-run.");
 }
 if (options) {
@@ -55,7 +59,7 @@ if (smoke) {
   console.log(JSON.stringify({ ...metrics, audioFile, note: "Time to first audio byte includes network latency. This is not end-to-end phone latency." }, null, 2));
   process.exit(0);
 }
-if (process.argv.includes("--outbound")) {
+if (browser || process.argv.includes("--outbound")) {
   const base = dryRun ? "https://your-voice-server.example" : publicVoiceUrl();
   let secretId = opt("ELEVENLABS_LLM_SECRET_ID");
   if (dryRun) secretId = "<ELEVENLABS_LLM_SECRET_ID>";
@@ -68,12 +72,20 @@ if (process.argv.includes("--outbound")) {
       console.log(`ELEVENLABS_LLM_SECRET_ID=${secretId}`);
     }
   }
-  const config = outboundAgentConfig(base, secretId!);
+  const browserTools: string[] = [];
+  if (browser && !dryRun) {
+    const existing = await listTools();
+    for (const name of toolNamesForSpec(AGENTS.find((spec) => spec.role === "advocate")!))
+      browserTools.push(await upsertTool(toolConfig(name, "client"), existing.filter((tool) => tool.tool_config?.type === "client")));
+  }
+  const config = browser ? browserAgentConfig(base, secretId!, browserTools) : outboundAgentConfig(base, secretId!);
   if (dryRun) console.log(JSON.stringify(config, null, 2));
   else {
-    const id = await upsertAgent(config, opt("ELEVENLABS_OUTBOUND_AGENT_ID"));
-    console.log(`ELEVENLABS_OUTBOUND_AGENT_ID=${id}`);
-    console.log("Import your Twilio number into ElevenLabs and set ELEVENLABS_PHONE_NUMBER_ID. No calls were placed.");
+    const envVar = browser ? "ELEVENLABS_BROWSER_AGENT_ID" : "ELEVENLABS_OUTBOUND_AGENT_ID";
+    const id = await upsertAgent(config, opt(envVar));
+    console.log(`${envVar}=${id}`);
+    console.log(browser ? "Select Human mode in the negotiation room. Complete the browser client mapping in BROWSER_DEMO.md first. No phone number is needed."
+      : "Import your Twilio number into ElevenLabs and set ELEVENLABS_PHONE_NUMBER_ID. No calls were placed.");
     if (!opt("ANTHROPIC_API_KEY")) console.log("Claude credentials are deferred: set the shared ANTHROPIC_API_KEY before enabling calls.");
   }
   process.exit(0);

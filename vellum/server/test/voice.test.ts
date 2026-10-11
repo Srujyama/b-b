@@ -189,6 +189,7 @@ const ENV = {
   ELEVENLABS_ADVOCATE_AGENT_ID: "agent_adv",
   ELEVENLABS_HOSPITAL_AGENT_ID: "agent_hosp",
   ELEVENLABS_INTAKE_AGENT_ID: "agent_zh",
+  ELEVENLABS_BROWSER_AGENT_ID: "",
 };
 
 describe("bridge", () => {
@@ -467,6 +468,8 @@ import { anthropicRequest, completionChunks } from "../src/agent/haiku.js";
 import { outboundAgentConfig, validateVoicePlan, type VoicePlan } from "../src/agent/call-plan.js";
 import { CallJobStore, runVoiceTask, syncVoiceTask, verifyWebhook } from "../src/agent/calls.js";
 import { configureVoiceContext } from "../src/agent/shared-context.js";
+import { browserAgentConfig } from "../src/agent/browser-demo.js";
+import { buildVoiceGateway } from "../src/agent/public-gateway.js";
 
 const voicePlan = (): VoicePlan => ({
   version: "1", jobId: "job-1", caseId: "case-1", planId: "plan-1", stepId: "call-billing",
@@ -656,11 +659,14 @@ describe("outbound voice worker", () => {
     vi.stubEnv("VOICE_TTS_MODEL", "invalid-new-default");
     providerFetch.mockResolvedValueOnce(new Response(eventStream(spokenEvents)));
     const r = await app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions", headers: { authorization: "Bearer gateway-test" },
-      payload: { stream: true, voice_job_id: job.jobId, messages: [{ role: "user", content: "Hello" }] } });
+      payload: { stream: true, elevenlabs_extra_body: { voice_job_id: job.jobId }, messages: [{ role: "user", content: "Hello" }] } });
     expect(r.statusCode).toBe(200);
     const llm = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
     expect(llm.system[0].text).toContain("active speech engine: eleven_v4.");
     expect(new CallJobStore(directory).get(job.jobId)?.speech).toEqual(job.speech);
+    const conflict = await app.inject({ method: "POST", url: "/api/voice/llm/v1/chat/completions", headers: { authorization: "Bearer gateway-test" },
+      payload: { stream: true, elevenlabs_extra_body: { voice_job_id: job.jobId }, voice_job_id: "different-job", messages: [] } });
+    expect(conflict.statusCode).toBe(400);
   });
   it("keeps legacy journal calls tag-free because they were dispatched with Flash", async () => {
     await submit(app);
@@ -790,5 +796,144 @@ describe("outbound voice worker", () => {
     expect(config.conversation_config.agent.prompt.tool_ids).toEqual([]);
     expect(config.conversation_config.agent.prompt.built_in_tools).toHaveProperty("play_keypad_touch_tone");
     expect(JSON.stringify(config)).not.toContain("anthropic-test");
+  });
+});
+
+describe("human browser rehearsal", () => {
+  let app: ReturnType<typeof Fastify>;
+  let providerFetch: ReturnType<typeof vi.fn>;
+  const url = "/api/voice/browser/llm/v1/chat/completions";
+  const headers = { authorization: "Bearer browser-test" };
+  beforeEach(async () => {
+    for (const [key, value] of Object.entries({ ELEVENLABS_API_KEY: "eleven-test", ELEVENLABS_BROWSER_AGENT_ID: "browser-agent",
+      ANTHROPIC_API_KEY: "anthropic-test", VOICE_LLM_TOKEN: "browser-test", VOICE_TTS_MODEL: "", VOICE_VOICE_PRESET: "",
+      VOICE_CALLS_ENABLED: "false", ELEVENLABS_PHONE_NUMBER_ID: "", ELEVENLABS_ADVOCATE_VOICE_ID: "" })) vi.stubEnv(key, value);
+    providerFetch = vi.fn(async () => new Response(eventStream(spokenEvents)));
+    vi.stubGlobal("fetch", providerFetch);
+    app = Fastify(); await app.register(voiceRoutes);
+  });
+  afterEach(async () => { await app.close(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+  it("provisions a separate Haiku/v4 browser agent with client tools and no phone tools", () => {
+    const config = browserAgentConfig("https://voice.example", "secret-ref", ["client-tool-1"]);
+    expect(config.conversation_config.agent.prompt.custom_llm).toMatchObject({
+      url: "https://voice.example/api/voice/browser/llm/v1/chat/completions", model_id: "claude-haiku-5-5" });
+    expect(config.conversation_config.tts.model_id).toBe("eleven_v4_turbo");
+    expect(config.conversation_config.agent.prompt.tool_ids).toEqual(["client-tool-1"]);
+    expect(config.conversation_config.agent.prompt.built_in_tools).not.toHaveProperty("play_keypad_touch_tone");
+    expect(config.platform_settings.overrides.custom_llm_extra_body).toBe(true);
+    expect(config.platform_settings.auth.enable_auth).toBe(true);
+    expect(config.platform_settings.privacy.record_voice).toBe(false);
+  });
+  it("starts human mode using dedicated agent and shared case metadata without a phone number", async () => {
+    const c = patientCase(); providerFetch.mockResolvedValueOnce(Response.json({ signed_url: "wss://signed/browser" }));
+    const response = await app.inject({ method: "POST", url: `/api/cases/${c.id}/negotiate`, payload: { counterparty: "human" } });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ simulated: true, mode: "human", advocateSignedUrl: "wss://signed/browser",
+      advocateInit: { custom_llm_extra_body: { browser_case_id: c.id }, conversation_config_override: { tts: { model_id: "eleven_v4_turbo" } } } });
+    expect(response.json().advocateInit.conversation_config_override.agent.first_message).toContain("simulated");
+    expect(providerFetch).toHaveBeenCalledOnce(); expect(providerFetch.mock.calls[0][0]).toContain("agent_id=browser-agent");
+  });
+  it("rejects absent patient consent before requesting signed URLs", async () => {
+    const c = patientCase(); c.patient = undefined;
+    expect((await app.inject({ method: "POST", url: `/api/cases/${c.id}/negotiate`, payload: { counterparty: "human" } })).statusCode).toBe(409);
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("reads changed shared memory and revoked consent on every turn via nested ElevenLabs metadata", async () => {
+    const c = patientCase();
+    const request = () => app.inject({ method: "POST", url, headers, payload: {
+      stream: true, elevenlabs_extra_body: { browser_case_id: c.id }, messages: [{ role: "user", content: "What next?" }] } });
+    expect((await request()).body).toContain("[DONE]");
+    c.facts.push("The duplicate lab charge has now been corrected."); c.walkaway = 1000;
+    expect((await request()).statusCode).toBe(200);
+    const latest = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
+    expect(latest.messages.at(-1).content[0].text).toContain("duplicate lab charge has now been corrected");
+    expect(latest.messages.at(-1).content[0].text).toContain("1000");
+    expect(latest.model).toBe("claude-haiku-5-5");
+    c.patient!.consent = false; await request();
+    expect(JSON.parse(providerFetch.mock.calls.at(-1)![1].body).messages.at(-1).content[0].text).toContain("authorization has been revoked");
+    expect(providerFetch.mock.calls.every(([address]) => address === "https://api.anthropic.com/v1/messages")).toBe(true);
+  });
+  it("rejects missing, malformed, unknown or phone metadata and missing bearer auth", async () => {
+    for (const extra of [undefined, [], "bad", { voice_job_id: "job-1" }])
+      expect((await app.inject({ method: "POST", url, headers, payload: { stream: true, elevenlabs_extra_body: extra, messages: [] } })).statusCode).toBe(400);
+    expect((await app.inject({ method: "POST", url, headers, payload: { stream: true, elevenlabs_extra_body: { browser_case_id: "missing-case" }, messages: [] } })).statusCode).toBe(404);
+    expect((await app.inject({ method: "POST", url, payload: { stream: true, messages: [] } })).statusCode).toBe(401);
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+  it("reports deferred Claude configuration before contacting providers", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", ""); const c = patientCase();
+    const result = await app.inject({ method: "POST", url, headers, payload: {
+      stream: true, elevenlabs_extra_body: { browser_case_id: c.id }, messages: [{ role: "user", content: "Hello" }] } });
+    expect(result.statusCode).toBe(503); expect(result.body).toContain("ANTHROPIC_API_KEY"); expect(providerFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("public browser voice gateway", () => {
+  beforeEach(() => vi.stubEnv("VOICE_LLM_TOKEN", "ingress-test")); afterEach(() => vi.unstubAllEnvs());
+  it("exposes only health and authenticated browser completions", async () => {
+    const upstream = vi.fn(), app = buildVoiceGateway(upstream);
+    try {
+      expect((await app.inject({ url: "/health" })).json().scope).toBe("browser-rehearsal-only");
+      for (const url of ["/", "/api/cases", "/api/voice/jobs", "/api/eleven/tools/accept_offer", "/api/voice/llm/v1/chat/completions"])
+        expect((await app.inject({ method: "POST", url, payload: {} })).statusCode).toBe(404);
+      expect((await app.inject({ method: "POST", url: "/api/voice/browser/llm/v1/chat/completions", payload: {} })).statusCode).toBe(401);
+      expect(upstream).not.toHaveBeenCalled();
+    } finally { await app.close(); }
+  });
+  it("passes SSE and metadata to a fixed loopback URL and drops arbitrary proxy headers", async () => {
+    const bytes = 'data: {"choices":[{"delta":{"content":"Synthetic hello"}}]}\n\ndata: [DONE]\n\n';
+    const upstream = vi.fn(async () => new Response(bytes, { headers: { "content-type": "text/event-stream" } }));
+    const app = buildVoiceGateway(upstream, 9876);
+    try {
+      const body = { stream: true, elevenlabs_extra_body: { browser_case_id: "synthetic-case" } };
+      const response = await app.inject({ method: "POST", url: "/api/voice/browser/llm/v1/chat/completions",
+        headers: { authorization: "Bearer ingress-test", "x-forwarded-host": "attacker.example" }, payload: body });
+      expect(response.statusCode).toBe(200); expect(response.body).toBe(bytes);
+      expect(response.headers["content-type"]).toContain("text/event-stream");
+      expect(upstream).toHaveBeenCalledWith("http://127.0.0.1:9876/api/voice/browser/llm/v1/chat/completions", expect.objectContaining({
+        method: "POST", body: JSON.stringify(body), headers: { authorization: "Bearer ingress-test", "content-type": "application/json" } }));
+    } finally { await app.close(); }
+  });
+  it("bounds body size and masks transport diagnostics", async () => {
+    const upstream = vi.fn(async () => { throw new Error("sensitive diagnostic"); }), app = buildVoiceGateway(upstream);
+    const request = (payload: object) => app.inject({ method: "POST", url: "/api/voice/browser/llm/v1/chat/completions",
+      headers: { authorization: "Bearer ingress-test" }, payload });
+    try {
+      expect((await request({ text: "x".repeat(256 * 1024) })).statusCode).toBe(413); expect(upstream).not.toHaveBeenCalled();
+      const failure = await request({}); expect(failure.statusCode).toBe(502); expect(failure.body).not.toContain("sensitive");
+    } finally { await app.close(); }
+  });
+});
+
+import { readFileSync, writeFileSync } from "node:fs";
+import { syncBrowserTunnel, tunnelOrigin } from "../src/agent/demo-tunnel.js";
+describe("temporary tunnel rotation", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("recognizes only expected provider origins, ignoring banners and hostile event data", () => {
+    const event = (id: string) => JSON.stringify({ type: "v1.tcpip_forward.register.accepted", id });
+    expect(tunnelOrigin(event("localhost/demo123.lhr.life"))).toBe("https://demo123.lhr.life");
+    for (const id of ["localhost/attacker.example", "localhost/demo.lhr.life/path", "localhost/user@demo.lhr.life", "localhost/demo.lhr.life:443"])
+      expect(tunnelOrigin(event(id))).toBeUndefined();
+    expect(tunnelOrigin("Welcome to localhost.run")).toBeUndefined();
+  });
+  it("updates the existing agent and only PUBLIC_URL, without creating agents or losing other environment settings", async () => {
+    for (const [k, v] of Object.entries({ ELEVENLABS_BROWSER_AGENT_ID: "browser-test", ELEVENLABS_LLM_SECRET_ID: "secret-ref",
+      ELEVENLABS_API_KEY: "test-key", VOICE_TTS_MODEL: "", VOICE_VOICE_PRESET: "", ELEVENLABS_ADVOCATE_VOICE_ID: "" })) vi.stubEnv(k, v);
+    vi.stubEnv("PUBLIC_URL", "https://old.lhr.life");
+    const directory = mkdtempSync(join(tmpdir(), "bb-tunnel-test-")), path = join(directory, ".env");
+    writeFileSync(path, 'PUBLIC_URL=https://old.lhr.life\nVOICE_LLM_TOKEN=preserve-test-token\n');
+    const f = vi.fn(async (_url: any, init?: RequestInit) => init?.method === "PATCH" ? Response.json({}) :
+      Response.json({ conversation_config: { agent: { prompt: { tool_ids: ["t1", "t2", "t3"] } } } }));
+    try {
+      await syncBrowserTunnel("https://new.lhr.life", path, f);
+      expect(f).toHaveBeenCalledTimes(2);
+      expect(f.mock.calls[1][0]).toBe("https://api.elevenlabs.io/v1/convai/agents/browser-test");
+      const config = JSON.parse(f.mock.calls[1][1]!.body as string);
+      expect(config.conversation_config.agent.prompt.custom_llm.url).toBe("https://new.lhr.life/api/voice/browser/llm/v1/chat/completions");
+      expect(readFileSync(path, "utf8")).toBe('PUBLIC_URL=https://new.lhr.life\nVOICE_LLM_TOKEN=preserve-test-token\n');
+      f.mockResolvedValueOnce(Response.json({}, { status: 503 }));
+      await expect(syncBrowserTunnel("https://failed.lhr.life", path, f)).rejects.toThrow();
+      expect(readFileSync(path, "utf8")).toContain("PUBLIC_URL=https://new.lhr.life");
+    } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 });
