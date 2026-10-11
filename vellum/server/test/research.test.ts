@@ -444,8 +444,7 @@ describe("POST /api/cases/:id/research", () => {
     const app = await buildApp();
     const c = createCase({ mode: "patient", status: "audited", bill, flags, patient: patient() });
     const res = await app.inject({ method: "POST", url: `/api/cases/${c.id}/research`, payload: {} });
-    expect(res.statusCode).toBe(202); // runs in the background
-    expect(res.json().status).toBe("audited");
+    expect(res.statusCode).toBe(200); // finished inside the route's wait, so the reply is the researched case
     let body = res.json() as CasePacket;
     for (let i = 0; i < 100 && body.status !== "researched"; i++) {
       await new Promise((r) => setTimeout(r, 20));

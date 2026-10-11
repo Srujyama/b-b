@@ -13,7 +13,7 @@ vi.mock("../src/store.js", async (importOriginal) => {
 import { llmJson } from "../src/llm.js";
 import { createCase, emit } from "../src/store.js";
 import { flushAll } from "../src/persist.js";
-import { CACHED_VIA, SEED_FILE, cachedCharity, cachedFairPrice, clearRuntimeResearchCache, hospitalKey } from "../src/research/cache.js";
+import { CACHED_VIA, SEED_FILE, cachedCharity, cachedFairPrice, clearRuntimeResearchCache, hospitalKey, rememberFairPrice } from "../src/research/cache.js";
 import { MAX_CODES, topCodes } from "../src/routes/research.js";
 import type { Bill, CasePacket } from "../src/types.js";
 
@@ -108,10 +108,27 @@ describe("seed cache (data/research-cache.json)", () => {
     expect(cachedFairPrice("STANFORD HEALTH CARE", "74177")!.billed).toBeUndefined();
     expect(cachedFairPrice("Mercy General", "74177")).toBeUndefined();
   });
+
+  it("a live 'no verifiable price' never replaces a sourced cached price (seed or runtime); a priced result does", () => {
+    const empty = { code: "74177", description: "CT", sources: [] };
+    rememberFairPrice("Stanford Health Care", empty);
+    expect(cachedFairPrice("Stanford Health Care", "74177")?.medicareRate).toBe(356); // seed kept
+
+    const src = [{ title: "PFS", url: "https://www.cms.gov/x", trust: "official" }] as never;
+    rememberFairPrice("Lakeview", { code: "99285", description: "ED", medicareRate: 200, sources: src });
+    rememberFairPrice("Lakeview", { code: "99285", description: "ED", sources: [] });
+    expect(cachedFairPrice("Lakeview", "99285")?.medicareRate).toBe(200); // runtime kept
+
+    rememberFairPrice("Lakeview", { code: "99285", description: "ED", medicareRate: 210, sources: src });
+    expect(cachedFairPrice("Lakeview", "99285")?.medicareRate).toBe(210); // a newer price wins
+
+    rememberFairPrice("Lakeview", { code: "96374", description: "IV push", sources: [] });
+    expect(cachedFairPrice("Lakeview", "96374")).toMatchObject({ code: "96374", sources: [] }); // nothing to protect
+  });
 });
 
 describe("demo bill: POST /api/cases/demo then POST /research", () => {
-  it("demo intake answers in under 2s; research answers 202 at once and finishes from the cache in under 5s with no Context.dev call", async () => {
+  it("demo intake answers in under 2s; research finishes from the cache and POST answers 200 with the researched case, no Context.dev call", async () => {
     stubContextDev(() => {
       throw new Error("Context.dev must not be called when the cache has the answer");
     });
@@ -123,10 +140,13 @@ describe("demo bill: POST /api/cases/demo then POST /research", () => {
 
     t0 = Date.now();
     const res = await post(`/api/cases/${id}/research`);
-    expect(res.statusCode).toBe(202);
-    expect(res.json()).toMatchObject({ id, status: "audited", research: { state: "running" } });
+    // the cached run finishes inside the route's wait, so the reply IS the final packet: a client adopting it can
+    // never overwrite a 'case: researched' WebSocket event that raced ahead of the HTTP reply
+    expect(res.statusCode).toBe(200);
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(res.json()).toMatchObject({ id, status: "researched", research: { state: "done" } });
+    expect(res.json().fairPrices).toHaveLength(4);
     const c = await waitFor(id, (x) => x.status === "researched");
-    expect(Date.now() - t0).toBeLessThan(5000);
     expect(c.status).toBe("researched");
     expect(c.research?.state).toBe("done");
     expect(fetchUrls).toEqual([]);
@@ -154,7 +174,7 @@ describe("demo bill: POST /api/cases/demo then POST /research", () => {
       throw new Error("no network");
     });
     const id = (await post("/api/cases/demo")).json().id;
-    expect((await post(`/api/cases/${id}/research`)).statusCode).toBe(202);
+    expect((await post(`/api/cases/${id}/research`)).statusCode).toBe(200);
     const c = await waitFor(id, (x) => x.status === "researched");
     expect(c.status).toBe("researched");
     expect(fetchUrls).toEqual([]);
@@ -165,7 +185,7 @@ describe("demo bill: POST /api/cases/demo then POST /research", () => {
     stubContextDev(OUT_OF_CREDITS);
     const id = (await post("/api/cases/demo")).json().id;
     const t0 = Date.now();
-    expect((await post(`/api/cases/${id}/research`, { fresh: true })).statusCode).toBe(202);
+    expect((await post(`/api/cases/${id}/research`, { fresh: true })).statusCode).toBe(200);
     const c = await waitFor(id, (x) => x.status === "researched");
     expect(Date.now() - t0).toBeLessThan(5000);
     expect(c.status).toBe("researched");
@@ -190,10 +210,12 @@ describe("hospitals with no cached research", () => {
   });
   const patient = { name: "Lin", language: "en" as const, maxPay: 3000, consent: true };
 
-  it("Context.dev out of credits and nothing cached: 202, then the run fails cleanly and the case stays audited", async () => {
+  it("Context.dev out of credits and nothing cached: the POST answers 502 with the reason, the case stays audited", async () => {
     stubContextDev(OUT_OF_CREDITS);
     const c = createCase({ mode: "patient", status: "audited", bill: bill("Nowhere Regional"), patient });
-    expect((await post(`/api/cases/${c.id}/research`)).statusCode).toBe(202);
+    const res = await post(`/api/cases/${c.id}/research`);
+    expect(res.statusCode).toBe(502);
+    expect(res.json().error).toMatch(/fair-price research failed for every code: .*USAGE_EXCEEDED/);
     const after = await waitFor(c.id, (x) => x.research?.state === "failed");
     expect(after.research?.state).toBe("failed");
     expect(after.research?.error).toMatch(/fair-price research failed for every code: .*USAGE_EXCEEDED.*no cached result to fall back on/);
@@ -249,7 +271,8 @@ describe("hospitals with no cached research", () => {
     expect(fetchUrls.some((u) => u.includes("medicare.gov"))).toBe(false);
   });
 
-  it("a second POST while research is running does not start another run", async () => {
+  it("a slow run answers 202 with the case as it is now; a second POST joins it instead of starting another", async () => {
+    vi.stubEnv("RESEARCH_WAIT_MS", "30");
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
     stubContextDev(() => ({ status: 401, json: { message: "out of credits", error_code: "USAGE_EXCEEDED" } }));
@@ -259,7 +282,9 @@ describe("hospitals with no cached research", () => {
       return new Response(JSON.stringify({ message: "out of credits", error_code: "USAGE_EXCEEDED" }), { status: 401 });
     });
     const c = createCase({ mode: "patient", status: "audited", bill: bill("Gate Memorial"), patient });
-    expect((await post(`/api/cases/${c.id}/research`)).statusCode).toBe(202);
+    const first = await post(`/api/cases/${c.id}/research`);
+    expect(first.statusCode).toBe(202);
+    expect(first.json()).toMatchObject({ id: c.id, status: "audited", research: { state: "running" } });
     await new Promise((r) => setTimeout(r, 20));
     const callsAfterFirst = fetchUrls.length;
     expect((await post(`/api/cases/${c.id}/research`)).statusCode).toBe(202);

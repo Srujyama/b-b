@@ -156,8 +156,8 @@ const PROBES: Probe[] = [
   { route: "POST /api/cases/:id/research", url: caseUrl("unknown", "/research"), status: 404, match: /unknown case/ },
   { route: "POST /api/cases/:id/research", url: caseUrl("empty", "/research"), status: 409, match: /no parsed bill/ },
   { route: "POST /api/cases/:id/research", url: caseUrl("run", "/research"), status: 503, match: NOT_CONFIGURED("CONTEXT_DEV_API_KEY") },
-  // a hospital with cached research (the seed cache: Stanford) still researches with no keys, in the background
-  { route: "POST /api/cases/:id/research", url: caseUrl("cached", "/research"), status: 202, match: /"status":"audited"/ },
+  // a hospital with cached research (the seed cache: Stanford) still researches with no keys, in milliseconds
+  { route: "POST /api/cases/:id/research", url: caseUrl("cached", "/research"), status: 200, match: /"status":"researched"/ },
 
   // ---- clinic.ts (Context.dev + Claude)
   { route: "POST /api/claims", url: "/api/claims", payload: {}, status: 400, match: /claim\.payer is required/ },

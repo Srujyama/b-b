@@ -179,22 +179,46 @@ function runTracked(id: string, p: Plan, opts: ResearchOpts): Promise<CasePacket
   return job;
 }
 
-/** Start research in the background and return the case right away (status flips to "researched" when done). */
-export function startResearch(id: string, opts: ResearchOpts = {}): CasePacket {
-  if (inFlight.has(id)) return { ...requireCase(id) };
-  const p = plan(id, opts);
-  runTracked(id, p, opts).catch((e: Error) => emit(id, { type: "error", message: `research failed: ${e.message}` }));
-  return { ...requireCase(id) }; // a snapshot: the live packet changes as research finishes
+/** How long POST /research waits for the job before answering 202. Cached research finishes in milliseconds, so the
+ * route answers with the finished packet; only slow live Context.dev research is handed off to the background. */
+export const RESEARCH_WAIT_MS = 3000;
+const waitMs = () => Number(process.env.RESEARCH_WAIT_MS) || RESEARCH_WAIT_MS; // env override for tests
+
+/** Start research (or join the run already in flight) and return the job. Validation errors (404/409/503) throw
+ * synchronously; a failed run also emits an 'error' event and leaves research.state "failed" on the case. */
+export function startResearch(id: string, opts: ResearchOpts = {}): Promise<CasePacket> {
+  const running = inFlight.get(id);
+  if (running) return running;
+  const job = runTracked(id, plan(id, opts), opts);
+  job.catch((e: Error) => emit(id, { type: "error", message: `research failed: ${e.message}` }));
+  return job;
 }
+
+type Outcome = { state: "done" } | { state: "failed"; e: Error & { statusCode?: number } } | { state: "running" };
 
 export default async function researchRoutes(app: FastifyInstance) {
   jsonErrors(app);
-  // 202: research runs in the background (it used to block for minutes on Context.dev and hit the proxy's
-  // ~120s cut-off). Progress streams over /ws as log events; the finished case arrives as a 'case' event.
+  // Waits up to RESEARCH_WAIT_MS for the run. Finished: 200 with the researched case, so the client never adopts a
+  // stale "audited" snapshot that lost the race to the WebSocket 'case' event (the cached demo path always lands
+  // here). Failed: its error status. Still going (live Context.dev can take minutes; the proxy cuts at ~120s): 202
+  // with the case as it is now; progress streams over /ws and the finished case arrives as a 'case' event.
   app.post<{ Params: { id: string }; Body: { fresh?: unknown } | null }>("/api/cases/:id/research", async (req, reply) => {
     try {
+      const id = req.params.id;
       const fresh = (req.body as { fresh?: unknown } | null)?.fresh === true;
-      return reply.code(202).send(startResearch(req.params.id, { fresh }));
+      const job = startResearch(id, { fresh });
+      let timer: NodeJS.Timeout | undefined;
+      const out = await Promise.race<Outcome>([
+        job.then(
+          (): Outcome => ({ state: "done" }),
+          (e: Error): Outcome => ({ state: "failed", e }),
+        ),
+        new Promise<Outcome>((r) => (timer = setTimeout(() => r({ state: "running" }), waitMs()))),
+      ]);
+      clearTimeout(timer);
+      if (out.state === "done") return reply.code(200).send(requireCase(id));
+      if (out.state === "failed") return reply.code(out.e.statusCode ?? 502).send({ error: out.e.message });
+      return reply.code(202).send({ ...requireCase(id) });
     } catch (e) {
       const err = e as Error & { statusCode?: number };
       return reply.code(err.statusCode ?? 500).send({ error: err.message });

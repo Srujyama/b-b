@@ -71,9 +71,15 @@ export function cachedCharity(hospital: string): CachedCharity | undefined {
   return get<CharityPolicy>(charityKey(hospital));
 }
 
-/** Store a fresh live result (only ones that came back from Context.dev, never a cached one). */
+const isPriced = (fp: FairPrice | undefined) => fp?.medicareRate !== undefined || fp?.hospitalCashPrice !== undefined;
+
+/** Store a fresh live result (only ones that came back from Context.dev, never a cached one). A live "no verifiable
+ * price" (e.g. a flaky search) never replaces a sourced price already cached (runtime or seed): it would lose the
+ * Medicare anchor for every later demo. */
 export function rememberFairPrice(hospital: string, fp: FairPrice) {
-  runtime.map.set(priceKey(hospital, fp.code), { value: strip(fp), fetchedAt: today() });
+  const key = priceKey(hospital, fp.code);
+  if (!isPriced(fp) && isPriced(get<FairPrice>(key))) return;
+  runtime.map.set(key, { value: strip(fp), fetchedAt: today() });
   runtime.save();
 }
 export function rememberCharity(hospital: string, policy: CharityPolicy) {

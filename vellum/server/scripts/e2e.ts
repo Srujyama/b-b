@@ -12,7 +12,7 @@
 //   E2E_RESEARCH_TIMEOUT_MS   how long to poll for status 'researched' (default 30000)
 //
 // What it does (real calls, nothing simulated here): health -> POST /api/cases/demo (bundled fixture bill + patient,
-// timed) -> GET case -> research (POST /research answers 202 at once; poll GET until 'researched': cached Context.dev
+// timed) -> GET case -> research (POST /research answers 200 with the researched case when it finishes within ~3s, else 202; poll GET until 'researched': cached Context.dev
 // results first, live otherwise; works with no keys for the demo hospital) -> financing (live Gemini Fed odds) -> XRPL devnet hardship credential -> a negotiation recorded through
 // the tool webhook the way a human billing rep's call is (log_offer x3 descending, accept ABOVE the patient's
 // walkaway must be refused, then accept at/below it) -> optional 0% community-fund loan (pipeline order: before the
@@ -39,7 +39,7 @@ const BASE = (process.env.BASE_URL || "http://localhost:8787").replace(/\/$/, ""
 const TIMEOUT = Number(process.env.E2E_TIMEOUT_MS) || 120_000;
 const DEMO_BUDGET_MS = Number(process.env.E2E_DEMO_BUDGET_MS) || 2_000; // POST /api/cases/demo must answer within this
 const RESEARCH_TIMEOUT_MS = Number(process.env.E2E_RESEARCH_TIMEOUT_MS) || 30_000; // poll this long for 'researched'
-const RESEARCH_STEP = "research (POST /research → 202, poll until researched)";
+const RESEARCH_STEP = "research (POST /research → 200 researched, or 202 + poll)";
 let demoMs = 0;
 let researchMs = 0;
 const TOOL_SECRET =process.env.E2E_TOOL_SECRET || process.env.ELEVENLABS_TOOL_SECRET || "";
@@ -228,7 +228,8 @@ async function main() {
     async () => {
       const t0 = Date.now();
       const r = await http("POST", `/api/cases/${caseId}/research`, {});
-      const accepted = ok(r, "POST /research", 202);
+      // 200 = finished inside the route's short wait (the cached demo path); 202 = still running live, poll below
+      const accepted = ok(r, "POST /research", r.status === 200 ? 200 : 202);
       const ackMs = Date.now() - t0;
       expect(accepted?.id === caseId, "POST /research returned another case");
       let c = accepted;
@@ -247,7 +248,7 @@ async function main() {
       const cached = c.fairPrices.filter((f: any) => f.cache).length;
       const prices = c.fairPrices.map((f: any) => `${f.code} ${f.medicareRate !== undefined ? `Medicare $${f.medicareRate}` : "no published price"}`).join(", ");
       const charity = c.charity?.hasFap ? `charity: free care <= ${c.charity.freeCareBelowPctFpl ?? "?"}% FPL${c.charity.cache ? " (cached)" : ""}` : "no charity policy";
-      return `202 in ${ackMs}ms, researched in ${(researchMs / 1000).toFixed(1)}s; ${prices}; ${cached}/${c.fairPrices.length} from the cache (${c.fairPrices.find((f: any) => f.cache)?.cache?.via ?? "live"}); ${charity}; plan: open $${c.opening}, target $${c.target}, walk away $${c.walkaway}`;
+      return `HTTP ${r.status} in ${ackMs}ms, researched in ${(researchMs / 1000).toFixed(1)}s; ${prices}; ${cached}/${c.fairPrices.length} from the cache (${c.fairPrices.find((f: any) => f.cache)?.cache?.via ?? "live"}); ${charity}; plan: open $${c.opening}, target $${c.target}, walk away $${c.walkaway}`;
     },
     { needs: ["create demo case (POST /api/cases/demo)"] },
   );
@@ -474,7 +475,7 @@ async function main() {
   const failed = results.filter((r) => r.outcome === "FAIL");
   const skipped = results.filter((r) => r.outcome === "SKIP");
   console.log(`\nCase: ${caseId || "(none)"}${caseId ? `  ${BASE}/api/cases/${caseId}` : ""}`);
-  console.log(`Timings: POST /api/cases/demo ${demoMs}ms; research (POST 202 → researched) ${researchMs}ms`);
+  console.log(`Timings: POST /api/cases/demo ${demoMs}ms; research (POST → researched) ${researchMs}ms`);
   if (links.length) console.log(`On-ledger transactions (XRPL devnet):\n  ${links.join("\n  ")}`);
   console.log(`\n${results.length - failed.length - skipped.length} PASS, ${skipped.length} SKIP, ${failed.length} FAIL`);
   if (failed.length) {
