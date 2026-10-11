@@ -8,10 +8,12 @@ results and remaining checks. The original browser feature landed on main in PR 
 This follow-up fixes the custom-LLM URL discovered by a real audio test, integrates browser metadata,
 saves translated transcripts, and carries simulation status into the UI and spoken summary.
 
-Claude and Context.dev are now configured locally and passed real API checks. ElevenLabs browser,
-Mandarin intake and fake-hospital agents are provisioned. The live synthetic audio loop passed;
-permanent hosted AI service configuration remains the founder's deployment step. No Twilio number
-or real telephone call is part of the hackathon demo.
+PR #28 is merged as `00feb46`, and Fly and Vercel both serve the merged UI/backend. See
+[E2E_RESULTS.md](./E2E_RESULTS.md) for the current partial-pass evidence. Historical provider checks
+and synthetic audio succeeded, but current checks found exhausted research/audio credits and
+missing hosted Haiku wiring. The team is restoring credits; the demo and approved devnet test
+are paused at the user's request. The wiring-only private import leaves all five existing
+ElevenLabs settings untouched. No Twilio number or real telephone call is part of this demo.
 
 The future real-phone worker notes below remain useful after the browser release. They do not
 replace the current hosted checklist or imply that a real phone worker has been deployed.
