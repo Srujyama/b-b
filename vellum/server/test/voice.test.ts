@@ -268,6 +268,18 @@ describe("bridge", () => {
     handle.stop();
   });
 
+  it("uses Haiku with shared case metadata for the AI-counterparty rehearsal", async () => {
+    process.env.ELEVENLABS_BROWSER_AGENT_ID = "haiku-browser";
+    const c = patientCase();
+    const { handle, adv, hosp } = await start(c.id);
+    expect(adv.url).toBe("wss://signed/haiku-browser");
+    expect(adv.sent[0].custom_llm_extra_body).toEqual({ browser_case_id: c.id });
+    expect(adv.sent[0].conversation_config_override.agent.first_message).toBe("");
+    expect(hosp.sent[0].custom_llm_extra_body).toBeUndefined();
+    expect(c.voiceSimulation).toBe(true);
+    handle.stop();
+  });
+
   it("drops the advocate's speech before the billing office answers", async () => {
     const c = patientCase();
     const { handle, adv, hosp } = await start(c.id);
@@ -456,6 +468,30 @@ describe("voice routes", () => {
     const r = await a.inject({ method: "GET", url: "/api/intake/signed-url" });
     expect(r.statusCode).toBe(503);
     expect(r.json().error).toMatch(/ELEVENLABS_API_KEY is not configured/);
+  });
+
+  it("persists and translates browser lines only for their authorized session", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async () => Response.json({ signed_url: "wss://signed" }));
+    const a = await app();
+    try {
+      const c = patientCase();
+      const started = await a.inject({ method: "POST", url: `/api/cases/${c.id}/negotiate`, payload: { counterparty: "human" } });
+      const token = started.json().transcriptToken;
+      expect(c.voiceSimulation).toBe(true);
+      const line = { role: "hospital", text: "Please request an itemized bill.", at: new Date().toISOString() };
+      const post = (session: string, id = c.id, payload = line) => a.inject({ method: "POST", url: `/api/cases/${id}/voice/transcript`, headers: { "x-voice-session": session }, payload });
+      expect((await post("bad")).statusCode).toBe(401);
+      expect((await post("é".repeat(64))).statusCode).toBe(401);
+      expect((await post(token, patientCase().id)).statusCode).toBe(401);
+      expect((await post(token, c.id, { ...line, at: "not a date" })).statusCode).toBe(400);
+      expect((await post(token)).statusCode).toBe(200);
+      expect((await post(token)).statusCode).toBe(200);
+      expect(c.transcript).toHaveLength(1);
+      await vi.waitFor(() => expect(c.transcript[0].textZh).toBe(`ZH(${line.text})`));
+      c.patient!.consent = false;
+      expect((await post(token)).statusCode).toBe(409);
+    } finally { globalThis.fetch = realFetch; await a.close(); }
   });
 });
 
@@ -765,11 +801,11 @@ describe("outbound voice worker", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain("[DONE]");
     const request = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
-    expect(request.messages.at(-1).content[0].text).toContain("Updated shared fact");
+    expect(request.system.at(-1).text).toContain("Updated shared fact");
     authorized = false;
     providerFetch.mockResolvedValueOnce(new Response(eventStream(spokenEvents)));
     await llm();
-    expect(JSON.parse(providerFetch.mock.calls.at(-1)![1].body).messages.at(-1).content[0].text).toContain("authorization has been revoked");
+    expect(JSON.parse(providerFetch.mock.calls.at(-1)![1].body).system.at(-1).text).toContain("authorization has been revoked");
     providerFetch.mockResolvedValueOnce(new Response(JSON.stringify(conversation())));
     await syncVoiceTask("job-1");
     expect(writeResult).toHaveBeenCalledWith(expect.objectContaining({ jobId: "job-1" }), expect.objectContaining({ requiresReview: true }));
@@ -816,7 +852,7 @@ describe("human browser rehearsal", () => {
   it("provisions a separate Haiku/v4 browser agent with client tools and no phone tools", () => {
     const config = browserAgentConfig("https://voice.example", "secret-ref", ["client-tool-1"]);
     expect(config.conversation_config.agent.prompt.custom_llm).toMatchObject({
-      url: "https://voice.example/api/voice/browser/llm/v1/chat/completions", model_id: "claude-haiku-5-5" });
+      url: "https://voice.example/api/voice/browser/llm/v1", model_id: "claude-haiku-5-5" });
     expect(config.conversation_config.tts.model_id).toBe("eleven_v4_turbo");
     expect(config.conversation_config.agent.prompt.tool_ids).toEqual(["client-tool-1"]);
     expect(config.conversation_config.agent.prompt.built_in_tools).not.toHaveProperty("play_keypad_touch_tone");
@@ -846,11 +882,14 @@ describe("human browser rehearsal", () => {
     c.facts.push("The duplicate lab charge has now been corrected."); c.walkaway = 1000;
     expect((await request()).statusCode).toBe(200);
     const latest = JSON.parse(providerFetch.mock.calls.at(-1)![1].body);
-    expect(latest.messages.at(-1).content[0].text).toContain("duplicate lab charge has now been corrected");
-    expect(latest.messages.at(-1).content[0].text).toContain("1000");
+    expect(latest.system.at(-1).text).toContain("duplicate lab charge has now been corrected");
+    expect(latest.system.at(-1).text).toContain("1000");
+    expect(latest.messages.at(-1).content[0].text).toBe("What next?");
+    expect(latest.system[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(latest.system.at(-1).cache_control).toBeUndefined();
     expect(latest.model).toBe("claude-haiku-5-5");
     c.patient!.consent = false; await request();
-    expect(JSON.parse(providerFetch.mock.calls.at(-1)![1].body).messages.at(-1).content[0].text).toContain("authorization has been revoked");
+    expect(JSON.parse(providerFetch.mock.calls.at(-1)![1].body).system.at(-1).text).toContain("authorization has been revoked");
     expect(providerFetch.mock.calls.every(([address]) => address === "https://api.anthropic.com/v1/messages")).toBe(true);
   });
   it("rejects missing, malformed, unknown or phone metadata and missing bearer auth", async () => {
@@ -929,7 +968,7 @@ describe("temporary tunnel rotation", () => {
       expect(f).toHaveBeenCalledTimes(2);
       expect(f.mock.calls[1][0]).toBe("https://api.elevenlabs.io/v1/convai/agents/browser-test");
       const config = JSON.parse(f.mock.calls[1][1]!.body as string);
-      expect(config.conversation_config.agent.prompt.custom_llm.url).toBe("https://new.lhr.life/api/voice/browser/llm/v1/chat/completions");
+      expect(config.conversation_config.agent.prompt.custom_llm.url).toBe("https://new.lhr.life/api/voice/browser/llm/v1");
       expect(readFileSync(path, "utf8")).toBe('PUBLIC_URL=https://new.lhr.life\nVOICE_LLM_TOKEN=preserve-test-token\n');
       f.mockResolvedValueOnce(Response.json({}, { status: 503 }));
       await expect(syncBrowserTunnel("https://failed.lhr.life", path, f)).rejects.toThrow();

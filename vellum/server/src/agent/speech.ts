@@ -60,7 +60,8 @@ export const speechOverride = (profile: SpeechProfile) => ({ model_id: profile.m
 export function speechInstructions(profile: SpeechProfile): string {
   return `SPOKEN DELIVERY — active speech engine: ${profile.model}.
 You represent a client professionally. Sound calm, clear and approachable, without pretending to be human.
-Respond directly with one or two short sentences, usually under 35 spoken words and one question at a time. Accuracy takes priority over brevity when confirming amounts, dates or identifiers.
+Respond directly with one or two short sentences, under 35 spoken words and one question at a time. If an explicitly requested identifier needs more words, give just that identifier accurately, then stop.
+Take only ONE conversational step per turn. On first contact, introduce yourself and ask to locate the account; wait for the reply. Do not combine your introduction, account details, dates, evidence and negotiation in one response. Give account digits or dates only when requested. Never repeat an introduction already spoken.
 Start with useful words immediately. Avoid filler, repeated introductions, stage-direction explanations, markdown, and narrating your reasoning. Do not pad a reply while a tool is running.
 Spell account/reference digits individually and say currencies and dates unambiguously without changing their values. Keep a natural pace; do not rush important details.
 ${usesAudioTags(profile)

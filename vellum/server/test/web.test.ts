@@ -205,14 +205,17 @@ describe("web: app.js logic in node (DOM stubbed)", () => {
     const opts = initToSessionOptions(
       {
         type: "conversation_initiation_client_data",
-        conversation_config_override: { agent: { prompt: { prompt: "P" }, first_message: "你好", language: "zh" } },
+        conversation_config_override: { agent: { prompt: { prompt: "P" }, first_message: "你好", language: "zh" },
+          tts: { voice_id: "bella", model_id: "eleven_v4_turbo", stability: 0.5, speed: 1 } },
+        custom_llm_extra_body: { browser_case_id: "c1" },
         dynamic_variables: { case_id: "c1" },
       },
       "c1",
     );
     expect(opts).toEqual({
       dynamicVariables: { case_id: "c1" },
-      overrides: { agent: { prompt: { prompt: "P" }, firstMessage: "你好", language: "zh" } },
+      customLlmExtraBody: { browser_case_id: "c1" },
+      overrides: { agent: { prompt: { prompt: "P" }, firstMessage: "你好", language: "zh" }, tts: { voiceId: "bella", stability: 0.5, speed: 1 } },
     });
     expect(initToSessionOptions(undefined, "c2")).toEqual({ dynamicVariables: { case_id: "c2" } });
   });
