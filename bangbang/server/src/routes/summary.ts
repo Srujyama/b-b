@@ -28,7 +28,7 @@ const money = (n: number) => {
 const zhUsd = (n: number) => `${money(n)} 美元`;
 const enUsd = (n: number) => `$${money(n)}`;
 
-export type StepState = "done" | "pending" | "none";
+export type StepState = "done" | "none";
 export type OutcomeSummary = {
   zh: string;
   en: string;

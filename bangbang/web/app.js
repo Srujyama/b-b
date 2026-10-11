@@ -76,7 +76,7 @@ export const I18N = {
     receiptsTitle: "每一步都有凭证",
     outcomeTitle: "结果", hearResult: "听结果", hearStop: "停止", hearLoading: "正在准备声音……",
     hearUnavailable: "现在放不了声音，您可以先看下面的文字。", hearFailed: "声音没放出来，您可以先看下面的文字。",
-    outcomePreview: "预览数据：示例个案，不是真实的结果",
+    outcomePreview: "预览数据：示例个案，不是真实的结果", hearDetails: "技术细节",
     receiptsLede: "钱先放在托管账户里，医院确认您欠款为零才会付出去。",
     credential: "证明困难资格", settle: "把钱放进托管", confirmZero: "医院确认余额为零",
     months: "分期月数", loan: "0% 分期", fedTitle: "一次付清，还是分期？", getAdvice: "看建议", hedge: "用 Gemini 测试盘对冲利率风险",
@@ -164,7 +164,7 @@ export const I18N = {
     receiptsTitle: "A receipt for every step",
     outcomeTitle: "The result", hearResult: "Hear the result", hearStop: "Stop", hearLoading: "Preparing the audio…",
     hearUnavailable: "Audio isn't available right now. The result is written below.", hearFailed: "The audio didn't play. The result is written below.",
-    outcomePreview: "Preview data: a sample case, not a real result",
+    outcomePreview: "Preview data: a sample case, not a real result", hearDetails: "Technical details",
     receiptsLede: "Your money waits in escrow and is paid only after the hospital confirms a zero balance.",
     credential: "Prove hardship eligibility", settle: "Put the money in escrow", confirmZero: "Hospital confirms zero balance",
     months: "Months", loan: "0% payment plan", fedTitle: "Pay at once, or in installments?", getAdvice: "Get advice", hedge: "Hedge rate risk (Gemini sandbox)",
@@ -1092,21 +1092,40 @@ function initPatient() {
   hearAudio.addEventListener("ended", () => setHearLabel(false));
   hearAudio.addEventListener("pause", () => setHearLabel(false));
   hearAudio.addEventListener("play", () => setHearLabel(true));
+  // The note keeps an i18n key (not a string) so it re-translates on the language toggle.
+  // The server's own message (e.g. "ElevenLabs is not configured — set ELEVENLABS_API_KEY") stays
+  // visible for honesty but is tucked into a collapsed "details" line Mrs. Lin doesn't have to read.
+  const hearNote = { key: null, detail: "" };
+  function renderHearNote() {
+    const note = $("#hear-note");
+    note.hidden = !hearNote.key;
+    if (!hearNote.key) return note.replaceChildren();
+    const wasOpen = Boolean(note.querySelector("details")?.open);
+    const kids = [h("span", {}, t(hearNote.key))];
+    if (hearNote.detail) {
+      kids.push(h("details", { class: "hear-why", open: wasOpen }, h("summary", {}, t("hearDetails")), h("span", { lang: "en" }, hearNote.detail)));
+    }
+    note.replaceChildren(...kids);
+  }
+  function setHearNote(key, detail = "") {
+    hearNote.key = key;
+    hearNote.detail = detail;
+    renderHearNote();
+  }
+  onLangChange(renderHearNote);
   $("#hear-btn").addEventListener("click", async (e) => {
     const p = P();
     if (!p) return;
     if (!hearAudio.paused) return hearAudio.pause();
-    const note = $("#hear-note");
     const btn = e.currentTarget;
-    note.hidden = true;
+    setHearNote(null);
     if (outcome.url && outcome.audioKey === outcome.key) {
       hearAudio.currentTime = 0;
       return hearAudio.play().catch(() => undefined);
     }
     btn.disabled = true;
     btn.classList.add("busy");
-    note.textContent = t("hearLoading");
-    note.hidden = false;
+    setHearNote("hearLoading");
     try {
       const res = await fetch(`/api/cases/${encodeURIComponent(p.id)}/summary.mp3`);
       if (!res.ok) {
@@ -1114,18 +1133,17 @@ function initPatient() {
         try {
           msg = (await res.json()).error ?? "";
         } catch {}
-        note.replaceChildren(t(res.status === 503 ? "hearUnavailable" : "hearFailed"), msg ? h("span", { class: "hear-why" }, msg) : "");
+        setHearNote(res.status === 503 ? "hearUnavailable" : "hearFailed", msg);
         return;
       }
       if (outcome.url) URL.revokeObjectURL(outcome.url);
       outcome.url = URL.createObjectURL(await res.blob());
       outcome.audioKey = outcome.key;
       hearAudio.src = outcome.url;
-      note.hidden = true;
+      setHearNote(null);
       await hearAudio.play();
     } catch (err) {
-      note.replaceChildren(t("hearFailed"), h("span", { class: "hear-why" }, err?.message ?? String(err)));
-      note.hidden = false;
+      setHearNote("hearFailed", err?.message ?? String(err));
     } finally {
       btn.disabled = false;
       btn.classList.remove("busy");

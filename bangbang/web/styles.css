@@ -441,7 +441,9 @@ body.clinic { font-size: 17px; }
 }
 .hear.playing { background: var(--seal); }
 .hear-note { background: var(--sunk); border-radius: var(--r-md); padding: 10px 14px; }
-.hear-why { display: block; margin-top: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.hear-why { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.hear-why summary { cursor: pointer; width: max-content; }
+.hear-why > span { display: block; margin-top: 4px; }
 .outcome-tag {
   display: inline-block; margin: 0 0 4px; padding: 4px 10px; border-radius: 999px;
   background: var(--seal-soft); color: var(--brass); font: 600 14px/1.4 var(--sans);
