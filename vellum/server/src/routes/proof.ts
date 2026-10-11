@@ -3,14 +3,17 @@
 // the off-chain entry bodies, each entry's hash, the claimed chain head, the mandate commitment, the on-chain head
 // (when the AdvocateLedger is deployed) and the settlement receipts. web/verify.html recomputes it all in the browser.
 import type { FastifyInstance, FastifyReply } from "fastify";
-import { zeroHash, type Hex } from "viem";
+import { createPublicClient, http, isAddress, zeroAddress, zeroHash, type Address, type Hex } from "viem";
+import { bscTestnet } from "viem/chains";
 import {
+  BSC_CHAIN_ID,
+  DEFAULT_BSC_RPC,
+  LEDGER_ABI,
   caseKey,
   consentHash,
   getEntries,
   hashEntry,
   nextHead,
-  readLedger,
   toCents,
   verifyChain,
   type ChainVerification,
@@ -19,6 +22,7 @@ import {
   type LedgerView,
 } from "../chain/bnb.js";
 import { seedPreview } from "../dev/preview.js";
+import { opt } from "../env.js";
 import { requireCase } from "../store.js";
 import type { CasePacket, Receipt } from "../types.js";
 
@@ -115,8 +119,36 @@ export function previewLogFor(c: CasePacket): LedgerEntry[] {
 const isPreviewCase = (c: CasePacket) =>
   c.facts.some((f) => /^PREVIEW/.test(f)) || c.receipts.some((r) => /PREVIEW/.test(r.txHash));
 
+/** Read-only view of the AdvocateLedger for one case. Public view calls only: no BSC_PRIVATE_KEY needed (unlike
+ *  chain/bnb.ts readLedger, which goes through the signing clients). Same contract, ABI and caseKey as bnb.ts. */
+export async function readHeadPublic(caseId: string, address: Address): Promise<OnChainHead> {
+  const pub = createPublicClient({ chain: bscTestnet, transport: http(opt("BSC_RPC_URL", DEFAULT_BSC_RPC)) });
+  const key = caseKey(caseId);
+  const [m, [head, count], d] = await Promise.all([
+    pub.readContract({ address, abi: LEDGER_ABI, functionName: "getMandate", args: [key] }),
+    pub.readContract({ address, abi: LEDGER_ABI, functionName: "getHead", args: [key] }),
+    pub.readContract({ address, abi: LEDGER_ABI, functionName: "getDeal", args: [key] }),
+  ]);
+  return {
+    contract: address,
+    chainId: BSC_CHAIN_ID,
+    caseKey: key,
+    head,
+    count: Number(count),
+    contractUrl: `https://testnet.bscscan.com/address/${address}`,
+    mandate:
+      m.patient === zeroAddress
+        ? null
+        : { patient: m.patient, agent: m.agent, maxAmountCents: m.maxAmountCents.toString(), consentHash: m.consentHash, openedAt: Number(m.openedAt), patientSigned: m.patientSigned, revoked: m.revoked },
+    deal:
+      d.recordedAt === 0n
+        ? null
+        : { amountCents: d.amountCents.toString(), transcriptRoot: d.transcriptRoot, logHead: d.logHead, logCount: Number(d.logCount), settlementRef: d.settlementRef, recordedAt: Number(d.recordedAt) },
+  };
+}
+
 /** Read the AdvocateLedger head for this case, or say exactly why there is none. Never throws. */
-export async function readChainHead(caseId: string): Promise<ChainRead> {
+export async function readChainHead(caseId: string, read: typeof readHeadPublic = readHeadPublic): Promise<ChainRead> {
   if (!process.env.ADVOCATE_LEDGER_ADDRESS) {
     return {
       onChain: null,
@@ -124,20 +156,12 @@ export async function readChainHead(caseId: string): Promise<ChainRead> {
       detail: "ADVOCATE_LEDGER_ADDRESS is not set — deploy contracts/AdvocateLedger.sol to BSC testnet (needs tBNB) and set it in bangbang/server/.env",
     };
   }
+  const address = process.env.ADVOCATE_LEDGER_ADDRESS;
+  if (!isAddress(address)) {
+    return { onChain: null, reason: "on-chain read failed", detail: `ADVOCATE_LEDGER_ADDRESS is not a valid address (${address}) — fix it in bangbang/server/.env` };
+  }
   try {
-    const v = await readLedger(caseId);
-    return {
-      onChain: {
-        contract: v.contract,
-        chainId: v.chainId,
-        caseKey: v.caseKey,
-        head: v.head,
-        count: v.count,
-        contractUrl: `https://testnet.bscscan.com/address/${v.contract}`,
-        mandate: v.mandate,
-        deal: v.deal,
-      },
-    };
+    return { onChain: await read(caseId, address) };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { onChain: null, reason: "on-chain read failed", detail: msg };

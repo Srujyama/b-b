@@ -123,6 +123,39 @@ describe("proof bundle", () => {
     expect(r.detail).toMatch(/ADVOCATE_LEDGER_ADDRESS is not set/);
   });
 
+  it("reads the on-chain head without BSC_PRIVATE_KEY (read-only view, public client only)", async () => {
+    const savedKey = process.env.BSC_PRIVATE_KEY;
+    const savedRpc = process.env.BSC_RPC_URL;
+    try {
+      delete process.env.BSC_PRIVATE_KEY;
+      process.env.ADVOCATE_LEDGER_ADDRESS = "0x00000000000000000000000000000000000000a1";
+      // injected reader: proves readChainHead itself never asks for a signing key
+      const head = `0x${"ab".repeat(32)}` as const;
+      const r = await readChainHead("case-1", async (id, address) => ({
+        contract: address, chainId: 97, caseKey: keccak256(stringToBytes(id)), head, count: 3,
+        contractUrl: `https://testnet.bscscan.com/address/${address}`, mandate: null, deal: null,
+      }));
+      expect(r.onChain?.head).toBe(head);
+      expect(r.onChain?.contract).toBe("0x00000000000000000000000000000000000000a1");
+      // default reader against an unreachable RPC: fails on the network, never on a missing key
+      process.env.BSC_RPC_URL = "http://127.0.0.1:9";
+      const f = await readChainHead("case-1");
+      expect(f.onChain).toBeNull();
+      expect(f.reason).toBe("on-chain read failed");
+      expect(f.detail).not.toMatch(/BSC_PRIVATE_KEY/);
+      // a malformed address is reported, not sent
+      process.env.ADVOCATE_LEDGER_ADDRESS = "0xnope";
+      const bad = await readChainHead("case-1");
+      expect(bad.onChain).toBeNull();
+      expect(bad.detail).toMatch(/not a valid address/);
+    } finally {
+      if (savedKey === undefined) delete process.env.BSC_PRIVATE_KEY;
+      else process.env.BSC_PRIVATE_KEY = savedKey;
+      if (savedRpc === undefined) delete process.env.BSC_RPC_URL;
+      else process.env.BSC_RPC_URL = savedRpc;
+    }
+  });
+
   it("has the documented shape, and the browser verifier accepts it", async () => {
     const c = await seedPreview("receipts", 0);
     const entries = sample();
@@ -266,5 +299,11 @@ describe("web: verify page", () => {
       expect((S.en.vfStates as Record<string, unknown>)[st], st).toBeDefined();
     }
     expect((S.en.vfStates as Record<string, [string]>).local[0]).toBe("Locally consistent; not yet anchored on BNB");
+    // before the hashing library loads there is no verdict: the card must not wear the red "broken" style
+    expect(src).not.toMatch(/"vf-verdict broken"/);
+    expect(src).toMatch(/"nolib" : "loading"/);
+    const css = readFileSync(new URL("../../web/verify.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.vf-verdict\.loading\b/);
+    expect(css).toMatch(/\.vf-verdict\.nolib\b/);
   });
 });

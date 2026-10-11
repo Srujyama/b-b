@@ -7,6 +7,8 @@ import { $, I18N, api, applyI18n, errorText, getLang, h, onLangChange, receiptIt
 import { bundleProblems, flattenEntries, overall, verifyEntries } from "./verify-core.js";
 
 export const KECCAK_URL = "https://cdn.jsdelivr.net/npm/@noble/hashes@1.4.0/esm/sha3.js/+esm";
+// a CDN that never answers must not leave the page "computing" forever: after this long we say it failed
+const KECCAK_TIMEOUT_MS = 15000;
 
 /* ------------------------------------------------------------------ strings (zh first, en for judges) */
 
@@ -20,7 +22,7 @@ const STRINGS = {
     vfFromFile: (name) => `正在核验文件 ${name}。文件里写的链上数值只是文件的说法，请点合约链接自己去 BNB 链上查。`,
     vfPreview: "这是界面预览数据（开发用）：病人、通话和交易都不是真的，这条记录也从来没有上链。",
     vfCase: (id) => `个案 ${id}`,
-    vfLoading: "正在计算……", vfNoLib: "无法加载哈希计算库，所以没法核验。请检查网络后刷新。",
+    vfLoading: "正在计算……", vfLoadingText: "正在加载哈希计算库，马上在您的浏览器里重新计算。", vfLibTimeout: "超时", vfNoLib: "无法加载哈希计算库，所以没法核验。请检查网络后刷新。",
     vfStates: {
       anchored: ["和 BNB 链上的记录一致", (n) => `${n} 条记录都重新算过，结果和 BNB 测试链上合约存的链头完全相同。`],
       local: ["本地一致，尚未上链", (n, why) => `${n} 条记录在您的浏览器里重新算过，前后完全对得上；但还没有锚定在 BNB 链上（${why}），所以还不能和链上比对。`],
@@ -70,7 +72,7 @@ const STRINGS = {
     vfFromFile: (name) => `Verifying the file ${name}. Any on-chain values inside a file are only the file's claim; open the contract link to check BNB Chain yourself.`,
     vfPreview: "UI preview data (dev harness): the patient, call and transactions are not real, and this log was never put on-chain.",
     vfCase: (id) => `Case ${id}`,
-    vfLoading: "Computing…", vfNoLib: "Could not load the hashing library, so nothing can be verified. Check the network and reload.",
+    vfLoading: "Computing…", vfLoadingText: "Loading the hashing library; the check runs in your browser in a moment.", vfLibTimeout: "timed out", vfNoLib: "Could not load the hashing library, so nothing can be verified. Check the network and reload.",
     vfStates: {
       anchored: ["Matches the record on BNB Chain", (n) => `All ${n} entries were recomputed and the head equals the one stored by the contract on BNB testnet.`],
       local: ["Locally consistent; not yet anchored on BNB", (n, why) => `All ${n} entries recompute and chain together in your browser, but the log is not yet anchored on BNB Chain (${why}), so there is no on-chain head to compare with.`],
@@ -122,7 +124,11 @@ const state = { bundle: null, fileName: null, keccak: null, libError: false, tam
 async function loadKeccak() {
   if (state.keccak || state.libError) return state.keccak;
   try {
-    const mod = await import(KECCAK_URL);
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${t("vfLibTimeout")} (${KECCAK_TIMEOUT_MS / 1000}s)`)), KECCAK_TIMEOUT_MS);
+    });
+    const mod = await Promise.race([import(KECCAK_URL), timeout]).finally(() => clearTimeout(timer));
     state.keccak = (bytes) => mod.keccak_256(bytes);
   } catch (e) {
     state.libError = true;
@@ -253,9 +259,19 @@ function setDownload(b) {
   a.download = state.fileName ?? `bangbang-proof-${b.case.id.slice(0, 8)}.json`;
 }
 
+// The file loader sits at the top while nothing is open, and moves below the results once a case or file is shown,
+// so the verdict is the first thing on screen (especially on a phone).
+function placeLoader(afterResults) {
+  const loader = $("#vf-loader");
+  const anchor = afterResults ? $("#vf-result") : $("#vf-picker");
+  if (anchor.nextElementSibling !== loader) anchor.after(loader);
+  loader.classList.toggle("vf-loader-after", afterResults);
+}
+
 function render() {
   const b = state.bundle;
   if (!b) return;
+  placeLoader(true);
   $("#vf-result").hidden = false;
   $("#vf-preview").hidden = !b.preview;
   const fn = $("#vf-from-file");
@@ -270,16 +286,19 @@ function render() {
   renderReceipts(b);
 
   if (!state.keccak) {
-    $("#vf-verdict").className = "vf-verdict broken";
-    $("#vf-stamp").textContent = "?";
+    // not a verdict yet: neutral while loading, and "could not check" (not "tampered") if the library failed
+    $("#vf-verdict").className = `vf-verdict ${state.libError ? "nolib" : "loading"}`;
+    $("#vf-stamp").textContent = state.libError ? "!" : "…";
     $("#vf-case").textContent = t("vfCase", b.case.id);
     $("#vf-verdict-title").textContent = state.libError ? t("vfNoLib") : t("vfLoading");
-    $("#vf-verdict-text").textContent = "";
+    $("#vf-verdict-text").textContent = state.libError ? "" : t("vfLoadingText");
+    $("#vf-heads").hidden = true;
     $("#vf-entries").replaceChildren();
     return;
   }
   const tamper = state.tamperOn && b.entries.length ? { index: state.tamperAt } : undefined;
   const res = verifyEntries(state.keccak, flattenEntries(b), { tamper, onChain: b.onChain });
+  $("#vf-heads").hidden = false;
   renderVerdict(b, res);
   $("#vf-entries").replaceChildren(...(res.rows.length ? res.rows.map((r) => entryRow(r, res)) : [h("li", { class: "empty" }, t("vfNoEntries"))]));
 }
@@ -311,6 +330,7 @@ async function openCase(id, tamperAt) {
 
 async function showPicker() {
   state.bundle = null;
+  placeLoader(false);
   $("#vf-result").hidden = true;
   $("#vf-picker").hidden = false;
   let cases = [];

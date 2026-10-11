@@ -10,6 +10,7 @@
 .vf-card .card-title h2 { margin: 0; }
 
 .vf-loader { background: transparent; border-style: dashed; }
+.vf-loader-after { margin-top: 8px; }
 .vf-file { display: inline-flex; align-items: center; position: relative; min-height: 48px; padding: 10px 18px; border: 2px solid var(--jade); border-radius: var(--r-md); color: var(--jade); font-weight: 700; font-size: 17px; cursor: pointer; background: var(--surface); }
 .vf-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 .vf-file:focus-within { outline: 3px solid var(--focus); outline-offset: 3px; }
@@ -28,6 +29,13 @@
 .vf-verdict.broken, .vf-verdict.mismatch { border-color: var(--bad); background: var(--bad-soft); }
 .vf-verdict.broken .vf-stamp, .vf-verdict.mismatch .vf-stamp { background: var(--bad); }
 .vf-verdict.broken h2, .vf-verdict.mismatch h2 { color: var(--bad); }
+.vf-verdict.loading { border-style: dashed; }
+.vf-verdict.loading .vf-stamp { background: var(--sunk); color: var(--ink-2); box-shadow: inset 0 0 0 2px var(--line); transform: none; animation: vf-pulse 1.4s ease-in-out infinite; }
+.vf-verdict.loading h2 { color: var(--ink-2); }
+.vf-verdict.nolib { border-color: var(--brass); }
+.vf-verdict.nolib .vf-stamp { background: var(--brass); color: var(--surface); }
+@keyframes vf-pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .vf-verdict.loading .vf-stamp { animation: none; } }
 .vf-verdict.empty .vf-stamp { background: var(--sunk); color: var(--ink-2); box-shadow: inset 0 0 0 2px var(--line); }
 
 /* the three heads */
