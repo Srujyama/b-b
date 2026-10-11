@@ -1,4 +1,4 @@
-// BangBang verify page (核验记录): recompute the advocate's tamper-evident log in the browser.
+// Vellum verify page (核验记录): recompute the advocate's tamper-evident log in the browser.
 // Data: GET /api/cases/:id/proof (server/src/routes/proof.ts) or a downloaded bundle file. The math lives in
 // verify-core.js (pure, also run by test/proof.test.ts against chain/bnb.ts verifyChain). keccak-256 comes from a
 // pinned @noble/hashes build on jsDelivr; if it cannot load we say so instead of showing a verdict.
@@ -15,10 +15,10 @@ const KECCAK_TIMEOUT_MS = 15000;
 const STRINGS = {
   zh: {
     vfBrand: "核验记录", vfEyebrow: "防篡改记录", vfTitle: "这份谈判记录有没有被改过？",
-    vfLede: "帮帮把每一次出价和每一句对话做成哈希，串成一条链。这个页面在您自己的浏览器里重新计算，不需要相信我们的服务器。",
+    vfLede: "Vellum 把每一次出价和每一句对话做成哈希，串成一条链。这个页面在您自己的浏览器里重新计算，不需要相信我们的服务器。",
     vfPick: "选一个个案", vfNoCases: "服务器上还没有个案。",
     vfLoadTitle: "核验下载的文件", vfLoadLede: "别人发给您的核验文件（.json）也可以在这里检查。文件只在您的浏览器里读取，不会上传。",
-    vfLoadBtn: "选择核验文件", vfBadFile: (why) => `这不是帮帮的核验文件：${why}`,
+    vfLoadBtn: "选择核验文件", vfBadFile: (why) => `这不是 Vellum 的核验文件：${why}`,
     vfFromFile: (name) => `正在核验文件 ${name}。文件里写的链上数值只是文件的说法，请点合约链接自己去 BNB 链上查。`,
     vfPreview: "这是界面预览数据（开发用）：病人、通话和交易都不是真的，这条记录也从来没有上链。",
     vfCase: (id) => `个案 ${id}`,
@@ -43,11 +43,11 @@ const STRINGS = {
     vfEntries: "每一条记录", vfCount: (n) => `${n} 条`,
     vfSourceServer: "来源：服务器的链下记录（每一条都已经发到 BNB 链上的合约）。",
     vfSourcePreview: "来源：预览用的本地记录，从来没有发到链上。",
-    vfNoEntries: "还没有记录。帮帮开始和医院谈以后，每一次出价都会在这里出现。",
+    vfNoEntries: "还没有记录。Vellum 开始和医院谈以后，每一次出价都会在这里出现。",
     vfHashOk: "内容哈希对得上", vfHashBad: "内容被改过", vfHeadOk: "链头对得上", vfHeadBad: "链从这里断开",
     vfAfterBreak: "前面断了，这一条也跟着对不上",
     vfKinds: { offer: "出价", transcript: "对话", note: "备注" },
-    vfBy: { advocate: "帮帮", hospital: "医院", insurer: "保险公司", patient: "病人", system: "系统" },
+    vfBy: { advocate: "Vellum", hospital: "医院", insurer: "保险公司", patient: "病人", system: "系统" },
     vfDetails: "看完整哈希", vfEntryHash: "内容哈希", vfRecorded: "记录的", vfRecomputed: "重新算的", vfHead: "链头",
     vfMandate: "您的授权", vfNoMandate: "还没有授权。",
     vfMax: "最多可以同意", vfConsentHash: "同意书哈希（个人信息不上链）",
@@ -65,10 +65,10 @@ const STRINGS = {
   },
   en: {
     vfBrand: "Verify the record", vfEyebrow: "Tamper-evident log", vfTitle: "Has this negotiation record been changed?",
-    vfLede: "BangBang hashes every offer and every line of the call into a chain. This page recomputes it in your own browser, so you don't have to trust our server.",
+    vfLede: "Vellum hashes every offer and every line of the call into a chain. This page recomputes it in your own browser, so you don't have to trust our server.",
     vfPick: "Pick a case", vfNoCases: "No cases on this server yet.",
     vfLoadTitle: "Verify a downloaded file", vfLoadLede: "You can also check a proof file (.json) someone sent you. It is read in your browser only, never uploaded.",
-    vfLoadBtn: "Choose a proof file", vfBadFile: (why) => `This is not a BangBang proof file: ${why}`,
+    vfLoadBtn: "Choose a proof file", vfBadFile: (why) => `This is not a Vellum proof file: ${why}`,
     vfFromFile: (name) => `Verifying the file ${name}. Any on-chain values inside a file are only the file's claim; open the contract link to check BNB Chain yourself.`,
     vfPreview: "UI preview data (dev harness): the patient, call and transactions are not real, and this log was never put on-chain.",
     vfCase: (id) => `Case ${id}`,
@@ -93,11 +93,11 @@ const STRINGS = {
     vfEntries: "Every entry", vfCount: (n) => `${n} entr${n === 1 ? "y" : "ies"}`,
     vfSourceServer: "Source: the server's off-chain log (each entry was appended to the contract on BNB Chain).",
     vfSourcePreview: "Source: a local preview log that was never sent to any chain.",
-    vfNoEntries: "No entries yet. Once BangBang negotiates, every offer appears here.",
+    vfNoEntries: "No entries yet. Once Vellum negotiates, every offer appears here.",
     vfHashOk: "Content hash matches", vfHashBad: "Content was changed", vfHeadOk: "Head matches", vfHeadBad: "Chain breaks here",
     vfAfterBreak: "Broken upstream, so this head no longer matches",
     vfKinds: { offer: "Offer", transcript: "Call line", note: "Note" },
-    vfBy: { advocate: "BangBang", hospital: "Hospital", insurer: "Insurer", patient: "Patient", system: "System" },
+    vfBy: { advocate: "Vellum", hospital: "Hospital", insurer: "Insurer", patient: "Patient", system: "System" },
     vfDetails: "Full hashes", vfEntryHash: "Entry hash", vfRecorded: "recorded", vfRecomputed: "recomputed", vfHead: "Head",
     vfMandate: "The patient's mandate", vfNoMandate: "No mandate yet.",
     vfMax: "May agree to at most", vfConsentHash: "Consent hash (no personal data on-chain)",
@@ -256,7 +256,7 @@ function setDownload(b) {
   state.dl = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
   const a = $("#vf-download");
   a.href = state.dl;
-  a.download = state.fileName ?? `bangbang-proof-${b.case.id.slice(0, 8)}.json`;
+  a.download = state.fileName ?? `vellum-proof-${b.case.id.slice(0, 8)}.json`;
 }
 
 // The file loader sits at the top while nothing is open, and moves below the results once a case or file is shown,

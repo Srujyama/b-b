@@ -50,7 +50,7 @@ describe("browser verifier (web/verify-core.js) == chain/bnb.ts", () => {
       expect(core.nextHead(keccak, zeroHash, e.entryHash)).toBe(tsNextHead(zeroHash, e.entryHash));
     }
     // noble keccak (what the page loads) agrees with viem keccak (what the server uses)
-    expect(core.bytesToHex(keccak(stringToBytes("帮帮")))).toBe(keccak256(stringToBytes("帮帮")));
+    expect(core.bytesToHex(keccak(stringToBytes("Vellum")))).toBe(keccak256(stringToBytes("Vellum")));
   });
 
   it("recomputes the same head and verdict as verifyChain on an intact log", () => {
@@ -223,7 +223,7 @@ describe("proof bundle", () => {
     expect(core.overall(empty, b)).toBe("empty");
 
     const dl = await app.inject({ method: "GET", url: `/api/cases/${c.id}/proof?download=1` });
-    expect(dl.headers["content-disposition"]).toMatch(/attachment; filename="bangbang-proof-/);
+    expect(dl.headers["content-disposition"]).toMatch(/attachment; filename="vellum-proof-/);
     expect(JSON.parse(dl.body).format).toBe(PROOF_FORMAT);
 
     expect((await app.inject({ method: "GET", url: "/api/cases/nope/proof" })).statusCode).toBe(404);
