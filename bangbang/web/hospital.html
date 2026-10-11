@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>BangBang Hospital Portal</title>
+  <meta name="description" content="Hospital billing portal: review settlements agreed with BangBang, check the XRPL escrow, confirm a $0 balance and release the funds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/hospital.css" />
+</head>
+<!-- The hospital's side of the settlement. A teammate on a second laptop plays the billing office:
+     they see the agreed amount and the escrow the patient locked for them on XRPL, check the account,
+     and confirm a $0 balance, which releases the escrow (XRPL Batch). English first for hospital staff. -->
+<body data-default-lang="en" class="hosp">
+<div id="hospital-app" class="shell wide hosp-shell">
+  <header class="topbar">
+    <a class="brand" href="/hospital.html" aria-label="BangBang hospital portal">
+      <span class="seal" aria-hidden="true">帮</span>
+      <span class="brand-name">帮帮 <small data-i18n="hospBrand">Hospital billing portal</small></span>
+    </a>
+    <a class="toplink" href="/dashboard.html" data-i18n="dashLink">Case overview</a>
+    <button id="lang-toggle" class="lang" type="button" aria-label="Switch language">中文</button>
+  </header>
+
+  <p class="hosp-net"><span class="hosp-dot" aria-hidden="true"></span><span data-i18n="hospNet">XRPL devnet: a test network. No real money moves.</span></p>
+
+  <div id="error" class="error" role="alert" hidden>
+    <p id="error-text"></p>
+    <button id="error-close" type="button" data-i18n="dismiss">Dismiss</button>
+  </div>
+
+  <main class="hosp-main">
+    <!-- queue of settlements -->
+    <section id="queue" class="hosp-queue" aria-labelledby="queue-title">
+      <div class="hosp-queue-head">
+        <h1 id="queue-title" data-i18n="hospQueueTitle">Settlements to confirm</h1>
+        <p class="hosp-lede" data-i18n="hospQueueLede">Each patient below agreed a settlement with a BangBang advocate. The money is already locked in escrow for the hospital and is paid out only when you confirm the account is at $0.</p>
+      </div>
+      <ul id="case-list" class="hosp-list" aria-live="polite"></ul>
+      <p id="queue-empty" class="hosp-empty" hidden data-i18n="hospEmpty">No settlements yet. Cases appear here once the advocate and the billing office agree on an amount.</p>
+    </section>
+
+    <!-- one case -->
+    <section id="detail" class="hosp-detail" hidden aria-labelledby="d-patient">
+      <a id="back" class="hosp-back" href="#" data-i18n="hospBack">All settlements</a>
+      <p id="d-preview" class="preview-banner" hidden data-i18n="hospPreview">Preview data from the design harness: not a real patient, and its receipts are not real transactions.</p>
+
+      <div class="hosp-card hosp-head">
+        <div class="hosp-head-main">
+          <p class="eyebrow" data-i18n="hospPatient">Patient</p>
+          <h2 id="d-patient" class="hosp-patient">—</h2>
+          <p id="d-meta" class="hosp-meta"></p>
+        </div>
+        <span id="d-stage" class="pill"></span>
+      </div>
+
+      <p id="d-waiting" class="hosp-waiting" hidden><span class="hosp-pulse" aria-hidden="true"></span><span data-i18n="hospWaiting">The patient's advocate is waiting on your confirmation right now.</span></p>
+
+      <dl class="hosp-figs">
+        <div class="fig"><dt data-i18n="hospBilled">Billed balance</dt><dd id="f-billed" class="struck">—</dd></div>
+        <div class="fig agreed"><dt data-i18n="hospAgreed">Agreed settlement</dt><dd id="f-agreed">—</dd></div>
+        <div class="fig locked"><dt data-i18n="hospLocked">Locked in escrow</dt><dd id="f-locked">—</dd></div>
+      </dl>
+
+      <!-- the action -->
+      <section id="confirm-card" class="hosp-card hosp-confirm" aria-labelledby="confirm-title">
+        <h3 id="confirm-title" data-i18n="hospConfirmTitle">Confirm the account balance</h3>
+        <p id="confirm-lede" class="hosp-note"></p>
+        <label class="hosp-check">
+          <input id="attest" type="checkbox" />
+          <span id="attest-text"></span>
+        </label>
+        <label class="field hosp-staff"><span data-i18n="hospStaff">Your name (optional, shown to the patient's advocate)</span><input id="staff-name" autocomplete="name" maxlength="80" /></label>
+        <button id="confirm-btn" class="primary hosp-go" type="button" disabled data-i18n="hospConfirmBtn">Confirm $0 balance &amp; release escrow</button>
+        <p id="confirm-why" class="hosp-why"></p>
+      </section>
+
+      <section id="released-card" class="hosp-card hosp-released" hidden aria-labelledby="released-title">
+        <div class="hosp-stamp" aria-hidden="true" data-i18n="hospStamp">PAID</div>
+        <h3 id="released-title" data-i18n="hospReleasedTitle">Escrow released to the hospital</h3>
+        <p id="released-lede" class="hosp-note"></p>
+        <ol id="release-receipts" class="timeline compact"></ol>
+      </section>
+
+      <div class="hosp-cols">
+        <section class="hosp-card" aria-labelledby="escrow-title">
+          <div class="hosp-card-title">
+            <h3 id="escrow-title" data-i18n="hospEscrowTitle">XRPL escrow</h3>
+            <span id="ledger-check" class="hosp-ledger"></span>
+          </div>
+          <dl id="escrow" class="hosp-dl"></dl>
+          <p class="hosp-fine" data-i18n="hospConditionNote">The condition is a PREIMAGE-SHA-256 crypto-condition. Its fulfillment (the release key) stays with BangBang and is revealed on the ledger only inside the release transaction, so nobody can pull the money early.</p>
+        </section>
+
+        <section class="hosp-card" aria-labelledby="cred-title">
+          <h3 id="cred-title" data-i18n="hospCredTitle">Hardship credential</h3>
+          <dl id="credential" class="hosp-dl"></dl>
+          <p class="hosp-fine" data-i18n="hospCredNote">Issued on XRPL by the patient's clinic social worker and accepted by the patient. It supports the financial-assistance basis for the settlement.</p>
+        </section>
+      </div>
+
+      <section class="hosp-card" aria-labelledby="activity-title">
+        <h3 id="activity-title" data-i18n="hospActivity">Activity on this case</h3>
+        <ol id="activity" class="hosp-activity"></ol>
+      </section>
+    </section>
+  </main>
+</div>
+<script type="module" src="/hospital.js"></script>
+</body>
+</html>
