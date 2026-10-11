@@ -1,6 +1,8 @@
 # Haiku-to-Haiku voice demo
 
-Prepared October 11, 2026, on top of main `334fd85`. The user selected an AI hospital
+Prepared October 11, 2026; integrated with main `82cc0aa`, Branch C PR #32 and the
+completed message-first UI in PR #40. Merge commit `9cef13b` retains PR #42's combined
+research/voice history and UI commit `92c2ab6`. The user selected an AI hospital
 counterparty instead of a teammate at the microphone. This replaces the earlier human-first
 demo preference; live conversations and ledger tests remain paused until requested.
 
@@ -34,7 +36,10 @@ before hanging up. All results remain labelled simulations.
 - The legacy hospital and clinic-insurer paths remain available when the new ID is absent.
   The existing live-text fallback remains intact if voice fails. A text fallback is not proof of
   successful ElevenLabs audio and currently uses the app's separate text-model configuration.
-- Existing `counterparty:"agent"` mode already opens the AI-to-AI room; no UI edit is required.
+- In the research step, select the AI hospital and explicitly check **Voice (ElevenLabs)**
+  before starting the call. This sends `counterparty:"agent"` and opens the AI-to-AI room.
+  Leaving voice unchecked sends `counterparty:"text"`; the pipeline also uses live text.
+  The workspace's timeline and activity panel show the actual negotiated channel.
 
 ## Provisioning and deployment
 
@@ -58,8 +63,10 @@ voice recording. No conversation, speech generation or ledger transaction was st
    Apply the separate replacement-provider-key file if that has not already been imported.
    A path on Brighton's Mac does not transfer a file to the founder's machine; send the actual
    private file. Do not import an older full settings file over replacement provider keys.
-3. New deployment variable for D: `ELEVENLABS_HAIKU_HOSPITAL_AGENT_ID`. Add it to the shared
-   environment template and any GitHub-to-Fly secret synchronization allowlist being introduced.
+3. New deployment variable for D: `ELEVENLABS_HAIKU_HOSPITAL_AGENT_ID`. Its empty placeholder
+   is in the shared environment template; the actual value must be imported privately on Fly.
+   Closed PR #39's deployment-time secret synchronization is intentionally excluded from the
+   fusion because it could overwrite the configured live provider keys.
    `ELEVENLABS_HOSPITAL_VOICE_ID` is an optional existing voice override; default Eric is distinct
    from the advocate's Bella. The shared `VOICE_LLM_MODEL` remains `claude-haiku-5-5`.
 4. If re-provisioning is needed, from `vellum/server` with the private configuration loaded:
@@ -76,13 +83,17 @@ voice recording. No conversation, speech generation or ledger transaction was st
 
 ## Verification and next rehearsal
 
-TypeScript and all 24 test files pass: **528 passed, two inherited expected failures**.
+The combined UI/research/voice tree passes TypeScript and all 25 test files: **544 test
+cases accepted, including two inherited expected-failure cases**. Browser JavaScript syntax
+checks pass; the UI session also checked desktop and mobile flows with fixtures.
 Coverage includes two-agent selection, separate metadata and voices, bidirectional PCM relay,
 private-case isolation, fresh hospital context, revoked consent, role/tool rejection and the
 new endpoint's no-key response. The route inventory audit adds one shared test probe for D review.
 
 The provider configuration is verified; a complete live Haiku-to-Haiku conversation has **not**
-been tested. After the user resumes, use a consenting synthetic patient case in agent mode and
+been tested. After the user resumes, attach or paste a synthetic itemized bill in the new
+message-first landing page, set a payment limit and consent, complete research, then enable
+Voice (ElevenLabs) with the AI hospital selected. Use this consenting synthetic case and
 verify `channel:"voice"`, audible alternating turns, both saved transcript roles and an outcome
 recorded by the advocate's tools. Confirm that a fallback is visibly reported as text. Stop
 after the negotiation unless the user also resumes the separately approved devnet sequence.
