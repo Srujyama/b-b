@@ -31,6 +31,10 @@ export async function buildApp() {
   await app.register(fastifyStatic, { root: WEB_DIR });
 
   const has = (k: string) => Boolean(process.env[k]);
+  // Public client config. PUBLIC_WS_ORIGIN (e.g. wss://bangbang-bab.fly.dev) is set when the web app is served
+  // from a different host (Vercel) than this server, because static hosts can't proxy WebSockets.
+  app.get("/api/config", async () => ({ wsOrigin: process.env.PUBLIC_WS_ORIGIN || null }));
+
   app.get("/health", async () => ({
     ok: true,
     anthropic: has("ANTHROPIC_API_KEY"),
