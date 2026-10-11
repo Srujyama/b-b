@@ -1,5 +1,5 @@
 // Live check for clinic mode: real Context.dev policy lookup + OpenAI criteria check + appeal letter on the demo denial.
-// Needs CONTEXT_DEV_API_KEY and OPENAI_API_KEY in .env.  Run: npx tsx scripts/live-clinic.ts
+// Needs CONTEXT_DEV_API_KEY and ANTHROPIC_API_KEY in .env.  Run: npx tsx scripts/live-clinic.ts
 import "dotenv/config";
 import { draftAppeal } from "../src/claims/appeal.js";
 import { loadDemoClaim } from "../src/routes/clinic.js";

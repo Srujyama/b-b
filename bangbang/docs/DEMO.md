@@ -6,7 +6,7 @@ to EN only where noted).
 
 ## Before you hit record (T-10 min)
 
-- [ ] `GET /health`: every integration `true` (openai, elevenlabs, contextDev, xrpl, bnb, ausd).
+- [ ] `GET /health`: every integration `true` (anthropic, elevenlabs, contextDev, xrpl, bnb, ausd).
 - [ ] Wallets funded: tBNB on `BSC_PRIVATE_KEY`, AUSD on the agent wallet, Base Sepolia ETH on the payee,
       `npm run setup:xrpl` done (patient holds USD, fund exists).
 - [ ] Dry run once: demo case → Run everything → finishes `settled`. Then **restart the server** (fresh state).

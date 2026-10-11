@@ -19,7 +19,7 @@ export async function researchCase(id: string, opts: { lookup?: FairPriceLookup 
   if (!c.bill) throw Object.assign(new Error("case has no parsed bill — POST /api/cases first"), { statusCode: 409 });
   if (!c.patient) throw Object.assign(new Error("case has no patient mandate (patient.maxPay)"), { statusCode: 409 });
   contextDevKey(); // 503 if Context.dev not configured
-  if (!process.env.OPENAI_API_KEY) throw Object.assign(new Error("OpenAI is not configured — set OPENAI_API_KEY in bangbang/server/.env"), { statusCode: 503 });
+  if (!process.env.ANTHROPIC_API_KEY) throw Object.assign(new Error("Claude is not configured — set ANTHROPIC_API_KEY in bangbang/server/.env"), { statusCode: 503 });
   const bill = c.bill;
   const hospital = bill.provider.name;
   const log = (message: string, messageZh: string) => emit(id, { type: "log", message, messageZh });
