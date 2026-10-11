@@ -559,3 +559,6 @@ td.mark { white-space: nowrap; }
 .bill-image img { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto;
   border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05); }
 .bill-image figcaption { text-align: center; color: #6b7280; font-size: 13px; margin-top: 8px; }
+
+.voice-toggle { display: inline-flex; align-items: center; gap: 8px; margin-right: 16px; color: #374151; font-size: 14px; cursor: pointer; }
+.voice-toggle input { width: 16px; height: 16px; accent-color: #2563eb; }

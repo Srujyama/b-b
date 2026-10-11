@@ -39,7 +39,7 @@ export default async function voiceRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { id: string }; Body: { counterparty?: "agent" | "human" | "text" } }>("/api/cases/:id/negotiate", async (req, reply) => {
     const packet = requireCase(req.params.id);
-    const mode = req.body?.counterparty ?? "agent";
+    const mode = req.body?.counterparty ?? "text"; // voice (ElevenLabs) only when explicitly asked for
     if (mode !== "agent" && mode !== "human" && mode !== "text") return reply.code(400).send({ error: "counterparty must be 'agent', 'human' or 'text'" });
     if (packet.mode === "patient" && packet.patient?.consent !== true)
       return reply.code(409).send({ error: "the patient has not consented — Vellum will not negotiate" });

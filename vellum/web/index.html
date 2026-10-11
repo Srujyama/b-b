@@ -121,7 +121,6 @@
           <label class="field"><span>People in the household</span><input name="household_size" id="f-household" type="number" min="1" inputmode="numeric" /></label>
           <label class="field"><span>Household income per year (USD)</span><input name="annual_income" id="f-income" type="number" min="0" inputmode="numeric" /></label>
         </div>
-        <label class="field"><span>The most she can pay (USD)</span><input name="max_pay" id="f-maxpay" type="number" min="1" inputmode="numeric" required /></label>
         <label class="consent"><input id="f-consent" name="consent" type="checkbox" />
           <span>Vellum may negotiate up to my limit.</span></label>
       </form>
@@ -152,7 +151,10 @@
         <summary>Research log</summary>
         <ol id="research-feed" class="feed" aria-live="polite"></ol>
       </details>
-      <div class="step-foot"><button id="to-room" class="primary" type="button" disabled>Start the call</button></div>
+      <div class="step-foot">
+        <label class="voice-toggle"><input type="checkbox" id="voice-on" /> <span>Voice (ElevenLabs)</span></label>
+        <button id="to-room" class="primary" type="button" disabled>Start the call</button>
+      </div>
     </section>
 
     <!-- 4 the call -->

@@ -484,7 +484,8 @@ export function liveDeps(app: FastifyInstance): PipelineDeps {
     async negotiate(id, counterparty, { humanTimeoutMs }) {
       const c = requireCase(id);
       if (counterparty === "agent") {
-        const handle = activeBridge(id) ?? (await startAgentBridge(id, c.mode === "clinic" ? "insurer" : "hospital"));
+        // the one-button pipeline never spends ElevenLabs credits: it negotiates as live text
+        const handle = activeBridge(id) ?? (await startAgentBridge(id, c.mode === "clinic" ? "insurer" : "hospital", { channel: "text" }));
         const { reason } = await handle.done;
         // A provider failure (e.g. ElevenLabs out of credits) is not "the hospital said no": surface it as such.
         if (reason === "error" && requireCase(id).agreedAmount == null)
