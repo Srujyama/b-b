@@ -7,6 +7,8 @@ import { handleTool } from "../agent/tools.js";
 import { haikuRoutes } from "../agent/haiku.js";
 import { callRoutes } from "../agent/calls.js";
 import { browserDemoInit } from "../agent/browser-demo.js";
+import { BrowserTranscripts } from "../agent/browser-transcript.js";
+import type { TranscriptLine } from "../types.js";
 
 // Voice routes (see docs/API.md):
 //   GET  /api/intake/signed-url[?case=]   → {signedUrl, init}  browser opens the Mandarin intake agent
@@ -15,6 +17,8 @@ import { browserDemoInit } from "../agent/browser-demo.js";
 // `init` = the conversation_initiation_client_data the browser must send first (per-case prompt overrides +
 // dynamic_variables {case_id}).
 export default async function voiceRoutes(app: FastifyInstance) {
+  const browserTranscripts = new BrowserTranscripts();
+  app.addHook("onClose", async () => browserTranscripts.clear());
   // missing config -> 503 {error}, explicit statusCode (404/409) as-is, upstream (ElevenLabs) failure -> 502
   app.setErrorHandler((e: Error & { statusCode?: number }, _req, reply) => {
     const code = e.statusCode ?? (/is not configured/i.test(e.message) ? 503 : 502);
@@ -35,7 +39,7 @@ export default async function voiceRoutes(app: FastifyInstance) {
     const packet = requireCase(req.params.id);
     const mode = req.body?.counterparty ?? "agent";
     if (mode !== "agent" && mode !== "human") return reply.code(400).send({ error: "counterparty must be 'agent' or 'human'" });
-    if (packet.mode === "patient" && packet.patient && !packet.patient.consent)
+    if (packet.mode === "patient" && packet.patient?.consent !== true)
       return reply.code(409).send({ error: "the patient has not consented — Vellum will not negotiate" });
 
     if (mode === "human") {
@@ -44,14 +48,29 @@ export default async function voiceRoutes(app: FastifyInstance) {
       if (browserAgent && packet.mode === "patient" && packet.patient?.consent !== true)
         return reply.code(409).send({ error: "the demo patient must consent before the rehearsal" });
       const advocateSignedUrl = await getSignedUrl(browserAgent ?? agentIdFor("advocate"));
-      if (packet.status !== "negotiating" && packet.agreedAmount == null) updateCase(packet.id, { status: "negotiating" });
+      updateCase(packet.id, { voiceSimulation: true,
+        ...(packet.agreedAmount == null ? { status: "negotiating" as const } : {}) });
       return { mode, simulated: true, advocateSignedUrl,
+        transcriptToken: browserTranscripts.start(packet.id),
         advocateInit: browserAgent ? browserDemoInit(packet) : advocateInitForHuman(packet) };
     }
 
     if (activeBridge(packet.id)) return reply.code(409).send({ error: "a negotiation call is already running for this case" });
     const handle = await startAgentBridge(packet.id, packet.mode === "clinic" ? "insurer" : "hospital");
     return { mode, counterparty: handle.counterparty };
+  });
+
+  app.post<{ Params: { id: string }; Body: TranscriptLine }>("/api/cases/:id/voice/transcript", {
+    bodyLimit: 12_000,
+    schema: { body: { type: "object", additionalProperties: false, required: ["role", "text", "at"], properties: {
+      role: { type: "string", enum: ["advocate", "hospital", "insurer"] },
+      text: { type: "string", minLength: 1, maxLength: 2000 },
+      at: { type: "string", maxLength: 40 },
+    } } },
+  }, async (req) => {
+    const { role, text, at } = req.body;
+    browserTranscripts.append(req.params.id, req.headers["x-voice-session"], { role, text, at });
+    return { ok: true };
   });
 
   app.post<{ Params: { id: string } }>("/api/cases/:id/negotiate/stop", async (req, reply) => {

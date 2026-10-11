@@ -278,8 +278,8 @@ export class ApiError extends Error {
 }
 
 /** fetch wrapper: JSON in/out, throws ApiError with the server's {error} message. */
-export async function api(path, { method = "GET", body, form } = {}) {
-  const init = { method, headers: {} };
+export async function api(path, { method = "GET", body, form, headers = {} } = {}) {
+  const init = { method, headers: { ...headers } };
   if (form) init.body = form;
   else if (body !== undefined) {
     init.headers["content-type"] = "application/json";
@@ -1025,9 +1025,11 @@ function initPatient() {
           tools: ADVOCATE_TOOLS,
           onMessage: ({ message, source }) => {
             if (!message) return;
-            const line = { role: source === "ai" ? "advocate" : "hospital", text: message, at: new Date().toISOString() };
+            const line = { role: source === "ai" ? "advocate" : P().mode === "clinic" ? "insurer" : "hospital", text: message, at: new Date().toISOString() };
             mergeEvent(P(), { type: "transcript", line });
             room.render();
+            api(`/api/cases/${P().id}/voice/transcript`, { method: "POST", headers: { "x-voice-session": res.transcriptToken }, body: line })
+              .catch((e) => showError(errorText(e)));
           },
           onError: (m) => showError(t("failed") + m),
           onDisconnect: () => {
@@ -1059,7 +1061,7 @@ function initPatient() {
   // Outcome summary: deterministic zh/en text from GET /summary; audio from GET /summary.mp3 (ElevenLabs).
   const outcome = { key: "", seq: 0, url: null, audioKey: "" };
   function summaryKey(p) {
-    return [p.id, p.status, p.agreedAmount ?? "", p.flags.length, p.receipts.map((r) => r.kind).join(",")].join("|");
+    return [p.id, p.status, p.voiceSimulation, p.agreedAmount ?? "", p.flags.length, p.receipts.map((r) => r.kind).join(",")].join("|");
   }
   function renderOutcome() {
     const p = P();
@@ -1075,10 +1077,10 @@ function initPatient() {
         $("#outcome-zh").replaceChildren(...lines.zh.map((l) => h("li", {}, l)));
         $("#outcome-en").replaceChildren(...lines.en.map((l) => h("li", {}, l)));
         const tag = $("#outcome-preview");
-        tag.hidden = !s.preview;
-        tag.dataset.i18n = "outcomePreview";
-        tag.textContent = t("outcomePreview");
-        $("#outcome-card").classList.toggle("is-preview", Boolean(s.preview));
+        tag.hidden = !(s.preview || s.simulated);
+        tag.dataset.i18n = s.preview ? "outcomePreview" : "simulatedTag";
+        tag.textContent = t(tag.dataset.i18n);
+        $("#outcome-card").classList.toggle("is-preview", Boolean(s.preview || s.simulated));
         $("#outcome-card").hidden = false;
       })
       .catch(() => {

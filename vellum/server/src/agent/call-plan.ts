@@ -93,7 +93,7 @@ export function outboundAgentConfig(baseUrl: string, secretId: string) {
         prompt: {
           prompt: `You are an AI client representative. Without a task brief, explain that context is missing and end the call.\n${speechInstructions(speech)}`,
           llm: "custom-llm", temperature: null, max_tokens: 512, backup_llm_config: { preference: "disabled" },
-          custom_llm: { url: `${baseUrl}/api/voice/llm/v1/chat/completions`, model_id: voiceModel(), api_key: { secret_id: secretId } },
+          custom_llm: { url: `${baseUrl}/api/voice/llm/v1`, model_id: voiceModel(), api_key: { secret_id: secretId } },
           built_in_tools: {
             end_call: systemTool("end_call", "End the call after a goodbye or when there is no appropriate task to perform."),
             skip_turn: systemTool("skip_turn", "Wait silently while on hold or while the other person is working."),
