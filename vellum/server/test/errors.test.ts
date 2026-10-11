@@ -47,7 +47,9 @@ describe("errorStatus / errorMessage", () => {
 
   it("redact strips bearer tokens and key-shaped strings, leaves ordinary text alone", () => {
     expect(redact("Authorization: Bearer abcdefghijklmnop failed")).toBe("Authorization: Bearer … failed");
-    expect(redact("bad key sk-ant-api03-AAAAAAAAAAAAAAAAAAAA")).toBe("bad key …");
+    // built at runtime so secret scanners don't flag a fake key in source
+    const fakeKey = ["sk", "ant", "api03", "A".repeat(20)].join("-");
+    expect(redact(`bad key ${fakeKey}`)).toBe("bad key …");
     expect(redact("unknown case 1234; see https://vellum-app.fly.dev/health")).toBe("unknown case 1234; see https://vellum-app.fly.dev/health");
   });
 });

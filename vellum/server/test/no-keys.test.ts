@@ -248,6 +248,8 @@ const PROBES: Probe[] = [
 
   // ---- summary.ts (text is keyless; audio needs ElevenLabs)
   { route: "GET /api/cases/:id/summary", url: caseUrl("unknown", "/summary"), status: 404, match: /unknown case/ },
+  { route: "GET /api/cases/:id/leverage", url: caseUrl("unknown", "/leverage"), status: 404, match: /unknown case/ },
+  { route: "GET /api/cases/:id/leverage", url: caseUrl("agreed", "/leverage"), status: 200, match: /score/ },
   { route: "GET /api/cases/:id/summary", url: caseUrl("agreed", "/summary"), status: 200, match: /1,?800/ },
   { route: "GET /api/cases/:id/summary", url: caseUrl("empty", "/summary"), status: 200, match: /No price has been agreed/ },
   { route: "GET /api/cases/:id/summary.mp3", url: caseUrl("unknown", "/summary.mp3"), status: 404, match: /unknown case/ },
