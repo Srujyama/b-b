@@ -1,6 +1,7 @@
 name: ci
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 jobs:
@@ -31,3 +32,18 @@ jobs:
       - run: |
           files=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
           node .github/scripts/check-ownership.mjs "${{ github.head_ref }}" $files
+
+  # Deploy the backend after tests pass on main. The token is scoped to the vellum-app Fly app only.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: server
+    runs-on: ubuntu-latest
+    concurrency: deploy-fly
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only --ha=false
+        working-directory: vellum
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - run: curl -fsS https://vellum-app.fly.dev/health

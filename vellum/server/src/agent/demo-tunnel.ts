@@ -52,7 +52,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const port = Number(process.env.VOICE_GATEWAY_PORT) || 8788;
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid voice gateway port");
   const ssh = spawn("ssh", ["-T", "-o", "BatchMode=yes", "-o", "IdentityAgent=none", "-o", "IdentitiesOnly=yes",
-    "-o", "IdentityFile=/dev/null", "-o", "StrictHostKeyChecking=accept-new", "-o", `UserKnownHostsFile=${join(tmpdir(), "bangbang-tunnel-known-hosts")}`,
+    "-o", "IdentityFile=/dev/null", "-o", "StrictHostKeyChecking=accept-new", "-o", `UserKnownHostsFile=${join(tmpdir(), "vellum-tunnel-known-hosts")}`,
     "-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3", "-o", "ExitOnForwardFailure=yes",
     "-R", `80:127.0.0.1:${port}`, "nokey@localhost.run", "--", "--output", "json"], { stdio: ["ignore", "pipe", "inherit"] });
   let previous: string | undefined;

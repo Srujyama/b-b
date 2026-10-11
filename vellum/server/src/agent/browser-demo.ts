@@ -9,7 +9,7 @@ import type { VoiceMemory } from "./shared-context.js";
 export function browserAgentConfig(baseUrl: string, secretId: string, toolIds: string[]) {
   const phone = outboundAgentConfig(baseUrl, secretId);
   return {
-    name: "Vellum Haiku Browser Rehearsal", tags: ["bangbang", "browser-rehearsal"],
+    name: "Vellum Haiku Browser Rehearsal", tags: ["vellum", "browser-rehearsal"],
     conversation_config: {
       ...phone.conversation_config,
       agent: { ...phone.conversation_config.agent, dynamic_variables: { dynamic_variable_placeholders: { case_id: "" } },

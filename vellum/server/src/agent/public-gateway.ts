@@ -11,7 +11,7 @@ export function buildVoiceGateway(upstream: typeof fetch = fetch, serverPort = 8
     const status = error.statusCode ?? 502;
     reply.code(status).send({ error: status === 401 ? "Unauthorized" : "Voice gateway request failed" });
   });
-  app.get("/health", async () => ({ ok: true, service: "bangbang-voice-gateway", scope: "browser-rehearsal-only" }));
+  app.get("/health", async () => ({ ok: true, service: "vellum-voice-gateway", scope: "browser-rehearsal-only" }));
   app.post("/api/voice/browser/llm/v1/chat/completions", {
     onRequest: async (req) => checkBearer(req.headers.authorization, "VOICE_LLM_TOKEN"),
   }, async (req, reply) => {

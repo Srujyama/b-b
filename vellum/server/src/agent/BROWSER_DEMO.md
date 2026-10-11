@@ -69,7 +69,7 @@ All commands below run from `vellum/server`. Keep secrets only in the ignored `.
    ```sh
    ssh -T -o BatchMode=yes -o IdentityAgent=none -o IdentitiesOnly=yes \
      -o IdentityFile=/dev/null -o StrictHostKeyChecking=accept-new \
-     -o UserKnownHostsFile="${TMPDIR:-/tmp}/bangbang-tunnel-known-hosts" \
+     -o UserKnownHostsFile="${TMPDIR:-/tmp}/vellum-tunnel-known-hosts" \
      -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
      -R 80:127.0.0.1:8788 nokey@localhost.run -- --output json
    ```
