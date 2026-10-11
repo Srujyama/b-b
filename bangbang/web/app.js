@@ -74,6 +74,9 @@ export const I18N = {
     humanMode: "真人模式：请对着麦克风扮演医院账单员，帮帮会跟您谈。",
     dealAt: (amt) => `成交：${amt}`, toReceipts: "看凭证", waitingLines: "通话开始后，对话会出现在这里。",
     receiptsTitle: "每一步都有凭证",
+    outcomeTitle: "结果", hearResult: "听结果", hearStop: "停止", hearLoading: "正在准备声音……",
+    hearUnavailable: "现在放不了声音，您可以先看下面的文字。", hearFailed: "声音没放出来，您可以先看下面的文字。",
+    outcomePreview: "预览数据：示例个案，不是真实的结果",
     receiptsLede: "钱先放在托管账户里，医院确认您欠款为零才会付出去。",
     credential: "证明困难资格", settle: "把钱放进托管", confirmZero: "医院确认余额为零",
     months: "分期月数", loan: "0% 分期", fedTitle: "一次付清，还是分期？", getAdvice: "看建议", hedge: "用 Gemini 测试盘对冲利率风险",
@@ -159,6 +162,9 @@ export const I18N = {
     humanMode: "Human mode: play the hospital billing office into the microphone. BangBang will negotiate with you.",
     dealAt: (amt) => `Deal: ${amt}`, toReceipts: "See receipts", waitingLines: "The conversation appears here once the call starts.",
     receiptsTitle: "A receipt for every step",
+    outcomeTitle: "The result", hearResult: "Hear the result", hearStop: "Stop", hearLoading: "Preparing the audio…",
+    hearUnavailable: "Audio isn't available right now. The result is written below.", hearFailed: "The audio didn't play. The result is written below.",
+    outcomePreview: "Preview data: a sample case, not a real result",
     receiptsLede: "Your money waits in escrow and is paid only after the hospital confirms a zero balance.",
     credential: "Prove hardship eligibility", settle: "Put the money in escrow", confirmZero: "Hospital confirms zero balance",
     months: "Months", loan: "0% payment plan", fedTitle: "Pay at once, or in installments?", getAdvice: "Get advice", hedge: "Hedge rate risk (Gemini sandbox)",
@@ -1047,9 +1053,89 @@ function initPatient() {
   $("#to-receipts").addEventListener("click", () => show("receipts"));
 
   /* ---- 6 receipts ---- */
+  // Outcome summary: deterministic zh/en text from GET /summary; audio from GET /summary.mp3 (ElevenLabs).
+  const outcome = { key: "", seq: 0, url: null, audioKey: "" };
+  function summaryKey(p) {
+    return [p.id, p.status, p.agreedAmount ?? "", p.flags.length, p.receipts.map((r) => r.kind).join(",")].join("|");
+  }
+  function renderOutcome() {
+    const p = P();
+    if (!p) return;
+    const key = summaryKey(p);
+    if (key === outcome.key) return;
+    outcome.key = key;
+    const seq = ++outcome.seq;
+    api(`/api/cases/${encodeURIComponent(p.id)}/summary`)
+      .then((s) => {
+        if (seq !== outcome.seq) return;
+        const lines = s.lines ?? { zh: [s.zh], en: [s.en] };
+        $("#outcome-zh").replaceChildren(...lines.zh.map((l) => h("li", {}, l)));
+        $("#outcome-en").replaceChildren(...lines.en.map((l) => h("li", {}, l)));
+        const tag = $("#outcome-preview");
+        tag.hidden = !s.preview;
+        tag.dataset.i18n = "outcomePreview";
+        tag.textContent = t("outcomePreview");
+        $("#outcome-card").classList.toggle("is-preview", Boolean(s.preview));
+        $("#outcome-card").hidden = false;
+      })
+      .catch(() => {
+        if (seq === outcome.seq) $("#outcome-card").hidden = true;
+      });
+  }
+  function setHearLabel(playing) {
+    $("#hear-btn").classList.toggle("playing", playing);
+    $("#hear-btn .hear-icon").textContent = playing ? "■" : "▶";
+    $("#hear-btn [data-i18n]").dataset.i18n = playing ? "hearStop" : "hearResult";
+    $("#hear-btn [data-i18n]").textContent = t(playing ? "hearStop" : "hearResult");
+  }
+  const hearAudio = $("#hear-audio");
+  hearAudio.addEventListener("ended", () => setHearLabel(false));
+  hearAudio.addEventListener("pause", () => setHearLabel(false));
+  hearAudio.addEventListener("play", () => setHearLabel(true));
+  $("#hear-btn").addEventListener("click", async (e) => {
+    const p = P();
+    if (!p) return;
+    if (!hearAudio.paused) return hearAudio.pause();
+    const note = $("#hear-note");
+    const btn = e.currentTarget;
+    note.hidden = true;
+    if (outcome.url && outcome.audioKey === outcome.key) {
+      hearAudio.currentTime = 0;
+      return hearAudio.play().catch(() => undefined);
+    }
+    btn.disabled = true;
+    btn.classList.add("busy");
+    note.textContent = t("hearLoading");
+    note.hidden = false;
+    try {
+      const res = await fetch(`/api/cases/${encodeURIComponent(p.id)}/summary.mp3`);
+      if (!res.ok) {
+        let msg = "";
+        try {
+          msg = (await res.json()).error ?? "";
+        } catch {}
+        note.replaceChildren(t(res.status === 503 ? "hearUnavailable" : "hearFailed"), msg ? h("span", { class: "hear-why" }, msg) : "");
+        return;
+      }
+      if (outcome.url) URL.revokeObjectURL(outcome.url);
+      outcome.url = URL.createObjectURL(await res.blob());
+      outcome.audioKey = outcome.key;
+      hearAudio.src = outcome.url;
+      note.hidden = true;
+      await hearAudio.play();
+    } catch (err) {
+      note.replaceChildren(t("hearFailed"), h("span", { class: "hear-why" }, err?.message ?? String(err)));
+      note.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove("busy");
+    }
+  });
+
   function renderReceipts() {
     const p = P();
     if (!p) return;
+    renderOutcome();
     const list = $("#receipts");
     const rs = [...p.receipts].sort((a, b) => String(a.at).localeCompare(String(b.at)));
     list.replaceChildren(...(rs.length ? rs.map(receiptItem) : [h("li", { class: "empty" }, t("noReceipts"))]));
