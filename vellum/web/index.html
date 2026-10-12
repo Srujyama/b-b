@@ -60,7 +60,7 @@
       <h2>How it works</h2>
       <ol class="how-steps">
         <li><b>Your bill</b><span>Every charge checked.</span></li>
-        <li><b>Your preferences</b><span>You set the limit.</span></li>
+        <li><b>Your preferences</b><span>Household and consent.</span></li>
         <li><b>Research</b><span>Fair prices, with sources.</span></li>
         <li><b>The call</b><span>Two AI agents negotiate.</span></li>
         <li><b>Your outcome</b><span>A clear next step.</span></li>
@@ -72,7 +72,7 @@
         <li><b>Context.dev</b><span>Finds fair prices and policies.</span></li>
         <li><b>XRPL (Ripple)</b><span>Holds the payment until the bill is $0. <span class="live-tag">live on devnet</span></span></li>
         <li><b>Gemini</b><span>Pay now or later.</span></li>
-        <li><b>BNB Chain</b><span>Public log of her limit. <span class="notlive-tag">contract not deployed yet</span></span></li>
+        <li><b>BNB Chain</b><span>Public log of the deal. <span class="notlive-tag">contract not deployed yet</span></span></li>
         <li><b>AUSD (x402)</b><span>Pays for data per request. <span class="notlive-tag">wallet not funded yet</span></span></li>
       </ul>
     </div>
@@ -129,7 +129,7 @@
         </div>
         <label id="new-case-limit" class="field" hidden><span>Your negotiation limit (USD)</span><input name="max_pay" id="f-maxpay" type="number" min="1" step="0.01" inputmode="decimal" /></label>
         <label class="consent"><input id="f-consent" name="consent" type="checkbox" />
-          <span>Vellum may negotiate up to my limit.</span></label>
+          <span>Vellum may negotiate this bill for me.</span></label>
       </form>
       <div id="intake-done" class="note" hidden></div>
       <details class="formwrap talk-wrap">
@@ -179,7 +179,7 @@
           <span id="deal-text"></span>
           <button id="to-summary" class="primary" type="button">See summary</button>
         </div>
-        <p class="limit-guard">Always within your limit.</p>
+        
         <div class="voices">
           <span class="voice" id="v-advocate"><i></i><span>Vellum</span></span>
           <span class="voice" id="v-hospital"><i></i><span>Hospital</span></span>
@@ -241,7 +241,7 @@
             <button id="hedge-btn" class="text" type="button">Hedge rate risk (Gemini sandbox)</button>
           </div>
           <div id="mandate-box" class="note">
-            <p>BNB Chain: her limit on a public log. <span class="notlive-tag">contract not deployed yet</span></p>
+            <p>BNB Chain: a public log of the deal. <span class="notlive-tag">contract not deployed yet</span></p>
             <button id="mandate-btn" class="secondary" type="button" hidden>Record the limit on-chain</button>
           </div>
           <h3>Receipts</h3>

@@ -40,7 +40,7 @@ export const I18N = {
     runStatus: { pending: "Pending", running: "Running", ok: "Done", skipped: "Skipped", failed: "Failed" },
     runSteps: { research: "Research fair prices + charity policy", financing: "Lump sum vs payment plan (Gemini Fed odds)", mandate: "Record the patient's mandate on BNB Chain", credential: "Issue the hardship credential on XRPL", negotiate: "Negotiate with the billing office (in English)", loan: "Open a 0% community-fund loan (XRPL)", settle: "Lock the agreed amount in XRPL escrow", recordDeal: "Record the deal on BNB Chain", confirm: "Hospital confirms a $0 balance (escrow release)" },
     flaggedNote: "Flagged for review, not confirmed savings.",
-    limitGuard: "Never above her limit.",
+    limitGuard: "Vellum negotiates for her.",
     steps: ["Mrs. Lin's bill", "Her information", "Research", "The call", "Summary"],
     billTitleDemo: "Mrs. Lin's bill", billTitleOwn: "Your bill",
     dealReached: (amt) => `Deal reached at ${amt}`,
@@ -65,7 +65,7 @@ export const I18N = {
     micDenied: "No microphone access. Allow the microphone in your browser, or fill in the form.",
     orForm: "Can't talk right now? Fill in a form", household: "People in your household", income: "Household income per year (USD)",
     maxPay: "The most you can pay (USD)",
-    consent: "Vellum may negotiate up to my limit.",
+    consent: "Vellum may negotiate this bill for me.",
     saveIntake: "Save my answers", needConsent: "Vellum can only negotiate for you once you tick the consent box.",
     intakeSaved: (name, max) => `Saved: ${name}, pays at most ${max}.`,
     researchTitle: "Fair prices",
@@ -978,7 +978,7 @@ function initPatient() {
           { class: "rungs" },
           rung(t("ladderOpening"), p.opening),
           rung(t("ladderTarget"), p.target),
-          rung(t("ladderWalkaway"), p.walkaway ?? p.patient?.maxPay),
+          
         ),
         p.fairPrices.length ? h("h2", {}, t("medicareTitle")) : null,
         p.fairPrices.length
